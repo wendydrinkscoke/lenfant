@@ -7,7 +7,7 @@ import {
 } from "aws-cdk-lib/aws-certificatemanager";
 import { UserPool } from "aws-cdk-lib/aws-cognito";
 import { IdentityPool } from "aws-cdk-lib/aws-cognito-identitypool";
-import { ITable } from "aws-cdk-lib/aws-dynamodb/lib/shared";
+import { ITable } from "aws-cdk-lib/aws-dynamodb";
 import {
   AnyPrincipal,
   Effect,
@@ -40,6 +40,7 @@ export interface GallaudetProps {
   readonly zone: HostedZone;
   readonly stage: string;
   readonly oauthTokensTable: ITable;
+  readonly taskCatalogTable: ITable;
   readonly googleOAuthClientSecret: ISecret;
   readonly emailIdentity: EmailIdentity;
   readonly invitationLinkJwtSigningKey: IKey;

@@ -81,8 +81,8 @@ the task is a manually-graded writing task).
     ~~so classroom-facing APIs can be secured.~~
     1. ~~Provision a DynamoDB table, called "OAuthTokens" to store OAuth~~
     ~~tokens received from users.~~
-    1. Provision a DynamoDB table, called "TaskCatalog", to store metadata about
-    tasks that can be attached to Google Classroom items.
+    1. ~~Provision a DynamoDB table, called "TaskCatalog", to store metadata~~
+    ~~about tasks that can be attached to Google Classroom items.~~
     1. Provision a DynamoDB table, called "Tasks", to store information about
     specific task instances that have been attached to Google Classroom items.
 1. Develop core classroom-facing APIs
