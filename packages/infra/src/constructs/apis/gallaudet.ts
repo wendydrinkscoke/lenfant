@@ -74,6 +74,12 @@ export class Gallaudet extends Construct {
             GOOGLE_OAUTH_CLIENT_SECRET_ARN:
               props.googleOAuthClientSecret.secretArn,
           },
+          description: [
+            'This function "delegates" access to a Google Classroom on',
+            "behalf of a user using. What this really entails is receiving",
+            "their OAuth token and storing it in a DynamoDB table for later",
+            "use.",
+          ].join(" "),
         },
       );
     props.oauthTokensTable.grantWriteData(
@@ -93,6 +99,10 @@ export class Gallaudet extends Construct {
             props.googleOAuthClientSecret.secretArn,
           OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
         },
+        description: [
+          "This function attaches a task, such as a sign-up task or an in-game",
+          "task, to a Google classroom item using the Google Classroom API.",
+        ].join(" "),
       },
     );
     props.oauthTokensTable.grantReadData(attachTaskFunction);
@@ -106,6 +116,10 @@ export class Gallaudet extends Construct {
           USER_POOL_ID: props.userPool.userPoolId,
           ROBLOX_PROVIDER_NAME: "RobloxOIDC",
         },
+        description: [
+          "This function links a user's Cognito account to their Roblox",
+          "account using Cognito's AdminLinkProviderForUser API.",
+        ].join(" "),
       },
     );
     linkRobloxAccountFunction.addToRolePolicy(
