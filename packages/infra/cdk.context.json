@@ -1,0 +1,22 @@
+{
+  "hosted-zone:account=115690362259:domainName=bartholdi.org:region=us-east-1": {
+    "Id": "/hostedzone/Z05516871QVZ11IL26JVQ",
+    "Name": "bartholdi.org."
+  },
+  "hosted-zone:account=115690362259:domainName=robloxnusa.academy:region=us-east-1": {
+    "Id": "/hostedzone/Z07965091PT24DPZI31MK",
+    "Name": "robloxnusa.academy."
+  },
+  "hosted-zone:account=091770677764:domainName=gedu.demo.robloxnusa.academy:region=us-east-1": {
+    "Id": "/hostedzone/Z00277083NL5MKK5S6UN8",
+    "Name": "gedu.demo.robloxnusa.academy."
+  },
+  "hosted-zone:account=115690362259:domainName=school.civictech.llc:region=us-east-1": {
+    "Id": "/hostedzone/Z06288422QLWEBICNMW3R",
+    "Name": "school.civictech.llc."
+  },
+  "hosted-zone:account=115690362259:domainName=gedu.demo.civictech.llc:region=us-east-1": {
+    "Id": "/hostedzone/Z01722573K3DDZ9G0WC1V",
+    "Name": "gedu.demo.civictech.llc."
+  }
+}
