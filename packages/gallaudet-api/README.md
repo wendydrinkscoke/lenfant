@@ -14,7 +14,7 @@ connecting Roblox learning experiences with Google Classroom.
 [Washington, D.C.](https://www.roblox.com/games/1213026131/Washington-D-C) will
 be the first game integrated with Gallaudet, we must design the service such 
 that additional games are equally well supported and to ensure data is isolated
-among these tenants.
+among these partners.
 1. **Teachers and students are our customers:** We should work backwards from
 the goals of students and educators to create fantastic experiences.
 1. **Educational game developers are our partners:** Our expectations for 
@@ -103,11 +103,12 @@ the task is a manually-graded writing task).
     1. _Maybe_ use a custom resource to add primary tasks to the Task Catalog to
     avoid manual effort.
 1. Develop core game-facing APIs
-    1. Introduce an API-key based authorizer.
+    1. ~~Introduce an API-key fronted endpoint.~~
     1. Introduce an API that enables game servers to register user-facing 
     metadata about the game itself.
-    1. Introduce an API that enables game servers to register tasks to the task 
-    catalog. In the first iteration, only "simple tasks" can be registered.
+    1. ~~Introduce an API that enables game servers to register tasks to the~~
+    ~~task catalog. In the first iteration, only "simple tasks" can be~~
+    ~~registered.~~
     1. Introduce an API that enables game servers to query if a player (i.e. a
     player who just joined their game server) has any tasks assigned to them
     which are associated with that specific game. A game server should not be

@@ -1,0 +1,179 @@
+process.env.TASK_CATALOG_TABLE_NAME = 'TaskCatalog';
+
+import {
+  CatalogTaskChainedRequestInput,
+  InternalFailureErrorResponseContent,
+  NotAuthorizedErrorResponseContent,
+  BadRequestErrorResponseContent,
+} from 'gallaudet-api-typescript-runtime';
+import { catalogTask } from '../src/catalog-task';
+
+var dynamoMocks: {
+  updatePromise: jest.Mock;
+  update: jest.Mock;
+};
+
+jest.mock('aws-sdk', () => {
+  const updatePromise = jest.fn();
+  const update = jest.fn(() => ({
+    promise: updatePromise,
+  }));
+
+  dynamoMocks = {
+    updatePromise,
+    update,
+  };
+
+  return {
+    DynamoDB: {
+      DocumentClient: jest.fn(() => ({
+        update,
+      })),
+    },
+  };
+});
+
+const buildRequestArgs = (
+  overrides: Partial<CatalogTaskChainedRequestInput> = {},
+) =>
+  ({
+    chain: undefined as never,
+    event: ({
+      requestContext: {
+        identity: {
+          apiKeyId: 'api-key-123',
+        },
+      },
+    }) as any,
+    context: {} as any,
+    interceptorContext: {
+      logger: {
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+      },
+    },
+    ...overrides,
+  }) as Omit<CatalogTaskChainedRequestInput, 'input'>;
+
+beforeEach(() => {
+  if (!dynamoMocks) {
+    throw new Error('DynamoDB mocks were not initialised');
+  }
+  jest.clearAllMocks();
+  dynamoMocks.updatePromise.mockResolvedValue({});
+});
+
+describe('CatalogTask', () => {
+  it('returns 403 when API key is missing', async () => {
+    const response = await catalogTask({
+      ...buildRequestArgs({
+        event: { requestContext: { identity: {} } } as any,
+      }),
+      input: {
+        requestParameters: {
+          entryId: 'draft-a-bill',
+        },
+        body: {
+          name: 'Draft a Bill',
+          subheading: 'Research and write legislation',
+          instructions: 'Work together to draft your bill.',
+          gradingMethod: 'simple-completion',
+        },
+      },
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(
+      (response.body as NotAuthorizedErrorResponseContent).message,
+    ).toEqual('Valid API key required');
+    expect(dynamoMocks.update).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when grading method is unsupported', async () => {
+    const response = await catalogTask({
+      ...buildRequestArgs(),
+      input: {
+        requestParameters: {
+          entryId: 'draft-a-bill',
+        },
+        body: {
+          name: 'Draft a Bill',
+          subheading: 'Research and write legislation',
+          instructions: 'Work together to draft your bill.',
+          gradingMethod: 'points',
+        } as any,
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect((response.body as BadRequestErrorResponseContent).message).toEqual(
+      'Unsupported grading method',
+    );
+    expect(dynamoMocks.update).not.toHaveBeenCalled();
+  });
+
+  it('persists the catalog entry and returns success', async () => {
+    const response = await catalogTask({
+      ...buildRequestArgs(),
+      input: {
+        requestParameters: {
+          entryId: 'draft-a-bill',
+        },
+        body: {
+          name: 'Draft a Bill',
+          subheading: 'Research and write legislation',
+          instructions: 'Work together to draft your bill.',
+          gradingMethod: 'simple-completion',
+        },
+      },
+    });
+
+    expect(dynamoMocks.update).toHaveBeenCalledTimes(1);
+    const updateCall = dynamoMocks.update.mock.calls[0] as any[] | undefined;
+    if (!updateCall) {
+      throw new Error('Expected DynamoDB update to be invoked');
+    }
+    const updateArgs = updateCall[0];
+    if (!updateArgs) {
+      throw new Error('Expected DynamoDB update arguments to be provided');
+    }
+    const updateArgsRecord = updateArgs as any;
+    expect(updateArgsRecord.TableName).toBe('TaskCatalog');
+    expect(updateArgsRecord.Key).toEqual({
+      PartnerId: 'api-key-123',
+      EntryId: 'draft-a-bill',
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual({
+      message: 'Task catalog entry saved',
+    });
+  });
+
+  it('returns 500 when DynamoDB throws', async () => {
+    const dynamoError = Object.assign(new Error('boom'), {
+      code: 'ProvisionedThroughputExceededException',
+    });
+    dynamoMocks.updatePromise.mockRejectedValueOnce(dynamoError);
+
+    const response = await catalogTask({
+      ...buildRequestArgs(),
+      input: {
+        requestParameters: {
+          entryId: 'draft-a-bill',
+        },
+        body: {
+          name: 'Draft a Bill',
+          subheading: 'Research and write legislation',
+          instructions: 'Work together to draft your bill.',
+          gradingMethod: 'simple-completion',
+        },
+      },
+    });
+
+    expect(response.statusCode).toBe(500);
+    expect(
+      (response.body as InternalFailureErrorResponseContent).message,
+    ).toEqual('Failed to save catalog entry');
+  });
+});

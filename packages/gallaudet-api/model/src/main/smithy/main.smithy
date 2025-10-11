@@ -12,6 +12,7 @@ service Gallaudet {
       DelegateGoogleClassroomAccess
       AttachTask
       LinkRobloxAccount
+      CatalogTask
     ]
     errors: [
       BadRequestError

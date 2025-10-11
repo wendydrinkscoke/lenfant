@@ -1,5 +1,9 @@
-import { CognitoAuthorizer, Integrations } from "@aws/pdk/type-safe-api";
-import { Cors } from "aws-cdk-lib/aws-apigateway";
+import {
+  Authorizers,
+  CognitoAuthorizer,
+  Integrations,
+} from "@aws/pdk/type-safe-api";
+import { ApiKeySourceType, Cors } from "aws-cdk-lib/aws-apigateway";
 import { SecurityPolicy } from "aws-cdk-lib/aws-apigatewayv2";
 import {
   Certificate,
@@ -24,6 +28,7 @@ import { Construct } from "constructs";
 import {
   Api,
   AttachTaskFunction,
+  CatalogTaskFunction,
   DelegateGoogleClassroomAccessFunction,
   LinkRobloxAccountFunction,
 } from "gallaudet-api-typescript-infra";
@@ -109,6 +114,21 @@ export class Gallaudet extends Construct {
     props.oauthTokensTable.grantReadData(attachTaskFunction);
     props.googleOAuthClientSecret.grantRead(attachTaskFunction);
 
+    const catalogTaskFunction = new CatalogTaskFunction(
+      this,
+      "CatalogTaskFunction",
+      {
+        environment: {
+          TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
+        },
+        description: [
+          "This function lets partner game servers create or update task",
+          "catalog entries that teachers can later assign in Classroom.",
+        ].join(" "),
+      },
+    );
+    props.taskCatalogTable.grantWriteData(catalogTaskFunction);
+
     const linkRobloxAccountFunction = new LinkRobloxAccountFunction(
       this,
       "LinkRobloxAccountFunction",
@@ -137,6 +157,9 @@ export class Gallaudet extends Construct {
 
     this.api = new Api(this, id, {
       defaultAuthorizer: props.cognitoAuthorizer,
+      apiKeyOptions: {
+        source: ApiKeySourceType.HEADER,
+      },
       corsOptions: {
         allowOrigins: [`https://${props.websiteDomainName}`],
         allowMethods: Cors.ALL_METHODS,
@@ -154,6 +177,13 @@ export class Gallaudet extends Construct {
         },
         linkRobloxAccount: {
           integration: Integrations.lambda(linkRobloxAccountFunction),
+        },
+        catalogTask: {
+          integration: Integrations.lambda(catalogTaskFunction),
+          authorizer: Authorizers.none(),
+          options: {
+            apiKeyRequired: true,
+          },
         },
       },
       policy: new PolicyDocument({
@@ -189,5 +219,28 @@ export class Gallaudet extends Construct {
         }),
       ],
     });
+
+    if (props.stage !== "prod") {
+      const postmanApiKey = this.api.api.addApiKey("PostmanTestingApiKey", {
+        apiKeyName: `postman-${props.stage}`,
+        description:
+          "Manual testing key for invoking catalog endpoints via Postman",
+      });
+
+      const postmanUsagePlan = this.api.api.addUsagePlan(
+        "PostmanTestingUsagePlan",
+        {
+          name: `postman-testing-${props.stage}`,
+          throttle: {
+            rateLimit: 10,
+            burstLimit: 5,
+          },
+        },
+      );
+      postmanUsagePlan.addApiStage({
+        stage: this.api.api.deploymentStage,
+      });
+      postmanUsagePlan.addApiKey(postmanApiKey);
+    }
   }
 }

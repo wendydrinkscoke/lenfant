@@ -42,7 +42,7 @@ export class GallaudetApiStack extends Stack {
     const taskCatalogTable = new Table(this, "TaskCatalogDDBTable", {
       tableName: "TaskCatalog",
       partitionKey: {
-        name: "TenantId",
+        name: "PartnerId",
         type: AttributeType.STRING,
       },
       sortKey: {

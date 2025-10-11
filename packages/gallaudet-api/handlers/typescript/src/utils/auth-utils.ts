@@ -18,16 +18,23 @@ class CognitoUserNotParseableFromEventError extends Error {
   }
 }
 
+class ApiKeyIdNotParseableFromEventError extends Error {
+  constructor() {
+    super('API key identifier not parseable from event.');
+    this.name = 'ApiKeyIdNotParseableFromEventError';
+  }
+}
 
 const ddbClient = new DynamoDB.DocumentClient();
 const secretsManager = new SecretsManager();
 let cachedGoogleOAuthClientSecret: { clientId?: string; clientSecret?: string } | null = null;
-const OAUTH_TOKENS_TABLE_NAME = getRequiredEnv('OAUTH_TOKENS_TABLE_NAME');
-const GOOGLE_OAUTH_CLIENT_SECRET_ARN = getRequiredEnv('GOOGLE_OAUTH_CLIENT_SECRET_ARN');
 
 export const getGoogleOAuthClient = async (cognitoUserId: string): Promise<OAuth2Client> => {
+  const tokensTableName = getRequiredEnv('OAUTH_TOKENS_TABLE_NAME');
+  const googleOAuthClientSecretArn = getRequiredEnv('GOOGLE_OAUTH_CLIENT_SECRET_ARN');
+
   const oauthToken = await ddbClient.get({
-    TableName: OAUTH_TOKENS_TABLE_NAME,
+    TableName: tokensTableName,
     Key: {
       CognitoUserId: cognitoUserId,
       Provider: 'google',
@@ -41,9 +48,8 @@ export const getGoogleOAuthClient = async (cognitoUserId: string): Promise<OAuth
 
   if (!cachedGoogleOAuthClientSecret) {
     const secretValue = await secretsManager.getSecretValue({
-      SecretId: GOOGLE_OAUTH_CLIENT_SECRET_ARN,
+      SecretId: googleOAuthClientSecretArn,
     }).promise();
-
     if (!secretValue.SecretString) {
       throw new Error(
         'Expected client credentials secret to contain SecretString payload.',
@@ -79,4 +85,12 @@ export const getCognitoUserIdFromEvent = (event: APIGatewayProxyEvent): string =
     throw new CognitoUserNotParseableFromEventError();
   }
   return cognitoUserId;
+};
+
+export const getApiKeyIdFromEvent = (event: APIGatewayProxyEvent): string => {
+  const apiKeyId = event.requestContext.identity.apiKeyId;
+  if (!apiKeyId) {
+    throw new ApiKeyIdNotParseableFromEventError();
+  }
+  return apiKeyId;
 };
