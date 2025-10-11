@@ -3,7 +3,7 @@ import { getRuntimeConfig } from "./environment-utils";
 
 export async function getGallaudetApi() {
   const runtimeConfig = await getRuntimeConfig();
-  const basePath = runtimeConfig.typeSafeApis.gallaudetApi as string;
+  const basePath = runtimeConfig.apiBasePath as string;
   let idToken: string | null = null;
   try {
     idToken =

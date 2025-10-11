@@ -4,9 +4,7 @@ interface RuntimeConfig {
   region: string;
   userPoolId: string;
   userPoolWebClientId: string;
-  typeSafeApis: {
-    gallaudetApi: string;
-  };
+  apiBasePath: string;
 }
 
 export async function getRuntimeConfig(): Promise<RuntimeConfig> {
@@ -17,9 +15,7 @@ export async function getRuntimeConfig(): Promise<RuntimeConfig> {
       region: "us-east-1",
       userPoolId: "us-east-1_VxiLkkU3P",
       userPoolWebClientId: "7ndomh55j4ja578971q5fhipgk",
-      typeSafeApis: {
-        gallaudetApi: 'https://6vad3pwwa6.execute-api.us-east-1.amazonaws.com/prod/'
-      }
+      apiBasePath: "https://6vad3pwwa6.execute-api.us-east-1.amazonaws.com/prod/"
     };
   }
 
