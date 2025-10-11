@@ -13,6 +13,7 @@ service Gallaudet {
       AttachTask
       LinkRobloxAccount
       CatalogTask
+      GetTaskCatalog
     ]
     errors: [
       BadRequestError

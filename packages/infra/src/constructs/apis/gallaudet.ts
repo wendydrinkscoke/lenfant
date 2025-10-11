@@ -30,6 +30,7 @@ import {
   AttachTaskFunction,
   CatalogTaskFunction,
   DelegateGoogleClassroomAccessFunction,
+  GetTaskCatalogFunction,
   LinkRobloxAccountFunction,
 } from "gallaudet-api-typescript-infra";
 
@@ -129,6 +130,22 @@ export class Gallaudet extends Construct {
     );
     props.taskCatalogTable.grantWriteData(catalogTaskFunction);
 
+    const getTaskCatalogFunction = new GetTaskCatalogFunction(
+      this,
+      "GetTaskCatalogFunction",
+      {
+        environment: {
+          TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
+        },
+        description: [
+          "This function returns the catalog of partner-provided tasks",
+          "so classroom UIs can expose the latest assignments teachers",
+          "may attach to Google Classroom work.",
+        ].join(" "),
+      },
+    );
+    props.taskCatalogTable.grantReadData(getTaskCatalogFunction);
+
     const linkRobloxAccountFunction = new LinkRobloxAccountFunction(
       this,
       "LinkRobloxAccountFunction",
@@ -184,6 +201,9 @@ export class Gallaudet extends Construct {
           options: {
             apiKeyRequired: true,
           },
+        },
+        getTaskCatalog: {
+          integration: Integrations.lambda(getTaskCatalogFunction),
         },
       },
       policy: new PolicyDocument({
