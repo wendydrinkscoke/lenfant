@@ -107,6 +107,7 @@ export class Gallaudet extends Construct {
             props.googleOAuthClientSecret.secretArn,
           OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
           TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
+          TASK_INSTANCE_TABLE_NAME: props.taskInstanceTable.tableName,
         },
         description: [
           "This function attaches a task, such as a sign-up task or an in-game",
@@ -116,6 +117,7 @@ export class Gallaudet extends Construct {
     );
     props.oauthTokensTable.grantReadData(attachTaskFunction);
     props.taskCatalogTable.grantReadData(attachTaskFunction);
+    props.taskInstanceTable.grantWriteData(attachTaskFunction);
     props.googleOAuthClientSecret.grantRead(attachTaskFunction);
 
     const catalogTaskFunction = new CatalogTaskFunction(

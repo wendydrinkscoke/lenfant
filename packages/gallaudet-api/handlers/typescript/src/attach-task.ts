@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { classroom } from '@googleapis/classroom';
 import { DynamoDB } from 'aws-sdk';
 import {
@@ -14,6 +15,7 @@ import { isAWSError, isGaxiosError } from './utils/error-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
 const TASK_CATALOG_TABLE_NAME = getRequiredEnv('TASK_CATALOG_TABLE_NAME');
+const TASK_INSTANCE_TABLE_NAME = getRequiredEnv('TASK_INSTANCE_TABLE_NAME');
 
 /**
  * Type-safe handler for the AttachTask operation
@@ -98,48 +100,76 @@ export const attachTask: AttachTaskChainedHandlerFunction = async (request) => {
 
     const title = `CivicTech Assignment – ${catalogEntryName}`;
 
-    // TODO: Update when we have a teacher-specific page to view task details.
-    //  Hard-coding this as a dummy page for now to demonstrate the flow.
-    const teacherUri = `${baseUrl}/terms-of-service`;
+    const taskInstanceId = randomUUID();
+    const encodedTaskInstanceId = encodeURIComponent(taskInstanceId);
+    const teacherUri = `${baseUrl}/teacher-task-view?taskId=${encodedTaskInstanceId}`;
+    const studentUri = `${baseUrl}/student-task-view?taskId=${encodedTaskInstanceId}`;
 
-    // TODO: Update when we have a student-specific page to view task details.
-    //  Hard-coding this as a dummy page for now to demonstrate the flow.
-    const studentUri = `${baseUrl}/privacy-policy`;
+    const persistTaskInstance = async (attachmentId: string | null) => {
+      const nowIso = new Date().toISOString();
+      try {
+        await ddbClient
+          .update({
+            TableName: TASK_INSTANCE_TABLE_NAME,
+            Key: {
+              InstanceId: taskInstanceId,
+            },
+            UpdateExpression: [
+              'SET #courseId = :courseId',
+              '#itemId = :itemId',
+              '#partnerId = :partnerId',
+              '#entryId = :entryId',
+              '#catalogEntryName = :catalogEntryName',
+              '#attachmentId = :attachmentId',
+              '#teacherUri = :teacherUri',
+              '#studentUri = :studentUri',
+              '#updatedAt = :updatedAt',
+              '#createdBy = :createdBy',
+              '#createdAt = if_not_exists(#createdAt, :createdAt)',
+            ].join(', '),
+            ExpressionAttributeNames: {
+              '#courseId': 'CourseId',
+              '#itemId': 'ItemId',
+              '#partnerId': 'PartnerId',
+              '#entryId': 'EntryId',
+              '#catalogEntryName': 'CatalogEntryName',
+              '#attachmentId': 'AttachmentId',
+              '#teacherUri': 'TeacherUri',
+              '#studentUri': 'StudentUri',
+              '#updatedAt': 'UpdatedAt',
+              '#createdBy': 'CreatedBy',
+              '#createdAt': 'CreatedAt',
+            },
+            ExpressionAttributeValues: {
+              ':courseId': courseId,
+              ':itemId': itemId,
+              ':partnerId': partnerId,
+              ':entryId': entryId,
+              ':catalogEntryName': catalogEntryName,
+              ':attachmentId': attachmentId,
+              ':teacherUri': teacherUri,
+              ':studentUri': studentUri,
+              ':updatedAt': nowIso,
+              ':createdBy': cognitoUserId,
+              ':createdAt': nowIso,
+            },
+            ReturnValues: 'NONE',
+          })
+          .promise();
+      } catch (ddbWriteError) {
+        if (isAWSError(ddbWriteError)) {
+          logger.error(
+            `Failed to persist task instance ${taskInstanceId}: ${ddbWriteError.code} - ${ddbWriteError.message}`,
+          );
+        } else {
+          logger.error(
+            `Unexpected error persisting task instance ${taskInstanceId}: ${JSON.stringify(ddbWriteError)}`,
+          );
+        }
+      }
+    };
 
-
-    // TODO: Store details about the task in our backend, indexed by the courseId
-    //  and itemId. This will allow us to retrieve the details from the student
-    //  and teacher view pages as well as to mark the task as completed when the
-    //  student finishes the assignment in-game.
-
-    const addOnAttachments = classroomApi.courses.courseWork.addOnAttachments;
-
-    const { data: listResponse } = await addOnAttachments.list({
-      courseId,
-      itemId,
-    });
-
-    const existing = listResponse.addOnAttachments?.find((attachment) => attachment?.title === title);
-
-    if (existing?.id) {
-      await addOnAttachments.patch({
-        courseId,
-        itemId,
-        attachmentId: existing.id,
-        updateMask: 'title,teacher_view_uri,student_view_uri',
-        requestBody: {
-          title,
-          teacherViewUri: { uri: teacherUri },
-          studentViewUri: { uri: studentUri },
-        },
-      });
-
-      return Response.success({
-        message: 'Attachment updated',
-      });
-    }
-
-    await addOnAttachments.create({
+    const createResult = await classroomApi.courses.courseWork.addOnAttachments.create({
       courseId,
       itemId,
       addOnToken,
@@ -149,9 +179,12 @@ export const attachTask: AttachTaskChainedHandlerFunction = async (request) => {
         studentViewUri: { uri: studentUri },
       },
     });
+    const attachment = createResult.data;
+    await persistTaskInstance(attachment?.id ?? null);
 
     return Response.success({
       message: 'Attachment created',
+      taskInstanceId,
     });
   } catch (error) {
     logger.error(`Failed to create Classroom attachment: ${JSON.stringify(error)}`);

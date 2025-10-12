@@ -99,10 +99,11 @@ the task is a manually-graded writing task).
     ~~rather than dummy tasks~~ that just point to dummy pages as the 
     student/teacher view.
         - ~~Provision the `TaskInstance` DynamoDB table.~~
-        - Grant the AttachTask Lambda permissions and logic to persist task 
-        instances (including a generated `InstanceId`).
-        - Replace the hard-coded student/teacher URIs with routes that accept a
-         `taskId` query parameter and render via a shared TaskView component.
+        - ~~Grant the AttachTask Lambda permissions and logic to persist task~~
+        ~~instances (including a generated `InstanceId`).~~
+        - ~~Replace the hard-coded student/teacher URIs with routes that~~
+        ~~accept `taskId` query parameter and render via a shared TaskView~~
+        ~~component.~~
         - Introduce `/student-task-view` and `/teacher-task-view` routes that 
         surface task details pulled from the backend.
         - Define and implement a secure `GetTask` API so the frontend can 
