@@ -14,6 +14,7 @@ import CognitoPopupCallback from './app/cognito-popup-callback';
 import AuthPopupStart from './app/auth-popup-start';
 import GooglePopupCallback from './app/google-popup-callback';
 import SignupViewStudentPage from './app/signup-view-student';
+import TaskView from './components/task-view';
 
 const container = document.getElementById('root')!;
 const root = ReactDOM.createRoot(container);
@@ -32,6 +33,14 @@ root.render(
         <Route path='/privacy-policy' element={<PrivacyPage />} />
         <Route path='/create-attachment' element={<CreateAttachmentContent />} />
         <Route path='/signup/student' element={<SignupViewStudentPage />} />
+        <Route
+          path='/student-task-view'
+          element={<TaskView audience="student" />}
+        />
+        <Route
+          path='/teacher-task-view'
+          element={<TaskView audience="teacher" />}
+        />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>,

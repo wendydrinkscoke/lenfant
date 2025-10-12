@@ -104,8 +104,8 @@ the task is a manually-graded writing task).
         - ~~Replace the hard-coded student/teacher URIs with routes that~~
         ~~accept `taskId` query parameter and render via a shared TaskView~~
         ~~component.~~
-        - Introduce `/student-task-view` and `/teacher-task-view` routes that 
-        surface task details pulled from the backend.
+        - ~~Introduce `/student-task-view` and `/teacher-task-view` routes~~
+        ~~that will ultimately surface task details pulled from the backend.~~
         - Define and implement a secure `GetTask` API so the frontend can 
         retrieve task instance data by `taskId`.
         - Hydrate the TaskView frontend by calling `getTask` with the provided
