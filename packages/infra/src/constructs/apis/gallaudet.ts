@@ -30,6 +30,7 @@ import {
   AttachTaskFunction,
   CatalogTaskFunction,
   DelegateGoogleClassroomAccessFunction,
+  GetTaskFunction,
   GetTaskCatalogFunction,
   LinkRobloxAccountFunction,
 } from "gallaudet-api-typescript-infra";
@@ -120,6 +121,23 @@ export class Gallaudet extends Construct {
     props.taskInstanceTable.grantWriteData(attachTaskFunction);
     props.googleOAuthClientSecret.grantRead(attachTaskFunction);
 
+    const getTaskFunction = new GetTaskFunction(this, "GetTaskFunction", {
+      environment: {
+        TASK_INSTANCE_TABLE_NAME: props.taskInstanceTable.tableName,
+        TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
+        OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
+        GOOGLE_OAUTH_CLIENT_SECRET_ARN: props.googleOAuthClientSecret.secretArn,
+      },
+      description: [
+        "Fetches a task instance record and authorizes the caller against",
+        "Google Classroom before returning task instance data.",
+      ].join(" "),
+    });
+    props.taskInstanceTable.grantReadData(getTaskFunction);
+    props.taskCatalogTable.grantReadData(getTaskFunction);
+    props.oauthTokensTable.grantReadData(getTaskFunction);
+    props.googleOAuthClientSecret.grantRead(getTaskFunction);
+
     const catalogTaskFunction = new CatalogTaskFunction(
       this,
       "CatalogTaskFunction",
@@ -196,6 +214,9 @@ export class Gallaudet extends Construct {
         },
         attachTask: {
           integration: Integrations.lambda(attachTaskFunction),
+        },
+        getTask: {
+          integration: Integrations.lambda(getTaskFunction),
         },
         linkRobloxAccount: {
           integration: Integrations.lambda(linkRobloxAccountFunction),

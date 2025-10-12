@@ -4,10 +4,10 @@ export type ClassroomRole = "teacher" | "student";
 
 const ROLE_PATTERNS: Array<{ role: ClassroomRole; test: (path: string) => boolean }> = [
   { role: "teacher", test: (path) => path.startsWith("/create-attachment") },
-  { role: "teacher", test: (path) => path.startsWith("/teacher-view") },
+  { role: "teacher", test: (path) => path.startsWith("/teacher-task-view") },
   { role: "teacher", test: (path) => path.startsWith("/student-work-review") },
   { role: "teacher", test: (path) => path.startsWith("/link-upgrade") },
-  { role: "student", test: (path) => path.startsWith("/student-view") },
+  { role: "student", test: (path) => path.startsWith("/student-task-view") },
   { role: "student", test: (path) => path.startsWith("/signup/student") },
 ];
 

@@ -2,7 +2,7 @@ import { useState, useCallback } from "react"
 // If you have this util, you can optionally fetch clientId to check `aud`
 // import { getRuntimeConfig } from "../lib/environment-utils"
 
-interface User {
+export interface User {
   id: string        // Google sub (from Cognito identities)
   email: string
   name: string
@@ -78,6 +78,8 @@ function isExpired(claims: IdTokenClaims): boolean {
   const now = Math.floor(Date.now() / 1000)
   return claims.exp <= now
 }
+
+export type AuthUser = User;
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)

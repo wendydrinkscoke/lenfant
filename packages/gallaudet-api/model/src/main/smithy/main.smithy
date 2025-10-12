@@ -11,6 +11,7 @@ service Gallaudet {
     operations: [
       DelegateGoogleClassroomAccess
       AttachTask
+      GetTask
       LinkRobloxAccount
       CatalogTask
       GetTaskCatalog

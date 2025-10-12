@@ -106,10 +106,10 @@ the task is a manually-graded writing task).
         ~~component.~~
         - ~~Introduce `/student-task-view` and `/teacher-task-view` routes~~
         ~~that will ultimately surface task details pulled from the backend.~~
-        - Define and implement a secure `GetTask` API so the frontend can 
-        retrieve task instance data by `taskId`.
-        - Hydrate the TaskView frontend by calling `getTask` with the provided
-         `taskId`.
+        - ~~Define and implement a secure `GetTask` API so the frontend can~~
+        ~~retrieve task instance data by `taskId`.~~
+        - ~~Hydrate the TaskView frontend by calling `getTask` with the~~
+        ~~provided `taskId`.~~
     1. Edit the Gallaudet API in order to suppport the frontend's 
     `create-attachment` page in **enforcing** that the first task teachers 
     assign to each classroom is the "signup task".
