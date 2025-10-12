@@ -94,9 +94,10 @@ the task is a manually-graded writing task).
     ~~to assignments.~~
     1. ~~Develop a primary task–"the singup task"–that enables students to~~
     ~~link their Google and Roblox identities.~~
-    1. Enable teachers to assign real tasks (that are dynamically fetched from
-    the task catalog and correspond to real student/teacher views) rather than
-    dummy tasks that just point to dummy pages as the student/teacher view.
+    1. ~~Enable teachers to assign real tasks (that are dynamically fetched~~
+    ~~from the task catalog~~ and correspond to real student/teacher views) 
+    ~~rather than dummy tasks~~ that just point to dummy pages as the 
+    student/teacher view.
     1. Edit the Gallaudet API in order to suppport the frontend's 
     `create-attachment` page in **enforcing** that the first task teachers 
     assign to each classroom is the "signup task".

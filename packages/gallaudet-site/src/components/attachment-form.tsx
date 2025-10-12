@@ -10,7 +10,6 @@ import { Alert, AlertDescription } from "../components/ui/alert"
 import { CheckCircle, Loader2, FileText, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 import { getGallaudetApi } from "../lib/gallaudet-api"
-import type { TaskTypes } from "gallaudet-api-typescript-react-query-hooks"
 
 type CatalogOption = {
   value: string
@@ -96,13 +95,19 @@ export default function AttachmentForm() {
       }
 
       const client = await getGallaudetApi()
+      const selectedOption = catalogOptions.find((option) => option.value === assignmentType)
+      if (!selectedOption) {
+        throw new Error("Selected assignment type not found")
+      }
+
       const response = await client.attachTask({
         attachTaskRequestContent: {
           courseId,
           itemId,
           itemType,
           addOnToken,
-          assignmentType: assignmentType as TaskTypes,
+          partnerId: selectedOption.partnerId,
+          entryId: selectedOption.value,
         },
       })
 

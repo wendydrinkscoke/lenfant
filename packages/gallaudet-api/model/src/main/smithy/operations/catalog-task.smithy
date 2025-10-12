@@ -1,16 +1,13 @@
 $version: "2"
 namespace llc.civictech.school
 
+use llc.civictech.school#CatalogEntryId
+
 /// Permitted grading approaches for cataloged tasks.
 enum TaskGradingMethod {
     /// A binary grading model that records whether the assignment was completed.
     SIMPLE_COMPLETION = "simple-completion"
 }
-
-/// A partner-scoped identifier supplied by the game server for this catalog 
-/// entry.
-@length(min: 1, max: 128)
-string CatalogEntryId
 
 /// A short, human-readable display name for the task.
 @length(min: 1, max: 30)

@@ -5,11 +5,8 @@ use llc.civictech.school#CatalogEntryId
 use llc.civictech.school#CatalogTaskInstructions
 use llc.civictech.school#CatalogTaskName
 use llc.civictech.school#CatalogTaskSubheading
+use llc.civictech.school#PartnerId
 use llc.civictech.school#TaskGradingMethod
-
-/// Unique identifier for a partner studio registered with the CivicTech platform.
-@length(min: 1, max: 64)
-string PartnerId
 
 /// Human-readable display name for the partner.
 @length(min: 1, max: 120)

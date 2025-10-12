@@ -1,4 +1,5 @@
 import { classroom } from '@googleapis/classroom';
+import { DynamoDB } from 'aws-sdk';
 import {
   attachTaskHandler,
   AttachTaskChainedHandlerFunction,
@@ -9,16 +10,10 @@ import {
 
 import { getCognitoUserIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
-import { isGaxiosError } from './utils/error-utils';
+import { isAWSError, isGaxiosError } from './utils/error-utils';
 
-const ASSIGNMENT_LABELS: Record<string, string> = {
-  'tour-whitehouse': 'Tour the White House',
-  'filibuster': 'Filibuster a Bill',
-  'draft-bill': 'Draft a Bill',
-  'press-briefing': 'Attend Press Briefing',
-  'committee-hearing': 'Committee Hearing',
-  'custom': 'Custom Assignment',
-};
+const ddbClient = new DynamoDB.DocumentClient();
+const TASK_CATALOG_TABLE_NAME = getRequiredEnv('TASK_CATALOG_TABLE_NAME');
 
 /**
  * Type-safe handler for the AttachTask operation
@@ -44,9 +39,9 @@ export const attachTask: AttachTaskChainedHandlerFunction = async (request) => {
       });
     }
 
-    const { courseId, itemId, itemType, addOnToken, assignmentType } = body;
+    const { courseId, itemId, itemType, addOnToken, partnerId, entryId } = body;
 
-    if (!courseId || !itemId || !itemType || !addOnToken || !assignmentType) {
+    if (!courseId || !itemId || !itemType || !addOnToken || !partnerId || !entryId) {
       return Response.badRequest({
         message: 'One or more required fields are missing',
       });
@@ -59,7 +54,49 @@ export const attachTask: AttachTaskChainedHandlerFunction = async (request) => {
       });
     }
 
-    const title = `CivicTech Assignment – ${ASSIGNMENT_LABELS[assignmentType] ?? assignmentType}`;
+    let catalogEntryName = entryId;
+    try {
+      const { Item } = await ddbClient
+        .get({
+          TableName: TASK_CATALOG_TABLE_NAME,
+          Key: {
+            PartnerId: partnerId,
+            EntryId: entryId,
+          },
+        })
+        .promise();
+
+      if (!Item) {
+        logger.warn(`Catalog entry not found for ${partnerId}/${entryId}`);
+        return Response.badRequest({
+          message: 'Selected task is no longer available',
+        });
+      }
+
+      const name = (Item as { Name?: string }).Name;
+      if (name?.trim()) {
+        catalogEntryName = name.trim();
+      }
+    } catch (ddbError) {
+      if (isAWSError(ddbError)) {
+        logger.error(
+          `Failed to load catalog entry (${partnerId}/${entryId}): ${ddbError.code} - ${ddbError.message}`,
+        );
+        return Response.internalFailure({
+          message: 'Failed to load task catalog entry',
+          details: `DynamoDB error: ${ddbError.code}`,
+        });
+      }
+
+      logger.error(
+        `Unexpected error reading catalog entry (${partnerId}/${entryId}): ${JSON.stringify(ddbError)}`,
+      );
+      return Response.internalFailure({
+        message: 'Failed to load task catalog entry',
+      });
+    }
+
+    const title = `CivicTech Assignment – ${catalogEntryName}`;
 
     // TODO: Update when we have a teacher-specific page to view task details.
     //  Hard-coding this as a dummy page for now to demonstrate the flow.

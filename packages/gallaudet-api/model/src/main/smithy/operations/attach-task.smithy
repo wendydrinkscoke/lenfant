@@ -1,14 +1,8 @@
 $version: "2"
 namespace llc.civictech.school
 
-enum TaskTypes {
-    TOUR_WHITEHOUSE = "tour-whitehouse"
-    FILIBUSTER = "filibuster"
-    DRAFT_BILL = "draft-bill"
-    PRESS_BRIEFING = "press-briefing"
-    COMMITTEE_HEARING = "committee-hearing"
-    CUSTOM = "custom"
-}
+use llc.civictech.school#CatalogEntryId
+use llc.civictech.school#PartnerId
 
 /// A token provided by classroom.google.com to the add-on iframe as a query 
 /// parameter, which can be used to authorize certain Classroom add-on actions.
@@ -41,9 +35,13 @@ operation AttachTask {
         @required
         addOnToken: AddOnToken
 
-        /// The CivicTech template the teacher selected in the iframe UI.
+        /// The partner that owns the catalog entry selected in the iframe UI.
         @required
-        assignmentType: TaskTypes
+        partnerId: PartnerId
+
+        /// The catalog entry selected in the iframe UI.
+        @required
+        entryId: CatalogEntryId
     }
     output := {
         @required
