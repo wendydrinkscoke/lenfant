@@ -98,7 +98,7 @@ the task is a manually-graded writing task).
     ~~from the task catalog~~ and correspond to real student/teacher views) 
     ~~rather than dummy tasks~~ that just point to dummy pages as the 
     student/teacher view.
-        - Provision the `TaskInstance` DynamoDB table.
+        - ~~Provision the `TaskInstance` DynamoDB table.~~
         - Grant the AttachTask Lambda permissions and logic to persist task 
         instances (including a generated `InstanceId`).
         - Replace the hard-coded student/teacher URIs with routes that accept a

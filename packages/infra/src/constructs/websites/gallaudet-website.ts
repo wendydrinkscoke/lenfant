@@ -63,7 +63,7 @@ export class GallaudetWebsite extends Construct {
           userPoolId: props?.userPoolId,
           cognitoDomainPrefix: props?.cognitoDomainPrefix,
           userPoolWebClientId: props?.userPoolClientId,
-          apiBasePath: `https://${props.gallaudet.api.api.domainName!.domainName}`
+          apiBasePath: `https://${props.gallaudet.api.api.domainName!.domainName}`,
         },
       },
       distributionProps: {

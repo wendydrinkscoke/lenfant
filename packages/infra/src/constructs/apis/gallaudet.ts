@@ -47,6 +47,7 @@ export interface GallaudetProps {
   readonly stage: string;
   readonly oauthTokensTable: ITable;
   readonly taskCatalogTable: ITable;
+  readonly taskInstanceTable: ITable;
   readonly googleOAuthClientSecret: ISecret;
   readonly emailIdentity: EmailIdentity;
   readonly invitationLinkJwtSigningKey: IKey;

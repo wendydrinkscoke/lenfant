@@ -51,6 +51,14 @@ export class GallaudetApiStack extends Stack {
       },
     });
 
+    const taskInstancesTable = new Table(this, "TaskInstanceDDBTable", {
+      tableName: "TaskInstances",
+      partitionKey: {
+        name: "InstanceId",
+        type: AttributeType.STRING,
+      },
+    });
+
     const googleOAuthClientSecret = Secret.fromSecretNameV2(
       this,
       "GoogleOIDCCredentials",
@@ -79,6 +87,7 @@ export class GallaudetApiStack extends Stack {
       stage: props.stage,
       oauthTokensTable,
       taskCatalogTable,
+      taskInstanceTable: taskInstancesTable,
       googleOAuthClientSecret,
       emailIdentity: props.emailIdentity,
       invitationLinkJwtSigningKey,
