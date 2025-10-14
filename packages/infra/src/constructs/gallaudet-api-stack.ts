@@ -1,9 +1,8 @@
 import { CognitoAuthorizer } from "@aws/pdk/type-safe-api";
-import { RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
+import { Stack, StackProps } from "aws-cdk-lib";
 import { UserPool } from "aws-cdk-lib/aws-cognito";
 import { IdentityPool } from "aws-cdk-lib/aws-cognito-identitypool";
 import { AttributeType, Table } from "aws-cdk-lib/aws-dynamodb";
-import { Key, KeySpec, KeyUsage } from "aws-cdk-lib/aws-kms";
 import { HostedZone } from "aws-cdk-lib/aws-route53";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import { EmailIdentity } from "aws-cdk-lib/aws-ses";
@@ -65,15 +64,6 @@ export class GallaudetApiStack extends Stack {
       "google-oauth-credentials",
     );
 
-    const invitationLinkJwtSigningKey = new Key(this, "JwtSigningKey", {
-      description:
-        "Asymmetric RSA key for signing/verifying JWTs in " +
-        "invitation links",
-      keySpec: KeySpec.RSA_2048,
-      keyUsage: KeyUsage.SIGN_VERIFY,
-      removalPolicy: RemovalPolicy.RETAIN,
-    });
-
     this.gallaudet = new Gallaudet(this, "Gallaudet", {
       identityPool: props.identityPool,
       apiSubdomain: "api",
@@ -90,7 +80,6 @@ export class GallaudetApiStack extends Stack {
       taskInstanceTable: taskInstancesTable,
       googleOAuthClientSecret,
       emailIdentity: props.emailIdentity,
-      invitationLinkJwtSigningKey,
       userPool: props.userPool,
     });
   }

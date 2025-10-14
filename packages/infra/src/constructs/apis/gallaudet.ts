@@ -19,7 +19,6 @@ import {
   PolicyDocument,
   PolicyStatement,
 } from "aws-cdk-lib/aws-iam";
-import { IKey } from "aws-cdk-lib/aws-kms/lib/key";
 import { ARecord, HostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { ApiGateway } from "aws-cdk-lib/aws-route53-targets";
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
@@ -51,7 +50,6 @@ export interface GallaudetProps {
   readonly taskInstanceTable: ITable;
   readonly googleOAuthClientSecret: ISecret;
   readonly emailIdentity: EmailIdentity;
-  readonly invitationLinkJwtSigningKey: IKey;
   readonly userPool: UserPool;
 }
 
