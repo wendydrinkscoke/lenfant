@@ -9,15 +9,16 @@ namespace llc.civictech.school
 string PartnerId
 
 /// Identifier of the catalog entry within the partner's namespace.
-@length(min: 1, max: 128)
+@length(min: 10, max: 50)
+@pattern("^[a-z0-9-]+$")
 string CatalogEntryId
 
 /// A short, human-readable display name for the task.
-@length(min: 1, max: 30)
+@length(min: 10, max: 30)
 string CatalogTaskName
 
 /// A brief description displayed alongside the task title.
-@length(min: 1, max: 60)
+@length(min: 10, max: 60)
 string CatalogTaskSubheading
 
 /// Detailed instructions shown to teachers and students.
