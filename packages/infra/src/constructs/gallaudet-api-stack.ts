@@ -58,6 +58,14 @@ export class GallaudetApiStack extends Stack {
       },
     });
 
+    const partnersTable = new Table(this, "PartnersDDBTable", {
+      tableName: "Partners",
+      partitionKey: {
+        name: "PartnerId",
+        type: AttributeType.STRING,
+      },
+    });
+
     const googleOAuthClientSecret = Secret.fromSecretNameV2(
       this,
       "GoogleOIDCCredentials",
@@ -78,6 +86,7 @@ export class GallaudetApiStack extends Stack {
       oauthTokensTable,
       taskCatalogTable,
       taskInstanceTable: taskInstancesTable,
+      partnersTable,
       googleOAuthClientSecret,
       emailIdentity: props.emailIdentity,
       userPool: props.userPool,

@@ -8,10 +8,6 @@ use llc.civictech.school#CatalogTaskSubheading
 use llc.civictech.school#PartnerId
 use llc.civictech.school#TaskGradingMethod
 
-/// Human-readable display name for the partner.
-@length(min: 1, max: 120)
-string PartnerName
-
 /// A task entry within a partner's catalog.
 structure TaskCatalogEntry {
     /// Partner-scoped identifier for the task.

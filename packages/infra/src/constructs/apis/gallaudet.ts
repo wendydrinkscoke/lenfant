@@ -32,6 +32,7 @@ import {
   GetTaskFunction,
   GetTaskCatalogFunction,
   LinkRobloxAccountFunction,
+  PutPartnerFunction,
 } from "gallaudet-api-typescript-infra";
 
 /**
@@ -48,6 +49,7 @@ export interface GallaudetProps {
   readonly oauthTokensTable: ITable;
   readonly taskCatalogTable: ITable;
   readonly taskInstanceTable: ITable;
+  readonly partnersTable: ITable;
   readonly googleOAuthClientSecret: ISecret;
   readonly emailIdentity: EmailIdentity;
   readonly userPool: UserPool;
@@ -193,6 +195,22 @@ export class Gallaudet extends Construct {
       }),
     );
 
+    const putPartnerFunction = new PutPartnerFunction(
+      this,
+      "PutPartnerFunction",
+      {
+        environment: {
+          PARTNERS_TABLE_NAME: props.partnersTable.tableName,
+        },
+        description: [
+          "This function records partner-supplied profile metadata so",
+          "the CivicTech platform can display accurate game details to",
+          "students and educators.",
+        ].join(" "),
+      },
+    );
+    props.partnersTable.grantWriteData(putPartnerFunction);
+
     this.api = new Api(this, id, {
       apiKeyOptions: {
         source: ApiKeySourceType.HEADER,
@@ -233,6 +251,13 @@ export class Gallaudet extends Construct {
         },
         linkRobloxAccount: {
           integration: Integrations.lambda(linkRobloxAccountFunction),
+        },
+        putPartner: {
+          integration: Integrations.lambda(putPartnerFunction),
+          authorizer: Authorizers.none(),
+          options: {
+            apiKeyRequired: true,
+          },
         },
       },
       policy: new PolicyDocument({

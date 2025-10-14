@@ -117,8 +117,8 @@ the task is a manually-graded writing task).
     avoid manual effort.
 1. Develop core game-facing APIs
     1. ~~Introduce an API-key fronted endpoint.~~
-    1. Introduce an API that enables game servers to register user-facing 
-    metadata about the game itself.
+    1. ~~Introduce an API that enables game servers to register user-facing~~
+    ~~metadata about the game itself.~~
     1. ~~Introduce an API that enables game servers to register tasks to the~~
     ~~task catalog. In the first iteration, only "simple tasks" can be~~
     ~~registered.~~

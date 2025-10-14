@@ -15,6 +15,7 @@ service Gallaudet {
       GetTask
       GetTaskCatalog
       LinkRobloxAccount
+      PutPartner
     ]
     errors: [
       BadRequestError
