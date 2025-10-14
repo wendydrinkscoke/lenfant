@@ -4,7 +4,6 @@ import {
   Certificate,
   CertificateValidation,
 } from "aws-cdk-lib/aws-certificatemanager";
-import { GeoRestriction } from "aws-cdk-lib/aws-cloudfront";
 import { ARecord, HostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { CloudFrontTarget } from "aws-cdk-lib/aws-route53-targets";
 import { Construct } from "constructs";
@@ -69,15 +68,6 @@ export class GallaudetWebsite extends Construct {
       distributionProps: {
         domainNames: [siteDomain],
         certificate: siteCert,
-        geoRestriction: GeoRestriction.allowlist(
-          "AU",
-          "ID",
-          "IN",
-          "JP",
-          "KR",
-          "SG",
-          "US",
-        ),
       },
     });
     if (!props.isProd) {
