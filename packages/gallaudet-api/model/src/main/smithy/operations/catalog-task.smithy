@@ -9,18 +9,6 @@ enum TaskGradingMethod {
     SIMPLE_COMPLETION = "simple-completion"
 }
 
-/// A short, human-readable display name for the task.
-@length(min: 1, max: 30)
-string CatalogTaskName
-
-/// A brief description displayed alongside the task title.
-@length(min: 1, max: 60)
-string CatalogTaskSubheading
-
-/// Detailed instructions shown to teachers and students.
-@length(min: 1)
-string CatalogTaskInstructions
-
 /// Creates or updates a task catalog entry for the calling partner.
 @idempotent
 @http(method: "PUT", uri: "/task-catalog/{entryId}")

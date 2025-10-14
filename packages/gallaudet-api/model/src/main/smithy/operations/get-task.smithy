@@ -6,10 +6,6 @@ use llc.civictech.school#CatalogTaskName
 use llc.civictech.school#CatalogTaskSubheading
 use llc.civictech.school#PartnerName
 
-/// Identifier assigned to a persisted task instance.
-@length(min: 1, max: 64)
-string TaskInstanceId
-
 /// Details needed to render a task instance inside a Classroom iframe.
 structure TaskInstanceView {
     /// Display title presented in the iframe.
@@ -30,14 +26,14 @@ structure TaskInstanceView {
 }
 
 /// Retrieves a persisted task instance if the caller is authorized to view it.
-@http(method: "GET", uri: "/task/{taskId}")
+@http(method: "GET", uri: "/tasks/{taskId}")
 @handler(language: "typescript")
 operation GetTask {
     input := {
         /// Identifier for the task instance to retrieve.
         @required
         @httpLabel
-        taskId: TaskInstanceId
+        taskId: TaskId
     }
     output := {
         /// Task instance details suitable for rendering in the iframe.

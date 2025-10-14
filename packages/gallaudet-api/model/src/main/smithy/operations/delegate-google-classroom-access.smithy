@@ -13,7 +13,7 @@ string PkceCodeVerifier
 /// gets this code via a redirect back from Google after an OAuth flow in which
 /// we request permissions to manage their classroom.
 @readonly
-@http(method: "POST", uri: "/classrooms-access")
+@http(method: "POST", uri: "/users/me/google-classroom/delegations")
 @handler(language: "typescript")
 operation DelegateGoogleClassroomAccess {
     input := {

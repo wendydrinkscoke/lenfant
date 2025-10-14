@@ -100,10 +100,14 @@ export default function AttachmentForm() {
         throw new Error("Selected assignment type not found")
       }
 
+      if (itemType !== "courseWork") {
+        throw new Error("Only courseWork itemType is currently supported")
+      }
+
       const response = await client.attachTask({
+        courseId,
+        itemId,
         attachTaskRequestContent: {
-          courseId,
-          itemId,
           itemType,
           addOnToken,
           partnerId: selectedOption.partnerId,

@@ -41,7 +41,8 @@ export const attachTask: AttachTaskChainedHandlerFunction = async (request) => {
       });
     }
 
-    const { courseId, itemId, itemType, addOnToken, partnerId, entryId } = body;
+    const { courseId, itemId } = input.requestParameters;
+    const { itemType, addOnToken, partnerId, entryId } = body;
 
     if (!courseId || !itemId || !itemType || !addOnToken || !partnerId || !entryId) {
       return Response.badRequest({

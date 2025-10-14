@@ -8,7 +8,7 @@ string RobloxIdToken
 /// Classroom user. The caller must already be signed in with Google (to satisfy
 /// the API's Cognito authorizer) and must provide the Roblox-backed Cognito ID
 /// token that was issued by the Roblox OIDC provider.
-@http(method: "POST", uri: "/roblox/link")
+@http(method: "POST", uri: "/users/me/linked-identities/roblox")
 @handler(language: "typescript")
 operation LinkRobloxAccount {
     input := {
