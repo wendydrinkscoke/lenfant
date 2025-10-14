@@ -47,7 +47,7 @@ apply DelegateGoogleClassroomAccess @examples([
             code: "4/0ABCDeFgHIJk123a1TwoThREE4_FivE8doByPnFpErRyZpL4TyPUsIs3gentPDctD0F3nsh"
             code_verifier: "dEs4YYgvqZl1.tj2g6ih_b1IK.-aQ1~CMPmq9qpNJ~eVCKG_bM~iiXErwNdqq0So"
             redirect_uri: "https://beta.school.civictech.llc/google/callback"
-        },
+        }
         output: {
             message: "Success"
         }
@@ -58,7 +58,7 @@ apply DelegateGoogleClassroomAccess @examples([
             code: "4/0AXYZbJhK1-12A3xt_abjZYtN6u-vu7D6tMo75Z5VL9FSRW0MKNYTf1gwvNTM6OY73z7vX6"
             code_verifier: "a7w~-aBtsNXAiGEntRRuREm8C1fHz3uIFoydSrlFKzI8FqMYQfayxaEezlmD0QZi"
             redirect_uri: "https://beta.school.civictech.llc/google/callback"
-        },
+        }
         output: {
             message: "Invalid grant"
         }
@@ -69,7 +69,7 @@ apply DelegateGoogleClassroomAccess @examples([
             code: "4/0AXYZbJhK1-12A3xt_abjZYtN6u-vu7D6tMo75Z5VL9FSRW0MKNYTf1gwvNTM6OY73z7vX6"
             code_verifier: "a7w~-aBtsNXAiGEntRRuREm8C1fHz3uIFoydSrlFKzI8FqMYQfayxaEezlmD0QZi"
             redirect_uri: "https://beta.school.civictech.llc/google/callback"
-        },
+        }
         output: {
             message: "Failed to exchange authorization code for tokens"
         }

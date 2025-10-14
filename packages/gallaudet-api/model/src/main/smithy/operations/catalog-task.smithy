@@ -47,3 +47,19 @@ operation CatalogTask {
         InternalFailureError
     ]
 }
+
+apply CatalogTask @examples([
+    {
+        title: "A working example"
+        input: {
+            entryId: "pee-on-john-harvard-statue",
+            name: "Pee on John Harvard Statue",
+            subheading: "Participate in a centuries-long urination tradition",
+            instructions: "In this task, you'll be peeing on a statue in game.",
+            gradingMethod: "simple-completion"
+        }
+        output: {
+            message: "Task catalog entry saved"
+        }
+    }
+])
