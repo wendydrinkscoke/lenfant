@@ -9,16 +9,16 @@ use aws.protocols#restJson1
 service Gallaudet {
     version: "1.0"
     operations: [
-      DelegateGoogleClassroomAccess
       AttachTask
-      GetTask
-      LinkRobloxAccount
       CatalogTask
+      DelegateGoogleClassroomAccess
+      GetTask
       GetTaskCatalog
+      LinkRobloxAccount
     ]
     errors: [
       BadRequestError
-      NotAuthorizedError
       InternalFailureError
+      NotAuthorizedError
     ]
 }

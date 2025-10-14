@@ -72,6 +72,44 @@ export class Gallaudet extends Construct {
       validation: CertificateValidation.fromDns(zone),
     });
 
+    const attachTaskFunction = new AttachTaskFunction(
+      this,
+      "AttachTaskFunction",
+      {
+        environment: {
+          WEBSITE_BASE_URL: `https://${props.websiteDomainName}`,
+          GOOGLE_OAUTH_CLIENT_SECRET_ARN:
+            props.googleOAuthClientSecret.secretArn,
+          OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
+          TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
+          TASK_INSTANCE_TABLE_NAME: props.taskInstanceTable.tableName,
+        },
+        description: [
+          "This function attaches a task, such as a sign-up task or an in-game",
+          "task, to a Google classroom item using the Google Classroom API.",
+        ].join(" "),
+      },
+    );
+    props.oauthTokensTable.grantReadData(attachTaskFunction);
+    props.taskCatalogTable.grantReadData(attachTaskFunction);
+    props.taskInstanceTable.grantWriteData(attachTaskFunction);
+    props.googleOAuthClientSecret.grantRead(attachTaskFunction);
+
+    const catalogTaskFunction = new CatalogTaskFunction(
+      this,
+      "CatalogTaskFunction",
+      {
+        environment: {
+          TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
+        },
+        description: [
+          "This function lets partner game servers create or update task",
+          "catalog entries that teachers can later assign in Classroom.",
+        ].join(" "),
+      },
+    );
+    props.taskCatalogTable.grantWriteData(catalogTaskFunction);
+
     const delegateGoogleClassroomAccessFunction =
       new DelegateGoogleClassroomAccessFunction(
         this,
@@ -98,29 +136,6 @@ export class Gallaudet extends Construct {
       delegateGoogleClassroomAccessFunction,
     );
 
-    const attachTaskFunction = new AttachTaskFunction(
-      this,
-      "AttachTaskFunction",
-      {
-        environment: {
-          WEBSITE_BASE_URL: `https://${props.websiteDomainName}`,
-          GOOGLE_OAUTH_CLIENT_SECRET_ARN:
-            props.googleOAuthClientSecret.secretArn,
-          OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
-          TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
-          TASK_INSTANCE_TABLE_NAME: props.taskInstanceTable.tableName,
-        },
-        description: [
-          "This function attaches a task, such as a sign-up task or an in-game",
-          "task, to a Google classroom item using the Google Classroom API.",
-        ].join(" "),
-      },
-    );
-    props.oauthTokensTable.grantReadData(attachTaskFunction);
-    props.taskCatalogTable.grantReadData(attachTaskFunction);
-    props.taskInstanceTable.grantWriteData(attachTaskFunction);
-    props.googleOAuthClientSecret.grantRead(attachTaskFunction);
-
     const getTaskFunction = new GetTaskFunction(this, "GetTaskFunction", {
       environment: {
         TASK_INSTANCE_TABLE_NAME: props.taskInstanceTable.tableName,
@@ -137,21 +152,6 @@ export class Gallaudet extends Construct {
     props.taskCatalogTable.grantReadData(getTaskFunction);
     props.oauthTokensTable.grantReadData(getTaskFunction);
     props.googleOAuthClientSecret.grantRead(getTaskFunction);
-
-    const catalogTaskFunction = new CatalogTaskFunction(
-      this,
-      "CatalogTaskFunction",
-      {
-        environment: {
-          TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
-        },
-        description: [
-          "This function lets partner game servers create or update task",
-          "catalog entries that teachers can later assign in Classroom.",
-        ].join(" "),
-      },
-    );
-    props.taskCatalogTable.grantWriteData(catalogTaskFunction);
 
     const getTaskCatalogFunction = new GetTaskCatalogFunction(
       this,
@@ -196,7 +196,6 @@ export class Gallaudet extends Construct {
     );
 
     this.api = new Api(this, id, {
-      defaultAuthorizer: props.cognitoAuthorizer,
       apiKeyOptions: {
         source: ApiKeySourceType.HEADER,
       },
@@ -206,20 +205,15 @@ export class Gallaudet extends Construct {
         allowHeaders: Cors.DEFAULT_HEADERS,
         allowCredentials: true,
       },
+      defaultAuthorizer: props.cognitoAuthorizer,
+      domainName: {
+        domainName: props.apiSubdomain + "." + props.domainName,
+        certificate: apiCertificate,
+        securityPolicy: SecurityPolicy.TLS_1_2,
+      },
       integrations: {
-        delegateGoogleClassroomAccess: {
-          integration: Integrations.lambda(
-            delegateGoogleClassroomAccessFunction,
-          ),
-        },
         attachTask: {
           integration: Integrations.lambda(attachTaskFunction),
-        },
-        getTask: {
-          integration: Integrations.lambda(getTaskFunction),
-        },
-        linkRobloxAccount: {
-          integration: Integrations.lambda(linkRobloxAccountFunction),
         },
         catalogTask: {
           integration: Integrations.lambda(catalogTaskFunction),
@@ -228,8 +222,19 @@ export class Gallaudet extends Construct {
             apiKeyRequired: true,
           },
         },
+        delegateGoogleClassroomAccess: {
+          integration: Integrations.lambda(
+            delegateGoogleClassroomAccessFunction,
+          ),
+        },
+        getTask: {
+          integration: Integrations.lambda(getTaskFunction),
+        },
         getTaskCatalog: {
           integration: Integrations.lambda(getTaskCatalogFunction),
+        },
+        linkRobloxAccount: {
+          integration: Integrations.lambda(linkRobloxAccountFunction),
         },
       },
       policy: new PolicyDocument({
@@ -242,17 +247,12 @@ export class Gallaudet extends Construct {
           }),
         ],
       }),
-      domainName: {
-        domainName: props.apiSubdomain + "." + props.domainName,
-        certificate: apiCertificate,
-        securityPolicy: SecurityPolicy.TLS_1_2,
-      },
     });
 
     new ARecord(scope, "ApiAliasRecord", {
+      recordName: props.apiSubdomain + "." + props.domainName,
       target: RecordTarget.fromAlias(new ApiGateway(this.api.api)),
       zone: zone,
-      recordName: props.apiSubdomain + "." + props.domainName,
     });
 
     // Grant authenticated users access to invoke the api
@@ -278,8 +278,8 @@ export class Gallaudet extends Construct {
         {
           name: `postman-testing-${props.stage}`,
           throttle: {
-            rateLimit: 10,
             burstLimit: 5,
+            rateLimit: 10,
           },
         },
       );
