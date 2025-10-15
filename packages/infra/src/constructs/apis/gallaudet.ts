@@ -141,6 +141,7 @@ export class Gallaudet extends Construct {
         TASK_INSTANCE_TABLE_NAME: props.taskInstanceTable.tableName,
         TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
         OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
+        PARTNERS_TABLE_NAME: props.partnersTable.tableName,
         GOOGLE_OAUTH_CLIENT_SECRET_ARN: props.googleOAuthClientSecret.secretArn,
       },
       description: [
@@ -151,6 +152,7 @@ export class Gallaudet extends Construct {
     props.taskInstanceTable.grantReadData(getTaskFunction);
     props.taskCatalogTable.grantReadData(getTaskFunction);
     props.oauthTokensTable.grantReadData(getTaskFunction);
+    props.partnersTable.grantReadData(getTaskFunction);
     props.googleOAuthClientSecret.grantRead(getTaskFunction);
 
     const getTaskCatalogFunction = new GetTaskCatalogFunction(

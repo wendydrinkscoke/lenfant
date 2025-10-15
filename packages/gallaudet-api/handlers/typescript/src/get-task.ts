@@ -28,15 +28,17 @@ type TaskInstanceItem = {
 
 type CatalogEntryItem = {
   PartnerId?: string;
-  PartnerName?: string;
   EntryId?: string;
   Name?: string;
   Subheading?: string;
   Instructions?: string;
 };
 
-const isNotFoundStatus = (status?: number): boolean =>
-  status === 403 || status === 404;
+type PartnerItem = {
+  PartnerId: string;
+  PartnerName: string;
+  RobloxGameId: string;
+}
 
 /**
  * Type-safe handler for the GetTask operation
@@ -273,7 +275,7 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
         });
       }
       logger.info(
-        `Loaded catalog entry for partnerId=${partnerId}, entryId=${entryId}, partnerName=${catalogEntry.PartnerName}`,
+        `Loaded catalog entry for partnerId=${partnerId}, entryId=${entryId}`,
       );
     } catch (catalogError) {
       if (isAWSError(catalogError)) {
@@ -297,11 +299,10 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
     const title = catalogEntry.Name?.trim() || fallbackTitle;
     const subheading = catalogEntry.Subheading?.trim();
     const instructions = catalogEntry.Instructions?.trim();
-    const partnerName = (catalogEntry.PartnerName ?? partnerId).trim();
 
-    if (!title || !subheading || !instructions || !partnerName) {
+    if (!title || !subheading || !instructions) {
       logger.error(
-        `Catalog entry missing required fields for partnerId=${partnerId}, entryId=${entryId}. title=${!!title}, subheading=${!!subheading}, instructions=${!!instructions}, partnerName=${!!partnerName}`,
+        `Catalog entry missing required fields for partnerId=${partnerId}, entryId=${entryId}. title=${!!title}, subheading=${!!subheading}, instructions=${!!instructions}`,
       );
       return Response.internalFailure({
         message: 'Task content incomplete',
@@ -311,6 +312,48 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
     logger.info(
       `Returning task content for taskId=${taskId}, role=${resolvedRole}, title="${title}"`,
     );
+
+    const PARTNERS_TABLE_NAME = getRequiredEnv('PARTNERS_TABLE_NAME');
+    let partner: PartnerItem | undefined;
+    try {
+      const partnerResult = await ddbClient
+        .get({
+          TableName: PARTNERS_TABLE_NAME,
+          Key: {
+            PartnerId: partnerId,
+          },
+        })
+        .promise();
+      partner = partnerResult.Item as PartnerItem | undefined;
+      if (!partner) {
+        logger.error(
+          `Partner entry missing for partnerId=${partnerId}, taskId=${taskId}`,
+        );
+        return Response.internalFailure({
+          message: 'Task content no longer available',
+        });
+      }
+      logger.info(
+        `Loaded partner entry for partnerId=${partnerId}, Name=${partner.PartnerName}`,
+      );
+    } catch (ddbError) {
+      if (isAWSError(ddbError)) {
+        logger.error(
+          `DynamoDB failure loading partner entry ${partnerId}: ${ddbError.code} - ${ddbError.message}`,
+        );
+        return Response.internalFailure({
+          message: 'Failed to load task content',
+          details: `DynamoDB error: ${ddbError.code}`,
+        });
+      }
+      logger.error(
+        `Unexpected error reading partner entry ${partnerId}: ${JSON.stringify(ddbError)}`,
+      );
+      return Response.internalFailure({
+        message: 'Failed to load task content',
+      });
+    }
+    const partnerName = partner?.PartnerName ?? partnerId;
 
     return Response.success({
       task: {

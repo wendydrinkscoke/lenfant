@@ -2,6 +2,7 @@ process.env.TASK_INSTANCE_TABLE_NAME = 'TaskInstances';
 process.env.TASK_CATALOG_TABLE_NAME = 'TaskCatalog';
 process.env.OAUTH_TOKENS_TABLE_NAME = 'OAuthTokens';
 process.env.GOOGLE_OAUTH_CLIENT_SECRET_ARN = 'secretArn';
+process.env.PARTNERS_TABLE_NAME = 'Partners';
 
 import {
   GetTaskChainedRequestInput,
@@ -84,6 +85,13 @@ beforeEach(() => {
           Name: 'Explore the Capitol',
           Subheading: 'Learn about the U.S. Capitol building',
           Instructions: 'Meet the guide and collect badges.',
+        },
+      },
+      Partners: {
+        Item: {
+          PartnerId: 'studio-42',
+          PartnerName: 'Studio Forty Two',
+          RobloxGameId: '1213026131',
         },
       },
     };
