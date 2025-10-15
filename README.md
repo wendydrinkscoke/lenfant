@@ -29,6 +29,15 @@ graded when the player completes them. In order to begin playing, students must
 go through an onboarding flow which associates their Google account with their
 Roblox account. 
 
+## Quick Start
+To get a workspace cloned and built, run the following shell commands:
+```
+git clone https://github.com/wendydrinkscoke/lenfant.git &&
+cd lenfant &&
+pnpm i &&
+pdk build
+```
+
 ## Editing sub-project settings
 
 The monorepo is an [AWS PDK](https://www.apple.com/startpage/) project. In order
