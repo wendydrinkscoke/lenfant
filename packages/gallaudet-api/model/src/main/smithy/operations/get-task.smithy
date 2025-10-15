@@ -23,6 +23,10 @@ structure TaskInstanceView {
     /// Partner display name to show alongside the task.
     @required
     partnerName: PartnerName
+
+    /// Roblox game ID which informs the play button link
+    @required
+    robloxGameId: RobloxGameId
 }
 
 /// Retrieves a persisted task instance if the caller is authorized to view it.

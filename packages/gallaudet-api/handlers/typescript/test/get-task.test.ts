@@ -129,6 +129,7 @@ describe('GetTask', () => {
         subheading: 'Learn about the U.S. Capitol building',
         instructions: 'Meet the guide and collect badges.',
         partnerName: 'Studio Forty Two',
+        robloxGameId: '1213026131',
       },
     });
     expect(getAddOnContextMock).toHaveBeenCalledWith({

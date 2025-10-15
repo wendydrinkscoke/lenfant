@@ -354,6 +354,7 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
       });
     }
     const partnerName = partner?.PartnerName ?? partnerId;
+    const robloxGameId = partner?.RobloxGameId;
 
     return Response.success({
       task: {
@@ -361,6 +362,7 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
         subheading,
         instructions,
         partnerName,
+        robloxGameId,
       },
     });
   } catch (error) {

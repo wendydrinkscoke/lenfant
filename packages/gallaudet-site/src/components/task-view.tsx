@@ -177,6 +177,13 @@ const TaskViewAuthorized = ({
     return "Unknown partner";
   }, [status, task]);
 
+  const robloxLink = useMemo(() => {
+    if (status === "success" && task?.robloxGameId) {
+      return `https://www.roblox.com/games/${task.robloxGameId}`;
+    }
+    return null;
+  }, [status, task]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6">
       <div className="mx-auto max-w-4xl space-y-6">
@@ -239,9 +246,20 @@ const TaskViewAuthorized = ({
                     className="h-48 w-full object-cover"
                   />
                   <Separator />
-                  <p className="p-3 text-sm text-slate-500">
-                    {PREVIEW_CAPTION}
-                  </p>
+                  <div className="space-y-3 p-3">
+                    <p className="text-sm text-slate-500">{PREVIEW_CAPTION}</p>
+                    {robloxLink && (
+                      <Button asChild className="w-full">
+                        <a
+                          href={robloxLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          View on Roblox
+                        </a>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
