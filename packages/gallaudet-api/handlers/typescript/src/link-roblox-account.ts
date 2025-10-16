@@ -1,4 +1,4 @@
-import { CognitoIdentityServiceProvider } from 'aws-sdk';
+import { CognitoIdentityServiceProvider, DynamoDB } from 'aws-sdk';
 import {
   linkRobloxAccountHandler,
   LinkRobloxAccountChainedHandlerFunction,
@@ -16,6 +16,7 @@ import {
 } from './utils/roblox-utils';
 
 const cognito = new CognitoIdentityServiceProvider();
+const ddbClient = new DynamoDB.DocumentClient();
 
 /**
  * Type-safe handler for the LinkRobloxAccount operation
@@ -35,9 +36,11 @@ export const linkRobloxAccount: LinkRobloxAccountChainedHandlerFunction = async 
 
   let userPoolId: string;
   let robloxProviderName: string;
+  let usersTableName: string;
   try {
     userPoolId = getRequiredEnv('USER_POOL_ID');
     robloxProviderName = getRequiredEnv('ROBLOX_PROVIDER_NAME');
+    usersTableName = getRequiredEnv('USERS_TABLE_NAME');
   } catch (err) {
     logger.error((err as Error).message);
     return Response.internalFailure({
@@ -147,6 +150,48 @@ export const linkRobloxAccount: LinkRobloxAccountChainedHandlerFunction = async 
       `Fetched destination user ${googleUser.Username ?? googleUsername} (enabled=${googleUser.Enabled})`,
     );
 
+    const googleUserSub = googleUser.UserAttributes?.find(
+      (attr) => attr.Name === 'sub',
+    )?.Value;
+    if (!googleUserSub) {
+      logger.error(
+        `Unable to locate sub attribute for Cognito user ${googleUsername}`,
+      );
+      return Response.internalFailure({
+        message: 'Failed to resolve mapped student account',
+      });
+    }
+
+    const persistUserMapping = async () => {
+      try {
+        await ddbClient
+          .put({
+            TableName: usersTableName,
+            Item: {
+              CognitoUserId: googleUserSub,
+              RobloxUserId: robloxUserId,
+              Username: googleUser.Username ?? googleUsername,
+              UpdatedAt: new Date().toISOString(),
+            },
+          })
+          .promise();
+        logger.info(
+          `Persisted user mapping (CognitoUserId=${googleUserSub}, RobloxUserId=${robloxUserId})`,
+        );
+      } catch (ddbError) {
+        if (isAWSError(ddbError)) {
+          logger.error(
+            `Failed to persist user mapping: ${ddbError.code} - ${ddbError.message}`,
+          );
+        } else {
+          logger.error(
+            `Unexpected error while persisting user mapping: ${JSON.stringify(ddbError)}`,
+          );
+        }
+        throw ddbError;
+      }
+    };
+
     const existingRobloxId = extractRobloxUserId(googleUser.UserAttributes);
     if (existingRobloxId && existingRobloxId !== robloxUserId) {
       logger.warn(
@@ -166,6 +211,13 @@ export const linkRobloxAccount: LinkRobloxAccountChainedHandlerFunction = async 
       logger.info(
         `Roblox ID ${robloxUserId} already linked to Cognito user ${googleUsername}; skipping relink.`,
       );
+      try {
+        await persistUserMapping();
+      } catch (persistError) {
+        return Response.internalFailure({
+          message: 'Failed to persist Roblox account mapping',
+        });
+      }
       return Response.success({
         message: 'Roblox account already linked',
       });
@@ -273,6 +325,14 @@ export const linkRobloxAccount: LinkRobloxAccountChainedHandlerFunction = async 
       logger.info(
         `Updated custom:robloxUserId for Cognito user ${googleUser.Username ?? googleUsername} to ${robloxUserId}`,
       );
+    }
+
+    try {
+      await persistUserMapping();
+    } catch (persistError) {
+      return Response.internalFailure({
+        message: 'Failed to persist Roblox account mapping',
+      });
     }
 
     return Response.success({

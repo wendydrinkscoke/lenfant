@@ -122,10 +122,11 @@ the task is a manually-graded writing task).
     1. ~~Introduce an API that enables game servers to register tasks to the~~
     ~~task catalog. In the first iteration, only "simple tasks" can be~~
     ~~registered.~~
-    1. Introduce an API that enables game servers to query if a player (i.e. a
-    player who just joined their game server) has any tasks assigned to them
-    which are associated with that specific game. A game server should not be
-    able to see tasks assigned to players which relate to separate games.
+    1. ~~Introduce an API that enables game servers to query if a player (i.e.~~
+    ~~a player who just joined their game server) has any tasks assigned to~~
+    ~~them which are associated with that specific game. A game server should~~
+    ~~not be able to see tasks assigned to players which relate to separate~~
+    ~~games.~~
     1. Introduce an API that enables game servers to mark that a 
     completion-graded task instance has been completed.
     1. Introduce an API that enables game servers to assign a tentative grade

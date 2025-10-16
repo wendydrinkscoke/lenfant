@@ -57,11 +57,33 @@ export class GallaudetApiStack extends Stack {
         type: AttributeType.STRING,
       },
     });
+    taskInstancesTable.addGlobalSecondaryIndex({
+      indexName: "AttachmentIdIndex",
+      partitionKey: {
+        name: "AttachmentId",
+        type: AttributeType.STRING,
+      },
+    });
 
     const partnersTable = new Table(this, "PartnersDDBTable", {
       tableName: "Partners",
       partitionKey: {
         name: "PartnerId",
+        type: AttributeType.STRING,
+      },
+    });
+
+    const usersTable = new Table(this, "UsersDDBTable", {
+      tableName: "Users",
+      partitionKey: {
+        name: "CognitoUserId",
+        type: AttributeType.STRING,
+      },
+    });
+    usersTable.addGlobalSecondaryIndex({
+      indexName: "RobloxUserIdIndex",
+      partitionKey: {
+        name: "RobloxUserId",
         type: AttributeType.STRING,
       },
     });
@@ -87,6 +109,7 @@ export class GallaudetApiStack extends Stack {
       taskCatalogTable,
       taskInstanceTable: taskInstancesTable,
       partnersTable,
+      usersTable,
       googleOAuthClientSecret,
       emailIdentity: props.emailIdentity,
       userPool: props.userPool,

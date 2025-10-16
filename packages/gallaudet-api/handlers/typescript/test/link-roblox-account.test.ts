@@ -1,5 +1,6 @@
 process.env.USER_POOL_ID = 'us-east-1_example';
 process.env.ROBLOX_PROVIDER_NAME = 'RobloxOIDC';
+process.env.USERS_TABLE_NAME = 'Users';
 
 import {
   BadRequestErrorResponseContent,

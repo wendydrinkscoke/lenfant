@@ -80,7 +80,11 @@ export default function CognitoPopupCallback() {
           const googleScope =
             role === "teacher"
               ? "https://www.googleapis.com/auth/classroom.addons.teacher"
-              : "https://www.googleapis.com/auth/classroom.addons.student";
+              : [
+                  "https://www.googleapis.com/auth/classroom.addons.student",
+                  "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
+                  "https://www.googleapis.com/auth/classroom.courses.readonly"
+                ].join(" ");
 
           const googleParams = new URLSearchParams({
             client_id: getGoogleAuthClientID(),

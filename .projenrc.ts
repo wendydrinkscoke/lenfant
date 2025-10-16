@@ -121,6 +121,9 @@ gallaudetApi.handlers.typescript?.addDeps(
   "gaxios",
   "google-auth-library",
 );
+if (gallaudetApi.handlers.typescript?.jest) {
+  gallaudetApi.handlers.typescript.jest.config.maxWorkers = 1;
+}
 
 new TypeSafeWebsiteProject({
   name: "gallaudet-site",

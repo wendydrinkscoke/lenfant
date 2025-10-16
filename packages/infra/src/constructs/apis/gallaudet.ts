@@ -31,6 +31,7 @@ import {
   DelegateGoogleClassroomAccessFunction,
   GetTaskFunction,
   GetTaskCatalogFunction,
+  ListTasksForPlayerFunction,
   LinkRobloxAccountFunction,
   PutPartnerFunction,
 } from "gallaudet-api-typescript-infra";
@@ -50,6 +51,7 @@ export interface GallaudetProps {
   readonly taskCatalogTable: ITable;
   readonly taskInstanceTable: ITable;
   readonly partnersTable: ITable;
+  readonly usersTable: ITable;
   readonly googleOAuthClientSecret: ISecret;
   readonly emailIdentity: EmailIdentity;
   readonly userPool: UserPool;
@@ -155,6 +157,29 @@ export class Gallaudet extends Construct {
     props.partnersTable.grantReadData(getTaskFunction);
     props.googleOAuthClientSecret.grantRead(getTaskFunction);
 
+    const listTasksForPlayerFunction = new ListTasksForPlayerFunction(
+      this,
+      "ListTasksForPlayerFunction",
+      {
+        environment: {
+          GOOGLE_OAUTH_CLIENT_SECRET_ARN:
+            props.googleOAuthClientSecret.secretArn,
+          OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
+          TASK_INSTANCE_TABLE_NAME: props.taskInstanceTable.tableName,
+          USERS_TABLE_NAME: props.usersTable.tableName,
+        },
+        description: [
+          "Allows partner game servers to list assignments associated with",
+          "a particular Roblox player so in-game experiences can surface",
+          "active CivicTech tasks.",
+        ].join(" "),
+      },
+    );
+    props.taskInstanceTable.grantReadData(listTasksForPlayerFunction);
+    props.oauthTokensTable.grantReadData(listTasksForPlayerFunction);
+    props.googleOAuthClientSecret.grantRead(listTasksForPlayerFunction);
+    props.usersTable.grantReadData(listTasksForPlayerFunction);
+
     const getTaskCatalogFunction = new GetTaskCatalogFunction(
       this,
       "GetTaskCatalogFunction",
@@ -178,6 +203,7 @@ export class Gallaudet extends Construct {
         environment: {
           USER_POOL_ID: props.userPool.userPoolId,
           ROBLOX_PROVIDER_NAME: "RobloxOIDC",
+          USERS_TABLE_NAME: props.usersTable.tableName,
         },
         description: [
           "This function links a user's Cognito account to their Roblox",
@@ -196,6 +222,7 @@ export class Gallaudet extends Construct {
         resources: [props.userPool.userPoolArn],
       }),
     );
+    props.usersTable.grantWriteData(linkRobloxAccountFunction);
 
     const putPartnerFunction = new PutPartnerFunction(
       this,
@@ -250,6 +277,13 @@ export class Gallaudet extends Construct {
         },
         getTaskCatalog: {
           integration: Integrations.lambda(getTaskCatalogFunction),
+        },
+        listTasksForPlayer: {
+          integration: Integrations.lambda(listTasksForPlayerFunction),
+          authorizer: Authorizers.none(),
+          options: {
+            apiKeyRequired: true,
+          },
         },
         linkRobloxAccount: {
           integration: Integrations.lambda(linkRobloxAccountFunction),
