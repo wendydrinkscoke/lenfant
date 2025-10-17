@@ -110,24 +110,25 @@ export class ManagementStack extends Stack {
       },
     );
 
-    // 3-a. Enable the Engineers group to read the CodePipeline in this account.
-    const pipelineReadOnlyPs = new CfnPermissionSet(
+    // 3-a. Enable the Engineers group to access pipelines in this account.
+    const pipelineDeveloperAccessPs = new CfnPermissionSet(
       this,
-      "PipelineReadOnlyPS",
+      "PipelineDeveloperAccessPS",
       {
         instanceArn,
-        name: "CodePipelineReader",
-        description: "Read-only access to CodePipeline in management account",
+        name: "CodePipelineDeveloperAccess",
+        description: "Developer access to CodePipeline in management account",
         managedPolicies: [
           "arn:aws:iam::aws:policy/AWSCodePipeline_ReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AWSCodeBuildReadOnlyAccess",
         ],
         sessionDuration: "PT4H",
       },
     );
 
-    new CfnAssignment(this, "AssignPipelineReadOnly", {
+    new CfnAssignment(this, "AssignPipelineDeveloperAccess", {
       instanceArn,
-      permissionSetArn: pipelineReadOnlyPs.attrPermissionSetArn,
+      permissionSetArn: pipelineDeveloperAccessPs.attrPermissionSetArn,
       principalType: "GROUP",
       principalId: engineersGroup.attrGroupId,
       targetType: "AWS_ACCOUNT",
