@@ -178,6 +178,8 @@ export const attachTask: AttachTaskChainedHandlerFunction = async (request) => {
         title,
         teacherViewUri: { uri: teacherUri },
         studentViewUri: { uri: studentUri },
+        studentWorkReviewUri: { uri: studentUri }, // TODO: Make a real page for this.
+        maxPoints: 100, // TODO: Make configurable via Task Catalog
       },
     });
     const attachment = createResult.data;
