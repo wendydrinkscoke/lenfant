@@ -14,6 +14,7 @@ service Gallaudet {
       DelegateGoogleClassroomAccess
       GetTask
       GetTaskCatalog
+      GradeTask
       ListTasksForPlayer
       LinkRobloxAccount
       PutPartner

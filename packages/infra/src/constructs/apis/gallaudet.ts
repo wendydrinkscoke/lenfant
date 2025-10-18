@@ -31,6 +31,7 @@ import {
   DelegateGoogleClassroomAccessFunction,
   GetTaskFunction,
   GetTaskCatalogFunction,
+  GradeTaskFunction,
   ListTasksForPlayerFunction,
   LinkRobloxAccountFunction,
   PutPartnerFunction,
@@ -157,6 +158,23 @@ export class Gallaudet extends Construct {
     props.partnersTable.grantReadData(getTaskFunction);
     props.googleOAuthClientSecret.grantRead(getTaskFunction);
 
+    const gradeTaskFunction = new GradeTaskFunction(this, "GradeTaskFunction", {
+      environment: {
+        TASK_INSTANCE_TABLE_NAME: props.taskInstanceTable.tableName,
+        OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
+        GOOGLE_OAUTH_CLIENT_SECRET_ARN: props.googleOAuthClientSecret.secretArn,
+        USERS_TABLE_NAME: props.usersTable.tableName,
+      },
+      description: [
+        "Grades a task instance in Google Classroom on behalf of the",
+        "teacher who assigned it.",
+      ].join(" "),
+    });
+    props.taskInstanceTable.grantReadData(gradeTaskFunction);
+    props.oauthTokensTable.grantReadData(gradeTaskFunction);
+    props.googleOAuthClientSecret.grantRead(gradeTaskFunction);
+    props.usersTable.grantReadData(gradeTaskFunction);
+
     const listTasksForPlayerFunction = new ListTasksForPlayerFunction(
       this,
       "ListTasksForPlayerFunction",
@@ -277,6 +295,13 @@ export class Gallaudet extends Construct {
         },
         getTaskCatalog: {
           integration: Integrations.lambda(getTaskCatalogFunction),
+        },
+        gradeTask: {
+          integration: Integrations.lambda(gradeTaskFunction),
+          authorizer: Authorizers.none(),
+          options: {
+            apiKeyRequired: true,
+          },
         },
         listTasksForPlayer: {
           integration: Integrations.lambda(listTasksForPlayerFunction),

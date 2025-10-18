@@ -127,10 +127,7 @@ the task is a manually-graded writing task).
     ~~them which are associated with that specific game. A game server should~~
     ~~not be able to see tasks assigned to players which relate to separate~~
     ~~games.~~
-    1. Introduce an API that enables game servers to mark that a 
-    completion-graded task instance has been completed.
-    1. Introduce an API that enables game servers to assign a tentative grade
-    to a partial-completion-graded task.
+    1. ~~Enable games to assign grades to tasks.~~
     1. Introduce an API that enables game servers to submit writing from 
     students for a manually-graded writing task.
 
