@@ -11,6 +11,7 @@ service Gallaudet {
     operations: [
       AttachTask
       CatalogTask
+      CompleteMilestone
       DelegateGoogleClassroomAccess
       GetTask
       GetTaskCatalog

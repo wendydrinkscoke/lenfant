@@ -10,6 +10,7 @@ import {
 import { getApiKeyIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError, isGaxiosError } from './utils/error-utils';
+import { extractGoogleUserIdFromUsername } from './utils/google-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
 const USERS_TABLE_NAME = getRequiredEnv('USERS_TABLE_NAME');
@@ -41,21 +42,6 @@ type StudentSubmissionsListResponse = {
     studentSubmissions?: StudentSubmissionSummary[];
     nextPageToken?: string | null;
   };
-};
-
-const extractGoogleUserIdFromUsername = (username?: string | null) => {
-  if (!username) {
-    return null;
-  }
-  const trimmed = username.trim();
-  if (!trimmed) {
-    return null;
-  }
-  const googlePrefix = 'Google_';
-  if (trimmed.startsWith(googlePrefix) && trimmed.length > googlePrefix.length) {
-    return trimmed.slice(googlePrefix.length);
-  }
-  return null;
 };
 
 /**

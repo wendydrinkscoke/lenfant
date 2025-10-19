@@ -28,6 +28,7 @@ import {
   Api,
   AttachTaskFunction,
   CatalogTaskFunction,
+  CompleteMilestoneFunction,
   DelegateGoogleClassroomAccessFunction,
   GetTaskFunction,
   GetTaskCatalogFunction,
@@ -113,13 +114,32 @@ export class Gallaudet extends Construct {
     );
     props.taskCatalogTable.grantWriteData(catalogTaskFunction);
 
+    const completeMilestoneFunction = new CompleteMilestoneFunction(
+      this,
+      "CompleteMilestoneFunction",
+      {
+        environment: {
+          GOOGLE_OAUTH_CLIENT_SECRET_ARN:
+            props.googleOAuthClientSecret.secretArn,
+          OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
+          TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
+          TASK_INSTANCE_TABLE_NAME: props.taskInstanceTable.tableName,
+          USERS_TABLE_NAME: props.usersTable.tableName,
+        },
+      },
+    );
+    props.oauthTokensTable.grantReadData(completeMilestoneFunction);
+    props.taskCatalogTable.grantReadData(completeMilestoneFunction);
+    props.taskInstanceTable.grantReadWriteData(completeMilestoneFunction);
+    props.usersTable.grantReadData(completeMilestoneFunction);
+    props.googleOAuthClientSecret.grantRead(completeMilestoneFunction);
+
     const delegateGoogleClassroomAccessFunction =
       new DelegateGoogleClassroomAccessFunction(
         this,
         "DelegateGoogleClassroomAccessFunction",
         {
           environment: {
-            OAUTH_TOKENS_TABLE_ARN: props.oauthTokensTable.tableArn,
             OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
             GOOGLE_OAUTH_CLIENT_SECRET_ARN:
               props.googleOAuthClientSecret.secretArn,
@@ -280,6 +300,13 @@ export class Gallaudet extends Construct {
         },
         catalogTask: {
           integration: Integrations.lambda(catalogTaskFunction),
+          authorizer: Authorizers.none(),
+          options: {
+            apiKeyRequired: true,
+          },
+        },
+        completeMilestone: {
+          integration: Integrations.lambda(completeMilestoneFunction),
           authorizer: Authorizers.none(),
           options: {
             apiKeyRequired: true,
