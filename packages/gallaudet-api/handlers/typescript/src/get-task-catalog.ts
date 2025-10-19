@@ -6,6 +6,7 @@ import {
   Response,
   LoggingInterceptor,
 } from 'gallaudet-api-typescript-runtime';
+import type { Milestone } from 'gallaudet-api-typescript-runtime';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError } from './utils/error-utils';
 
@@ -19,7 +20,15 @@ type CatalogItem = {
   Name?: string;
   Subheading?: string;
   Instructions?: string;
-  GradingMethod?: string;
+  Milestones?: Milestone[];
+};
+
+type CatalogEntry = {
+  entryId: string;
+  name: string;
+  subheading: string;
+  instructions: string;
+  milestones?: Milestone[];
 };
 
 /**
@@ -54,12 +63,7 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
   const partnersMap = new Map<string, {
     partnerId: string;
     partnerName: string;
-    catalogEntries: Array<{
-      entryId: string;
-      name: string;
-      subheading: string;
-      instructions: string;
-    }>;
+    catalogEntries: CatalogEntry[];
   }>();
 
   items.forEach((item) => {
@@ -68,6 +72,7 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
     const name = item.Name;
     const subheading = item.Subheading;
     const instructions = item.Instructions;
+    const milestones = item.Milestones;
     if (
       !partnerId ||
       !entryId ||
@@ -87,12 +92,14 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
       });
     }
 
-    partnersMap.get(partnerId)?.catalogEntries.push({
+    const entry: CatalogEntry = {
       entryId,
       name,
       subheading,
       instructions,
-    });
+    };
+    entry.milestones = milestones;
+    partnersMap.get(partnerId)?.catalogEntries.push(entry);
   });
 
   const partners = Array.from(partnersMap.values()).map((partner) => ({

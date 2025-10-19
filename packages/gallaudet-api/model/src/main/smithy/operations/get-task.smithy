@@ -4,6 +4,7 @@ namespace llc.civictech.school
 use llc.civictech.school#CatalogTaskInstructions
 use llc.civictech.school#CatalogTaskName
 use llc.civictech.school#CatalogTaskSubheading
+use llc.civictech.school#Milestones
 use llc.civictech.school#PartnerName
 
 /// Details needed to render a task instance inside a Classroom iframe.
@@ -19,6 +20,9 @@ structure TaskInstanceView {
     /// Instructions for the educator or student.
     @required
     instructions: CatalogTaskInstructions
+
+    /// Optional milestones that outline partial completion goals.
+    milestones: Milestones
 
     /// Partner display name to show alongside the task.
     @required

@@ -85,6 +85,18 @@ beforeEach(() => {
           Name: 'Explore the Capitol',
           Subheading: 'Learn about the U.S. Capitol building',
           Instructions: 'Meet the guide and collect badges.',
+          Milestones: [
+            {
+              id: 'tour-the-rotunda',
+              name: 'Tour the Rotunda',
+              percentageContribution: 50,
+            },
+            {
+              id: 'meet-your-guide',
+              name: 'Meet your guide',
+              percentageContribution: 50,
+            },
+          ],
         },
       },
       Partners: {
@@ -130,6 +142,18 @@ describe('GetTask', () => {
         instructions: 'Meet the guide and collect badges.',
         partnerName: 'Studio Forty Two',
         robloxGameId: '1213026131',
+        milestones: [
+          {
+            id: 'tour-the-rotunda',
+            name: 'Tour the Rotunda',
+            percentageContribution: 50,
+          },
+          {
+            id: 'meet-your-guide',
+            name: 'Meet your guide',
+            percentageContribution: 50,
+          },
+        ],
       },
     });
     expect(getAddOnContextMock).toHaveBeenCalledWith({

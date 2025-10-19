@@ -124,6 +124,58 @@ describe('CatalogTask', () => {
     });
   });
 
+  it('persists milestones when provided', async () => {
+    const response = await catalogTask({
+      ...buildRequestArgs(),
+      input: {
+        requestParameters: {
+          entryId: 'tour-the-whitehouse',
+        },
+        body: {
+          name: 'Tour the Whitehouse',
+          subheading: 'Explore iconic rooms and history',
+          instructions: 'Complete each stop on your tour.',
+          milestones: [
+            {
+              id: 'visit-oval-office',
+              name: 'Visit the Oval Office',
+              percentageContribution: 50,
+            },
+            {
+              id: 'visit-situation-room',
+              name: 'Visit the Situation Room',
+              percentageContribution: 50,
+            },
+          ],
+        } as any,
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const updateCall = dynamoMocks.update.mock.calls[0] as any[] | undefined;
+    if (!updateCall) {
+      throw new Error('Expected DynamoDB update to be invoked');
+    }
+    const updateArgs = updateCall[0];
+    if (!updateArgs) {
+      throw new Error('Expected DynamoDB update arguments to be provided');
+    }
+
+    expect(updateArgs.ExpressionAttributeNames['#milestones']).toBe('Milestones');
+    expect(updateArgs.ExpressionAttributeValues[':milestones']).toEqual([
+      {
+        id: 'visit-oval-office',
+        name: 'Visit the Oval Office',
+        percentageContribution: 50,
+      },
+      {
+        id: 'visit-situation-room',
+        name: 'Visit the Situation Room',
+        percentageContribution: 50,
+      },
+    ]);
+  });
+
   it('returns 500 when DynamoDB throws', async () => {
     const dynamoError = Object.assign(new Error('boom'), {
       code: 'ProvisionedThroughputExceededException',
@@ -148,5 +200,39 @@ describe('CatalogTask', () => {
     expect(
       (response.body as InternalFailureErrorResponseContent).message,
     ).toEqual('Failed to save catalog entry');
+  });
+
+  it('returns 400 when milestones are invalid', async () => {
+    const response = await catalogTask({
+      ...buildRequestArgs(),
+      input: {
+        requestParameters: {
+          entryId: 'tour-the-whitehouse',
+        },
+        body: {
+          name: 'Tour the Whitehouse',
+          subheading: 'Explore iconic rooms and history',
+          instructions: 'Complete each stop on your tour.',
+          milestones: [
+            {
+              id: 'visit-oval-office',
+              name: 'Visit the Oval Office',
+              percentageContribution: 80,
+            },
+            {
+              id: 'visit-situation-room',
+              name: 'Visit the Situation Room',
+              percentageContribution: 10,
+            },
+          ],
+        } as any,
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body).toEqual({
+      message: 'The sum of percentages awarded across all milestones must equal 100',
+    });
+    expect(dynamoMocks.update).not.toHaveBeenCalled();
   });
 });

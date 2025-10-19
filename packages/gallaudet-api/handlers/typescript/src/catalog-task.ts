@@ -75,6 +75,36 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
     });
   }
 
+  const { milestones } = input.body;
+  if (milestones) {
+    const seenIds = new Set<string>();
+    for (const { id } of milestones) {
+      if (seenIds.has(id)) {
+        return Response.badRequest({
+          message: `Duplicate identifier ${id}`,
+        });
+      }
+      seenIds.add(id);
+    }
+
+    const totalPercentage = milestones.reduce(
+      (total, milestone) => total + milestone.percentageContribution,
+      0,
+    );
+
+    if (totalPercentage !== 100) {
+      return Response.badRequest({
+        message: 'The sum of percentages awarded across all milestones must equal 100',
+      });
+    }
+
+    if (milestones.length == 0) {
+      return Response.badRequest({
+        message: 'Milestones array must not be empty if provided',
+      });
+    }
+  }
+
   const nowIso = new Date().toISOString();
   const sanitizedName = name.trim();
   const sanitizedSubheading = subheading.trim();
@@ -84,6 +114,38 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
     `Upserting catalog entry (partner=${partnerId}, entryId=${entryId})`,
   );
 
+  const updateSegments = [
+    '#name = :name',
+    '#subheading = :subheading',
+    '#instructions = :instructions',
+    '#updatedAt = :updatedAt',
+    '#createdAt = if_not_exists(#createdAt, :createdAt)',
+  ];
+
+  const expressionAttributeNames: Record<string, string> = {
+    '#name': 'Name',
+    '#subheading': 'Subheading',
+    '#instructions': 'Instructions',
+    '#updatedAt': 'UpdatedAt',
+    '#createdAt': 'CreatedAt',
+  };
+
+  const expressionAttributeValues: Record<string, unknown> = {
+    ':name': sanitizedName,
+    ':subheading': sanitizedSubheading,
+    ':instructions': sanitizedInstructions,
+    ':updatedAt': nowIso,
+    ':createdAt': nowIso,
+  };
+
+  if (milestones) {
+    updateSegments.push('#milestones = :milestones');
+    expressionAttributeNames['#milestones'] = 'Milestones';
+    expressionAttributeValues[':milestones'] = milestones;
+  }
+
+  const updateExpression = `SET ${updateSegments.join(', ')}`;
+
   try {
     await ddbClient.update({
       TableName: TASK_CATALOG_TABLE_NAME,
@@ -91,27 +153,9 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
         PartnerId: partnerId,
         EntryId: entryId,
       },
-      UpdateExpression: [
-        'SET #name = :name',
-        '#subheading = :subheading',
-        '#instructions = :instructions',
-        '#updatedAt = :updatedAt',
-        '#createdAt = if_not_exists(#createdAt, :createdAt)',
-      ].join(', '),
-      ExpressionAttributeNames: {
-        '#name': 'Name',
-        '#subheading': 'Subheading',
-        '#instructions': 'Instructions',
-        '#updatedAt': 'UpdatedAt',
-        '#createdAt': 'CreatedAt',
-      },
-      ExpressionAttributeValues: {
-        ':name': sanitizedName,
-        ':subheading': sanitizedSubheading,
-        ':instructions': sanitizedInstructions,
-        ':updatedAt': nowIso,
-        ':createdAt': nowIso,
-      },
+      UpdateExpression: updateExpression,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
       ReturnValues: 'NONE',
     }).promise();
   } catch (error) {

@@ -237,6 +237,31 @@ const TaskViewAuthorized = ({
                   Instructions
                 </h2>
                 {instructionsContent}
+                {status === "success" &&
+                  task?.milestones &&
+                  task.milestones.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-base font-semibold text-slate-800">
+                        Mission Checklist
+                      </h3>
+                      <ul className="space-y-2">
+                        {task.milestones.map((milestone) => (
+                          <li
+                            key={milestone.id}
+                            className="flex items-center justify-between rounded-md border border-slate-200 bg-white/60 px-3 py-2 text-sm text-slate-700"
+                          >
+                            <span>{milestone.name}</span>
+                            <Badge variant="secondary">
+                              {milestone.percentageContribution}%
+                            </Badge>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-xs text-slate-500">
+                        Complete each milestone to earn full credit.
+                      </p>
+                    </div>
+                  )}
               </div>
               <div>
                 <div className="overflow-hidden rounded-lg border bg-white shadow-sm">

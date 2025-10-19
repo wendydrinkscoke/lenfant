@@ -1,8 +1,7 @@
 $version: "2"
 namespace llc.civictech.school
 
-@range(min: 0, max: 100)
-byte Percentage
+use llc.civictech.school#Percentage
 
 @http(method: "PUT", uri: "/partners/me/players/{robloxUserId}/tasks/{taskId}/grade")
 @handler(language: "typescript")

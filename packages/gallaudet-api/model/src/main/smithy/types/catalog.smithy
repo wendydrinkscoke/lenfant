@@ -17,3 +17,33 @@ string CatalogTaskSubheading
 /// Detailed instructions shown to teachers and students.
 @length(min: 1)
 string CatalogTaskInstructions
+
+/// Identifier of a milestone within the catalog task entry.
+@length(min: 10, max: 50)
+@pattern("^[a-z0-9-]+$")
+string MilestoneId
+
+/// Human-readable title for a milestone.
+@length(min: 10, max: 60)
+@pattern("^[A-Za-z0-9](?:[A-Za-z0-9 '\\-]*[A-Za-z0-9])?$")
+string MilestoneName
+
+/// A milestone that contributes toward completion of the catalog task.
+structure Milestone {
+    /// Identifier chosen by the game server for the milestone.
+    @required
+    id: MilestoneId
+
+    /// Display name shown for this milestone.
+    @required
+    name: MilestoneName
+
+    /// Percentage credited when the milestone is marked complete.
+    @required
+    percentageContribution: Percentage
+}
+
+/// Collection of milestones contributing to a catalog task.
+list Milestones {
+    member: Milestone
+}

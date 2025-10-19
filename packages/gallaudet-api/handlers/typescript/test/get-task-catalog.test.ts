@@ -59,7 +59,6 @@ describe('GetTaskCatalog', () => {
           Name: 'Draft a Bill',
           Subheading: 'Research and write legislation',
           Instructions: 'Work together to draft your bill.',
-          GradingMethod: 'simple-completion',
         },
         {
           PartnerId: 'partnerA',
@@ -68,7 +67,18 @@ describe('GetTaskCatalog', () => {
           Name: 'Tour the White House',
           Subheading: 'Guided tour of the White House',
           Instructions: 'Visit each room in the tour.',
-          GradingMethod: 'simple-completion',
+          Milestones: [
+            {
+              id: 'visit-oval-office',
+              name: 'Visit the Oval Office',
+              percentageContribution: 50,
+            },
+            {
+              id: 'visit-situation-room',
+              name: 'Visit the Situation Room',
+              percentageContribution: 50,
+            },
+          ],
         },
         {
           PartnerId: 'partnerB',
@@ -76,7 +86,6 @@ describe('GetTaskCatalog', () => {
           Name: 'Attend Press Briefing',
           Subheading: 'Answer questions from the press',
           Instructions: 'Hold a press briefing for reporters.',
-          GradingMethod: 'simple-completion',
         },
       ],
     });
@@ -110,6 +119,18 @@ describe('GetTaskCatalog', () => {
               name: 'Tour the White House',
               subheading: 'Guided tour of the White House',
               instructions: 'Visit each room in the tour.',
+              milestones: [
+                {
+                  id: 'visit-oval-office',
+                  name: 'Visit the Oval Office',
+                  percentageContribution: 50,
+                },
+                {
+                  id: 'visit-situation-room',
+                  name: 'Visit the Situation Room',
+                  percentageContribution: 50,
+                },
+              ],
             },
           ],
         },

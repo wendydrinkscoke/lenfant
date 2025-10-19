@@ -2,6 +2,7 @@ $version: "2"
 namespace llc.civictech.school
 
 use llc.civictech.school#CatalogEntryId
+use llc.civictech.school#Milestones
 
 /// Creates or updates a task catalog entry for the calling partner.
 @idempotent
@@ -25,6 +26,9 @@ operation CatalogTask {
         /// Instructions visible to educators and students.
         @required
         instructions: CatalogTaskInstructions
+
+        /// Optional milestones that award partial completion percentages.
+        milestones: Milestones
     }
     output := {
         /// Human-readable confirmation message.
@@ -45,7 +49,19 @@ apply CatalogTask @examples([
             entryId: "pee-on-john-harvard-statue",
             name: "Pee on John Harvard Statue",
             subheading: "Participate in a centuries-long urination tradition",
-            instructions: "In this task, you'll be peeing on a statue in game."
+            instructions: "In this task, you'll be peeing on a statue in game.",
+            milestones: [
+                {
+                    id: "find-the-statue",
+                    name: "Find the John Harvard statue",
+                    percentageContribution: 50
+                },
+                {
+                    id: "complete-the-tradition",
+                    name: "Complete the tradition",
+                    percentageContribution: 50
+                }
+            ]
         }
         output: {
             message: "Task catalog entry saved"

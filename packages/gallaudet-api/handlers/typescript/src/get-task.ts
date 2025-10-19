@@ -7,6 +7,7 @@ import {
   Response,
   LoggingInterceptor,
 } from 'gallaudet-api-typescript-runtime';
+import type { Milestone } from 'gallaudet-api-typescript-runtime';
 
 import { getCognitoUserIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
@@ -32,6 +33,7 @@ type CatalogEntryItem = {
   Name?: string;
   Subheading?: string;
   Instructions?: string;
+  Milestones?: Milestone[];
 };
 
 type PartnerItem = {
@@ -39,6 +41,7 @@ type PartnerItem = {
   PartnerName: string;
   RobloxGameId: string;
 }
+
 
 /**
  * Type-safe handler for the GetTask operation
@@ -299,6 +302,7 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
     const title = catalogEntry.Name?.trim() || fallbackTitle;
     const subheading = catalogEntry.Subheading?.trim();
     const instructions = catalogEntry.Instructions?.trim();
+    const milestones = catalogEntry.Milestones;
 
     if (!title || !subheading || !instructions) {
       logger.error(
@@ -363,6 +367,7 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
         instructions,
         partnerName,
         robloxGameId,
+        ...(milestones !== undefined ? { milestones } : {}),
       },
     });
   } catch (error) {
