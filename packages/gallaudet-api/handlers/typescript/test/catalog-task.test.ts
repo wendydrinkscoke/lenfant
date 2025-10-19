@@ -4,7 +4,6 @@ import {
   CatalogTaskChainedRequestInput,
   InternalFailureErrorResponseContent,
   NotAuthorizedErrorResponseContent,
-  BadRequestErrorResponseContent,
 } from 'gallaudet-api-typescript-runtime';
 import { catalogTask } from '../src/catalog-task';
 
@@ -78,7 +77,6 @@ describe('CatalogTask', () => {
           name: 'Draft a Bill',
           subheading: 'Research and write legislation',
           instructions: 'Work together to draft your bill.',
-          gradingMethod: 'simple-completion',
         },
       },
     });
@@ -87,29 +85,6 @@ describe('CatalogTask', () => {
     expect(
       (response.body as NotAuthorizedErrorResponseContent).message,
     ).toEqual('Valid API key required');
-    expect(dynamoMocks.update).not.toHaveBeenCalled();
-  });
-
-  it('returns 400 when grading method is unsupported', async () => {
-    const response = await catalogTask({
-      ...buildRequestArgs(),
-      input: {
-        requestParameters: {
-          entryId: 'draft-a-bill',
-        },
-        body: {
-          name: 'Draft a Bill',
-          subheading: 'Research and write legislation',
-          instructions: 'Work together to draft your bill.',
-          gradingMethod: 'points',
-        } as any,
-      },
-    });
-
-    expect(response.statusCode).toBe(400);
-    expect((response.body as BadRequestErrorResponseContent).message).toEqual(
-      'Unsupported grading method',
-    );
     expect(dynamoMocks.update).not.toHaveBeenCalled();
   });
 
@@ -124,7 +99,6 @@ describe('CatalogTask', () => {
           name: 'Draft a Bill',
           subheading: 'Research and write legislation',
           instructions: 'Work together to draft your bill.',
-          gradingMethod: 'simple-completion',
         },
       },
     });
@@ -166,7 +140,6 @@ describe('CatalogTask', () => {
           name: 'Draft a Bill',
           subheading: 'Research and write legislation',
           instructions: 'Work together to draft your bill.',
-          gradingMethod: 'simple-completion',
         },
       },
     });

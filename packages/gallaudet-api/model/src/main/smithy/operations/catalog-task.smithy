@@ -3,12 +3,6 @@ namespace llc.civictech.school
 
 use llc.civictech.school#CatalogEntryId
 
-/// Permitted grading approaches for cataloged tasks.
-enum TaskGradingMethod {
-    /// A binary grading model that records whether the assignment was completed.
-    SIMPLE_COMPLETION = "simple-completion"
-}
-
 /// Creates or updates a task catalog entry for the calling partner.
 @idempotent
 @http(method: "PUT", uri: "/task-catalog/{entryId}")
@@ -31,10 +25,6 @@ operation CatalogTask {
         /// Instructions visible to educators and students.
         @required
         instructions: CatalogTaskInstructions
-
-        /// Grading approach to use when evaluating student progress.
-        @required
-        gradingMethod: TaskGradingMethod
     }
     output := {
         /// Human-readable confirmation message.
@@ -55,8 +45,7 @@ apply CatalogTask @examples([
             entryId: "pee-on-john-harvard-statue",
             name: "Pee on John Harvard Statue",
             subheading: "Participate in a centuries-long urination tradition",
-            instructions: "In this task, you'll be peeing on a statue in game.",
-            gradingMethod: "simple-completion"
+            instructions: "In this task, you'll be peeing on a statue in game."
         }
         output: {
             message: "Task catalog entry saved"

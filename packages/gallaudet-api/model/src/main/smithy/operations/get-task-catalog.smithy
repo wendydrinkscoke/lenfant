@@ -6,7 +6,6 @@ use llc.civictech.school#CatalogTaskInstructions
 use llc.civictech.school#CatalogTaskName
 use llc.civictech.school#CatalogTaskSubheading
 use llc.civictech.school#PartnerId
-use llc.civictech.school#TaskGradingMethod
 
 /// A task entry within a partner's catalog.
 structure TaskCatalogEntry {
@@ -25,10 +24,6 @@ structure TaskCatalogEntry {
     /// Instructions visible to educators and students.
     @required
     instructions: CatalogTaskInstructions
-
-    /// Grading approach to use when evaluating student progress.
-    @required
-    gradingMethod: TaskGradingMethod
 }
 
 /// Catalog entries grouped by partner.

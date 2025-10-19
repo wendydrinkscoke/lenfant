@@ -13,8 +13,6 @@ import { isAWSError } from './utils/error-utils';
 const ddbClient = new DynamoDB.DocumentClient();
 const TASK_CATALOG_TABLE_NAME = getRequiredEnv('TASK_CATALOG_TABLE_NAME');
 
-const SUPPORTED_GRADING_METHODS = new Set(['simple-completion']);
-
 /**
  * Type-safe handler for the CatalogTask operation
  */
@@ -54,7 +52,6 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
     name,
     subheading,
     instructions,
-    gradingMethod,
   } = input.body;
 
   if (!name?.trim()) {
@@ -78,22 +75,13 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
     });
   }
 
-  if (!gradingMethod || !SUPPORTED_GRADING_METHODS.has(gradingMethod)) {
-    logger.warn(
-      `Unsupported grading method "${gradingMethod}" for partner ${partnerId} and entry ${entryId}`,
-    );
-    return Response.badRequest({
-      message: 'Unsupported grading method',
-    });
-  }
-
   const nowIso = new Date().toISOString();
   const sanitizedName = name.trim();
   const sanitizedSubheading = subheading.trim();
   const sanitizedInstructions = instructions.trim();
 
   logger.info(
-    `Upserting catalog entry (partner=${partnerId}, entryId=${entryId}, gradingMethod=${gradingMethod})`,
+    `Upserting catalog entry (partner=${partnerId}, entryId=${entryId})`,
   );
 
   try {
@@ -107,7 +95,6 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
         'SET #name = :name',
         '#subheading = :subheading',
         '#instructions = :instructions',
-        '#gradingMethod = :gradingMethod',
         '#updatedAt = :updatedAt',
         '#createdAt = if_not_exists(#createdAt, :createdAt)',
       ].join(', '),
@@ -115,7 +102,6 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
         '#name': 'Name',
         '#subheading': 'Subheading',
         '#instructions': 'Instructions',
-        '#gradingMethod': 'GradingMethod',
         '#updatedAt': 'UpdatedAt',
         '#createdAt': 'CreatedAt',
       },
@@ -123,7 +109,6 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
         ':name': sanitizedName,
         ':subheading': sanitizedSubheading,
         ':instructions': sanitizedInstructions,
-        ':gradingMethod': gradingMethod,
         ':updatedAt': nowIso,
         ':createdAt': nowIso,
       },

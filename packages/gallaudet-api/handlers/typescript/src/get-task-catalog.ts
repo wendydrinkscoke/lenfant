@@ -5,7 +5,6 @@ import {
   INTERCEPTORS,
   Response,
   LoggingInterceptor,
-  TaskGradingMethod,
 } from 'gallaudet-api-typescript-runtime';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError } from './utils/error-utils';
@@ -52,14 +51,6 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
     });
   }
 
-  const SUPPORTED_GRADING_METHODS: readonly TaskGradingMethod[] = ['simple-completion'];
-
-  const isSupportedGradingMethod = (
-    method: unknown,
-  ): method is TaskGradingMethod =>
-    typeof method === 'string' &&
-  SUPPORTED_GRADING_METHODS.includes(method as TaskGradingMethod);
-
   const partnersMap = new Map<string, {
     partnerId: string;
     partnerName: string;
@@ -68,7 +59,6 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
       name: string;
       subheading: string;
       instructions: string;
-      gradingMethod: TaskGradingMethod;
     }>;
   }>();
 
@@ -78,15 +68,12 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
     const name = item.Name;
     const subheading = item.Subheading;
     const instructions = item.Instructions;
-    const gradingMethod = item.GradingMethod;
-
     if (
       !partnerId ||
       !entryId ||
       !name ||
       !subheading ||
-      !instructions ||
-      !isSupportedGradingMethod(gradingMethod)
+      !instructions
     ) {
       logger.warn(`Skipping malformed catalog entry: ${JSON.stringify(item)}`);
       return;
@@ -105,7 +92,6 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
       name,
       subheading,
       instructions,
-      gradingMethod,
     });
   });
 
