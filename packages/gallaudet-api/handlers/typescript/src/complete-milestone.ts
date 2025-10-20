@@ -16,6 +16,7 @@ import { getApiKeyIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError, isGaxiosError } from './utils/error-utils';
 import { extractGoogleUserIdFromUsername } from './utils/google-utils';
+import { normalizeAndAddMilestoneCompletion } from './utils/milestone-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
 const USERS_TABLE_NAME = getRequiredEnv('USERS_TABLE_NAME');
@@ -68,37 +69,6 @@ type FailureResponse =
 
 type HandlerResult<T> = { ok: true; value: T } | { ok: false; response: FailureResponse };
 type Logger = ReturnType<typeof LoggingInterceptor.getLogger>;
-
-const normalizeStudentCompletions = (
-  milestones: Milestone[],
-  milestoneId: string,
-  existing: readonly string[] | undefined,
-) => {
-  const validIds = new Set(milestones.map((milestone) => milestone.id));
-  if (!validIds.has(milestoneId)) {
-    return { error: 'invalid-milestone' as const };
-  }
-
-  const filteredExisting = (existing ?? []).filter((id) => validIds.has(id));
-  const completionSet = new Set(filteredExisting);
-  completionSet.add(milestoneId);
-
-  const orderedCompletionIds = milestones
-    .filter((milestone) => completionSet.has(milestone.id))
-    .map((milestone) => milestone.id);
-
-  const cumulativePercentage = milestones.reduce((total, milestone) => (
-    completionSet.has(milestone.id) ? total + (milestone.percentageContribution ?? 0) : total
-  ), 0);
-
-  const nextMilestone = milestones.find((milestone) => !completionSet.has(milestone.id));
-
-  return {
-    orderedCompletionIds,
-    cumulativePercentage,
-    nextMilestone,
-  };
-};
 
 const loadStudentMapping = async (
   robloxUserId: string,
@@ -622,7 +592,7 @@ export const completeMilestone: CompleteMilestoneChainedHandlerFunction = async 
   const milestoneCompletions = (taskInstance.MilestoneCompletions ?? {}) as MilestoneCompletionsMap;
   const existingForStudent = milestoneCompletions[studentCognitoUserId] ?? [];
 
-  const normalizationResult = normalizeStudentCompletions(
+  const normalizationResult = normalizeAndAddMilestoneCompletion(
     catalogMilestones,
     milestoneId,
     existingForStudent,

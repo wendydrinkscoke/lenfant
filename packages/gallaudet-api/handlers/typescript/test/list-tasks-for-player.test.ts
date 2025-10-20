@@ -292,6 +292,7 @@ describe('ListTasksForPlayer', () => {
           entryId: 'catalog-entry-1',
           name: 'Tour the White House',
           subheading: 'Explore iconic rooms and history',
+          cumulativePercentage: 40,
           nextMilestone: {
             id: 'visit-situation-room',
             name: 'Visit the Situation Room',
@@ -321,5 +322,104 @@ describe('ListTasksForPlayer', () => {
       },
     });
     expect(dynamoMocks.scan).not.toHaveBeenCalled();
+  });
+
+  it('includes cumulativePercentage when a milestone task has no completions', async () => {
+    dynamoMocks.query.mockReturnValueOnce({
+      promise: jest.fn().mockResolvedValue({
+        Items: [
+          {
+            CognitoUserId: 'cognito-user-1',
+          },
+        ],
+      }),
+    });
+    (getGoogleOAuthClient as jest.Mock).mockResolvedValue({});
+
+    coursesListMock.mockReturnValue({
+      data: {
+        courses: [{ id: 'course-1' }],
+      },
+    });
+
+    courseWorkListMock.mockReturnValue({
+      data: {
+        courseWork: [{ id: 'cw-1' }],
+      },
+    });
+
+    addOnAttachmentsListMock.mockReturnValue({
+      data: {
+        addOnAttachments: [
+          {
+            id: 'attachment-1',
+          },
+        ],
+      },
+    });
+
+    dynamoMocks.query.mockReturnValueOnce({
+      promise: jest.fn().mockResolvedValue({
+        Items: [
+          {
+            InstanceId: 'task-123',
+            EntryId: 'catalog-entry-1',
+            PartnerId: 'partner-key-1',
+            AttachmentId: 'attachment-1',
+          },
+        ],
+      }),
+    });
+
+    dynamoMocks.get.mockReturnValueOnce({
+      promise: jest.fn().mockResolvedValue({
+        Item: {
+          PartnerId: 'partner-key-1',
+          EntryId: 'catalog-entry-1',
+          Name: 'Tour the White House',
+          Subheading: 'Explore iconic rooms and history',
+          Milestones: [
+            {
+              id: 'visit-oval-office',
+              name: 'Visit the Oval Office',
+              percentageContribution: 40,
+            },
+            {
+              id: 'visit-situation-room',
+              name: 'Visit the Situation Room',
+              percentageContribution: 60,
+            },
+          ],
+        },
+      }),
+    });
+
+    const response = await listTasksForPlayer({
+      ...buildRequestArgs(),
+      input: {
+        requestParameters: {
+          robloxUserId: '12345',
+        },
+        body: undefined as never,
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual({
+      tasks: [
+        {
+          taskId: 'task-123',
+          entryId: 'catalog-entry-1',
+          name: 'Tour the White House',
+          subheading: 'Explore iconic rooms and history',
+          cumulativePercentage: 0,
+          nextMilestone: {
+            id: 'visit-oval-office',
+            name: 'Visit the Oval Office',
+            percentageContribution: 40,
+          },
+        },
+      ],
+    });
   });
 });

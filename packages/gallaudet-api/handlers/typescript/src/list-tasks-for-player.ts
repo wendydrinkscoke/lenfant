@@ -12,6 +12,7 @@ import {
 import { getApiKeyIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError, isGaxiosError } from './utils/error-utils';
+import { computeMilestoneProgress } from './utils/milestone-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
 const TASK_INSTANCE_TABLE_NAME = getRequiredEnv('TASK_INSTANCE_TABLE_NAME');
@@ -384,7 +385,14 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
     });
   }
 
-  const tasks: Array<{ taskId: string; entryId: string; name: string; subheading: string; nextMilestone?: Milestone }> = [];
+  const tasks: Array<{
+    taskId: string;
+    entryId: string;
+    name: string;
+    subheading: string;
+    nextMilestone?: Milestone;
+    cumulativePercentage?: number;
+  }> = [];
   const seenTaskIds = new Set<string>();
   for (const attachmentId of attachmentIds) {
     let taskRecord: TaskInstanceRecord | undefined;
@@ -461,7 +469,10 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
     }
 
     seenTaskIds.add(taskRecord.InstanceId);
-    let nextMilestone: Milestone | undefined;
+    let milestoneFields: {
+      nextMilestone?: Milestone;
+      cumulativePercentage?: number;
+    } = {};
 
     let catalogEntry: CatalogEntryRecord | null = null;
     try {
@@ -509,12 +520,11 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
     const milestones = catalogEntry?.Milestones ?? [];
     if (milestones.length > 0) {
       const completionsForStudent = (taskRecord.MilestoneCompletions ?? {})[cognitoUserSub] ?? [];
-      const validMilestoneIds = new Set(milestones.map((milestone) => milestone.id));
-      const completionSet = new Set(
-        completionsForStudent.filter((id) => validMilestoneIds.has(id)),
-      );
-
-      nextMilestone = milestones.find((milestone) => !completionSet.has(milestone.id));
+      const progress = computeMilestoneProgress(milestones, completionsForStudent);
+      milestoneFields = {
+        cumulativePercentage: progress.cumulativePercentage,
+        ...(progress.nextMilestone ? { nextMilestone: progress.nextMilestone } : {}),
+      };
     }
 
     tasks.push({
@@ -522,7 +532,7 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
       entryId: taskRecord.EntryId,
       name,
       subheading,
-      ...(nextMilestone ? { nextMilestone } : {}),
+      ...milestoneFields,
     });
   }
 

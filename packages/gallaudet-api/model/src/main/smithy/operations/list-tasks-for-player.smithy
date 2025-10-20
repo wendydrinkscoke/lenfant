@@ -26,6 +26,10 @@ structure PlayerTaskAssignment {
 
     /// Next milestone remaining for this player, when a task defines milestones.
     nextMilestone: Milestone
+
+    /// The sum of all the percentContributions for completed milestones if this
+    /// task uses milestones.
+    cumulativePercentage: Percentage
 }
 
 list PlayerTaskAssignments {
