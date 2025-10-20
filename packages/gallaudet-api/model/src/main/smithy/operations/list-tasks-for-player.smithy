@@ -3,10 +3,19 @@ namespace llc.civictech.school
 
 use llc.civictech.school#RobloxUserId
 use llc.civictech.school#TaskId
+use llc.civictech.school#CatalogTaskName
+use llc.civictech.school#CatalogTaskSubheading
 use llc.civictech.school#CatalogEntryId
+use llc.civictech.school#Milestone
 
 /// A task assigned to a specific Roblox player for this partner.
 structure PlayerTaskAssignment {
+    @required
+    name: CatalogTaskName
+
+    @required
+    subheading: CatalogTaskSubheading
+
     /// Unique identifier for the task instance.
     @required
     taskId: TaskId
@@ -14,6 +23,9 @@ structure PlayerTaskAssignment {
     /// Identifier for the catalog entry that defines the assignment.
     @required
     entryId: CatalogEntryId
+
+    /// Next milestone remaining for this player, when a task defines milestones.
+    nextMilestone: Milestone
 }
 
 list PlayerTaskAssignments {

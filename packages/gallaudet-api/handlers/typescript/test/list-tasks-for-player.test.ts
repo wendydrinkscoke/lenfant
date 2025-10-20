@@ -2,6 +2,7 @@ process.env.TASK_INSTANCE_TABLE_NAME = 'TaskInstances';
 process.env.OAUTH_TOKENS_TABLE_NAME = 'OAuthTokens';
 process.env.GOOGLE_OAUTH_CLIENT_SECRET_ARN = 'secretArn';
 process.env.USERS_TABLE_NAME = 'Users';
+process.env.TASK_CATALOG_TABLE_NAME = 'TaskCatalog';
 
 import {
   ListTasksForPlayerChainedRequestInput,
@@ -22,12 +23,14 @@ jest.mock('aws-sdk', () => {
   const query = jest.fn();
   const scan = jest.fn();
   const put = jest.fn();
+  const get = jest.fn();
   return {
     DynamoDB: {
       DocumentClient: jest.fn(() => ({
         query,
         scan,
         put,
+        get,
       })),
     },
     __mocks: {
@@ -35,6 +38,7 @@ jest.mock('aws-sdk', () => {
         query,
         scan,
         put,
+        get,
       },
     },
   };
@@ -48,6 +52,7 @@ const {
       query: jest.Mock;
       scan: jest.Mock;
       put: jest.Mock;
+      get: jest.Mock;
     };
   };
 };
@@ -117,6 +122,7 @@ beforeEach(() => {
   dynamoMocks.query.mockReset();
   dynamoMocks.scan.mockReset();
   dynamoMocks.put.mockReset();
+  dynamoMocks.get.mockReset();
   coursesListMock.mockReset();
   courseWorkListMock.mockReset();
   addOnAttachmentsListMock.mockReset();
@@ -237,8 +243,34 @@ describe('ListTasksForPlayer', () => {
             EntryId: 'catalog-entry-1',
             PartnerId: 'partner-key-1',
             AttachmentId: 'attachment-1',
+            MilestoneCompletions: {
+              'cognito-user-1': ['visit-oval-office'],
+            },
           },
         ],
+      }),
+    });
+
+    dynamoMocks.get.mockReturnValueOnce({
+      promise: jest.fn().mockResolvedValue({
+        Item: {
+          PartnerId: 'partner-key-1',
+          EntryId: 'catalog-entry-1',
+          Name: 'Tour the White House',
+          Subheading: 'Explore iconic rooms and history',
+          Milestones: [
+            {
+              id: 'visit-oval-office',
+              name: 'Visit the Oval Office',
+              percentageContribution: 40,
+            },
+            {
+              id: 'visit-situation-room',
+              name: 'Visit the Situation Room',
+              percentageContribution: 60,
+            },
+          ],
+        },
       }),
     });
 
@@ -258,6 +290,13 @@ describe('ListTasksForPlayer', () => {
         {
           taskId: 'task-123',
           entryId: 'catalog-entry-1',
+          name: 'Tour the White House',
+          subheading: 'Explore iconic rooms and history',
+          nextMilestone: {
+            id: 'visit-situation-room',
+            name: 'Visit the Situation Room',
+            percentageContribution: 60,
+          },
         },
       ],
     });
@@ -273,6 +312,13 @@ describe('ListTasksForPlayer', () => {
       },
       Limit: 1,
       ConsistentRead: false,
+    });
+    expect(dynamoMocks.get).toHaveBeenCalledWith({
+      TableName: 'TaskCatalog',
+      Key: {
+        PartnerId: 'partner-key-1',
+        EntryId: 'catalog-entry-1',
+      },
     });
     expect(dynamoMocks.scan).not.toHaveBeenCalled();
   });

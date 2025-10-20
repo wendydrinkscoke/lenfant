@@ -6,6 +6,7 @@ import {
   INTERCEPTORS,
   Response,
   LoggingInterceptor,
+  Milestone,
 } from 'gallaudet-api-typescript-runtime';
 
 import { getApiKeyIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
@@ -14,6 +15,7 @@ import { isAWSError, isGaxiosError } from './utils/error-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
 const TASK_INSTANCE_TABLE_NAME = getRequiredEnv('TASK_INSTANCE_TABLE_NAME');
+const TASK_CATALOG_TABLE_NAME = getRequiredEnv('TASK_CATALOG_TABLE_NAME');
 const USERS_TABLE_NAME = getRequiredEnv('USERS_TABLE_NAME');
 const ROBLOX_USER_GSI_NAME = 'RobloxUserIdIndex';
 const TASK_INSTANCE_ATTACHMENT_GSI_NAME = 'AttachmentIdIndex';
@@ -23,6 +25,15 @@ type TaskInstanceRecord = {
   EntryId?: string;
   PartnerId?: string;
   AttachmentId?: string;
+  MilestoneCompletions?: Record<string, string[]>;
+};
+
+type CatalogEntryRecord = {
+  PartnerId?: string;
+  EntryId?: string;
+  Milestones?: Milestone[];
+  Name?: string;
+  Subheading?: string;
 };
 
 const listCoursesForStudent = async (logger: ReturnType<typeof LoggingInterceptor.getLogger>, classroomApi: ReturnType<typeof classroom>) => {
@@ -373,7 +384,7 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
     });
   }
 
-  const tasks: Array<{ taskId: string; entryId: string }> = [];
+  const tasks: Array<{ taskId: string; entryId: string; name: string; subheading: string; nextMilestone?: Milestone }> = [];
   const seenTaskIds = new Set<string>();
   for (const attachmentId of attachmentIds) {
     let taskRecord: TaskInstanceRecord | undefined;
@@ -450,9 +461,68 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
     }
 
     seenTaskIds.add(taskRecord.InstanceId);
+    let nextMilestone: Milestone | undefined;
+
+    let catalogEntry: CatalogEntryRecord | null = null;
+    try {
+      logger.info(
+        `Loading catalog entry to compute milestones for partnerId=${partnerId}, entryId=${taskRecord.EntryId}`,
+      );
+      const catalogResult = await ddbClient
+        .get({
+          TableName: TASK_CATALOG_TABLE_NAME,
+          Key: {
+            PartnerId: partnerId,
+            EntryId: taskRecord.EntryId,
+          },
+        })
+        .promise();
+      catalogEntry = (catalogResult.Item as CatalogEntryRecord | undefined) ?? null;
+    } catch (error) {
+      if (isAWSError(error)) {
+        logger.error(
+          `Failed loading catalog entry ${partnerId}/${taskRecord.EntryId}: ${error.code} - ${error.message}`,
+        );
+        return Response.internalFailure({
+          message: 'Failed to load task catalog entry',
+          details: `DynamoDB error: ${error.code}`,
+        });
+      }
+
+      logger.error(
+        `Unexpected error reading catalog entry ${partnerId}/${taskRecord.EntryId}: ${JSON.stringify(error)}`,
+      );
+      return Response.internalFailure({
+        message: 'Failed to load task catalog entry',
+      });
+    }
+
+    const name = catalogEntry?.Name?.trim();
+    const subheading = catalogEntry?.Subheading?.trim();
+    if (!name || !subheading) {
+      logger.warn(
+        `Catalog entry ${partnerId}/${taskRecord.EntryId} missing name or subheading; skipping`,
+      );
+      continue;
+    }
+
+    const milestones = catalogEntry?.Milestones ?? [];
+    if (milestones.length > 0) {
+      const completionsForStudent = (taskRecord.MilestoneCompletions ?? {})[cognitoUserSub] ?? [];
+      const validMilestoneIds = new Set(milestones.map((milestone) => milestone.id));
+      const completionSet = new Set(
+        completionsForStudent.filter((id) => validMilestoneIds.has(id)),
+      );
+
+      nextMilestone = milestones.find((milestone) => !completionSet.has(milestone.id));
+    }
+
     tasks.push({
       taskId: taskRecord.InstanceId,
       entryId: taskRecord.EntryId,
+      name,
+      subheading,
+      ...(nextMilestone ? { nextMilestone } : {}),
     });
   }
 
