@@ -232,6 +232,23 @@ export const gradeTask: GradeTaskChainedHandlerFunction = async (request) => {
     `Task metadata: courseId=${courseId}, courseWorkId=${courseWorkId}, attachmentId=${attachmentId}, teacherCognitoUserId=${teacherCognitoUserId}`,
   );
 
+  // If this student already has a higher grade recorded, keep it to preserve their best attempt.
+  const existingGrades = (taskInstance.Grades ?? {}) as Record<string, number>;
+  const existingGradeForStudent = existingGrades[studentCognitoUserId];
+  const normalizedExistingGrade =
+    typeof existingGradeForStudent === 'number' && !Number.isNaN(existingGradeForStudent)
+      ? existingGradeForStudent
+      : undefined;
+
+  if (normalizedExistingGrade !== undefined && percentageValue < normalizedExistingGrade) {
+    logger.info(
+      `Skipping grade update for student ${studentCognitoUserId} on task ${taskId}: incoming grade ${percentageValue} is lower than existing grade ${normalizedExistingGrade}`,
+    );
+    return Response.success({
+      message: 'Existing grade is higher; keeping best score',
+    });
+  }
+
   // Steps 4 & 5: Retrieve the teacher's OAuth tokens and instantiate a Classroom client.
   let studentOAuthClient;
   logger.info(`Loading Google OAuth client for student CognitoUserId=${studentCognitoUserId}`);
@@ -482,7 +499,6 @@ export const gradeTask: GradeTaskChainedHandlerFunction = async (request) => {
     `Successfully graded task ${taskId} for robloxUserId=${robloxUserId} (add-on submissionId=${submissionIdForPatch})`,
   );
 
-  const existingGrades = (taskInstance.Grades ?? {}) as Record<string, number>;
   const updatedGrades: Record<string, number> = {
     ...existingGrades,
     [studentCognitoUserId]: percentageValue,

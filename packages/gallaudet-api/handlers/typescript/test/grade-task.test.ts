@@ -525,6 +525,57 @@ describe('gradeTask handler', () => {
     expect(patchSubmissionMock).not.toHaveBeenCalled();
   });
 
+  it('keeps existing higher grade without patching Classroom or DynamoDB', async () => {
+    dynamoMocks.query.mockReturnValue({
+      promise: jest.fn().mockResolvedValue({
+        Items: [
+          {
+            CognitoUserId: 'cognito-student-1',
+            Username: 'Google_112233',
+          },
+        ],
+      }),
+    });
+
+    dynamoMocks.get.mockReturnValue({
+      promise: jest.fn().mockResolvedValue({
+        Item: {
+          InstanceId: 'task-1',
+          PartnerId: 'partner-123',
+          CourseId: 'course-1',
+          ItemId: 'coursework-1',
+          AttachmentId: 'attachment-1',
+          CreatedBy: 'teacher-1',
+          Grades: {
+            'cognito-student-1': 90,
+          },
+        },
+      }),
+    });
+
+    const response = await gradeTask({
+      ...buildRequestArgs(),
+      input: {
+        requestParameters: {
+          robloxUserId: 'roblox-1',
+          taskId: 'task-1',
+        },
+        body: {
+          percentage: 80,
+        },
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual({
+      message: 'Existing grade is higher; keeping best score',
+    });
+    expect(mockedGetGoogleOAuthClient).not.toHaveBeenCalled();
+    expect(studentSubmissionsListMock).not.toHaveBeenCalled();
+    expect(patchSubmissionMock).not.toHaveBeenCalled();
+    expect(dynamoMocks.update).not.toHaveBeenCalled();
+  });
+
   it('grades the task successfully', async () => {
     dynamoMocks.query.mockReturnValue({
       promise: jest.fn().mockResolvedValue({
