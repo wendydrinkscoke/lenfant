@@ -27,6 +27,7 @@ type TaskInstanceRecord = {
   PartnerId?: string;
   AttachmentId?: string;
   MilestoneCompletions?: Record<string, string[]>;
+  Grades?: Record<string, number>;
 };
 
 type CatalogEntryRecord = {
@@ -35,6 +36,7 @@ type CatalogEntryRecord = {
   Milestones?: Milestone[];
   Name?: string;
   Subheading?: string;
+  Instructions?: string;
 };
 
 const listCoursesForStudent = async (logger: ReturnType<typeof LoggingInterceptor.getLogger>, classroomApi: ReturnType<typeof classroom>) => {
@@ -390,6 +392,7 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
     entryId: string;
     name: string;
     subheading: string;
+    instructions: string;
     nextMilestone?: Milestone;
     cumulativePercentage?: number;
   }> = [];
@@ -510,9 +513,10 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
 
     const name = catalogEntry?.Name?.trim();
     const subheading = catalogEntry?.Subheading?.trim();
-    if (!name || !subheading) {
+    const instructions = catalogEntry?.Instructions?.trim();
+    if (!name || !subheading || !instructions) {
       logger.warn(
-        `Catalog entry ${partnerId}/${taskRecord.EntryId} missing name or subheading; skipping`,
+        `Catalog entry ${partnerId}/${taskRecord.EntryId} missing name, subheading, or instructions; skipping`,
       );
       continue;
     }
@@ -525,6 +529,11 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
         cumulativePercentage: progress.cumulativePercentage,
         ...(progress.nextMilestone ? { nextMilestone: progress.nextMilestone } : {}),
       };
+    } else {
+      const gradeForStudent = (taskRecord?.Grades ?? {})[cognitoUserSub];
+      milestoneFields = {
+        cumulativePercentage: gradeForStudent ?? 0,
+      };
     }
 
     tasks.push({
@@ -533,6 +542,7 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
       name,
       subheading,
       ...milestoneFields,
+      instructions,
     });
   }
 

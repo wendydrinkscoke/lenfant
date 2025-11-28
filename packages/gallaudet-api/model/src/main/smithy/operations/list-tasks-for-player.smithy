@@ -16,6 +16,10 @@ structure PlayerTaskAssignment {
     @required
     subheading: CatalogTaskSubheading
 
+    /// Instructions for how to complete the task.
+    @required
+    instructions: CatalogTaskInstructions
+
     /// Unique identifier for the task instance.
     @required
     taskId: TaskId
@@ -28,7 +32,8 @@ structure PlayerTaskAssignment {
     nextMilestone: Milestone
 
     /// The sum of all the percentContributions for completed milestones if this
-    /// task uses milestones.
+    /// task uses milestones. Or, for tasks that aren't milestones, the current
+    /// percentage grade in the TaskInstances table for the student.
     cumulativePercentage: Percentage
 }
 

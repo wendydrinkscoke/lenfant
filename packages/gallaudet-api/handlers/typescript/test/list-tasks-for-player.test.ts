@@ -246,6 +246,7 @@ describe('ListTasksForPlayer', () => {
             MilestoneCompletions: {
               'cognito-user-1': ['visit-oval-office'],
             },
+            Instructions: 'To do this task, you need to do a thing.',
           },
         ],
       }),
@@ -258,6 +259,7 @@ describe('ListTasksForPlayer', () => {
           EntryId: 'catalog-entry-1',
           Name: 'Tour the White House',
           Subheading: 'Explore iconic rooms and history',
+          Instructions: 'To do this task, you need to do a thing.',
           Milestones: [
             {
               id: 'visit-oval-office',
@@ -292,6 +294,7 @@ describe('ListTasksForPlayer', () => {
           entryId: 'catalog-entry-1',
           name: 'Tour the White House',
           subheading: 'Explore iconic rooms and history',
+          instructions: 'To do this task, you need to do a thing.',
           cumulativePercentage: 40,
           nextMilestone: {
             id: 'visit-situation-room',
@@ -366,6 +369,7 @@ describe('ListTasksForPlayer', () => {
             EntryId: 'catalog-entry-1',
             PartnerId: 'partner-key-1',
             AttachmentId: 'attachment-1',
+            Instructions: 'To do this task, you need to do a thing.',
           },
         ],
       }),
@@ -378,6 +382,7 @@ describe('ListTasksForPlayer', () => {
           EntryId: 'catalog-entry-1',
           Name: 'Tour the White House',
           Subheading: 'Explore iconic rooms and history',
+          Instructions: 'To do this task, you need to do a thing.',
           Milestones: [
             {
               id: 'visit-oval-office',
@@ -412,6 +417,7 @@ describe('ListTasksForPlayer', () => {
           entryId: 'catalog-entry-1',
           name: 'Tour the White House',
           subheading: 'Explore iconic rooms and history',
+          instructions: 'To do this task, you need to do a thing.',
           cumulativePercentage: 0,
           nextMilestone: {
             id: 'visit-oval-office',
