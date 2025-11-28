@@ -34,7 +34,14 @@ To get a workspace cloned and built, run the following shell commands:
 ```
 git clone https://github.com/wendydrinkscoke/lenfant.git &&
 cd lenfant &&
-pnpm i &&
+brew install openjdk@17 &&
+sudo ln -sfn $(brew --prefix openjdk@17)/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk &&
+npm install -g pnpm &&
+npm install -g @aws/pdk &&
+pnpm i
+```
+Enter your local user password.
+```
 pdk build
 ```
 
