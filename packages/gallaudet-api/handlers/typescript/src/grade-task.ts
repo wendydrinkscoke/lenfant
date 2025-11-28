@@ -30,6 +30,7 @@ type TaskInstanceRecord = {
   ItemId?: string;
   AttachmentId?: string;
   CreatedBy?: string;
+  Grades?: Record<string, number>;
 };
 
 type StudentSubmissionSummary = {
@@ -480,6 +481,53 @@ export const gradeTask: GradeTaskChainedHandlerFunction = async (request) => {
   logger.info(
     `Successfully graded task ${taskId} for robloxUserId=${robloxUserId} (add-on submissionId=${submissionIdForPatch})`,
   );
+
+  const existingGrades = (taskInstance.Grades ?? {}) as Record<string, number>;
+  const updatedGrades: Record<string, number> = {
+    ...existingGrades,
+    [studentCognitoUserId]: percentageValue,
+  };
+  const updateTimestamp = new Date().toISOString();
+  try {
+    logger.info(
+      `Persisting grade for student ${studentCognitoUserId} on task ${taskId} into ${TASK_INSTANCE_TABLE_NAME}`,
+    );
+    await ddbClient
+      .update({
+        TableName: TASK_INSTANCE_TABLE_NAME,
+        Key: {
+          InstanceId: taskId,
+        },
+        UpdateExpression: 'SET #grades = :grades, #updatedAt = :updatedAt',
+        ExpressionAttributeNames: {
+          '#grades': 'Grades',
+          '#updatedAt': 'UpdatedAt',
+        },
+        ExpressionAttributeValues: {
+          ':grades': updatedGrades,
+          ':updatedAt': updateTimestamp,
+        },
+        ReturnValues: 'NONE',
+      })
+      .promise();
+  } catch (error) {
+    if (isAWSError(error)) {
+      logger.error(
+        `Failed updating grade for task ${taskId}: ${error.code} - ${error.message}`,
+      );
+      return Response.internalFailure({
+        message: 'Failed to persist grade',
+        details: `DynamoDB error: ${error.code}`,
+      });
+    }
+
+    logger.error(
+      `Unexpected error updating grade for task ${taskId}: ${JSON.stringify(error)}`,
+    );
+    return Response.internalFailure({
+      message: 'Failed to persist grade',
+    });
+  }
 
   return Response.success({
     message: 'Task graded successfully',

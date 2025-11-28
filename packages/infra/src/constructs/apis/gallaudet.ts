@@ -190,7 +190,7 @@ export class Gallaudet extends Construct {
         "teacher who assigned it.",
       ].join(" "),
     });
-    props.taskInstanceTable.grantReadData(gradeTaskFunction);
+    props.taskInstanceTable.grantReadWriteData(gradeTaskFunction);
     props.oauthTokensTable.grantReadData(gradeTaskFunction);
     props.googleOAuthClientSecret.grantRead(gradeTaskFunction);
     props.usersTable.grantReadData(gradeTaskFunction);

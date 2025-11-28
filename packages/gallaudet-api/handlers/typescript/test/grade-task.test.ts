@@ -24,17 +24,20 @@ jest.mock('../src/utils/auth-utils', () => {
 jest.mock('aws-sdk', () => {
   const query = jest.fn();
   const get = jest.fn();
+  const update = jest.fn();
   return {
     DynamoDB: {
       DocumentClient: jest.fn(() => ({
         query,
         get,
+        update,
       })),
     },
     __mocks: {
       dynamo: {
         query,
         get,
+        update,
       },
     },
   };
@@ -75,6 +78,7 @@ const {
     dynamo: {
       query: jest.Mock;
       get: jest.Mock;
+      update: jest.Mock;
     };
   };
 };
@@ -114,6 +118,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   dynamoMocks.query.mockReset();
   dynamoMocks.get.mockReset();
+  dynamoMocks.update.mockReset();
   getAddOnContextMock.mockReset();
   studentSubmissionsListMock.mockReset();
   patchSubmissionMock.mockReset();
@@ -278,6 +283,12 @@ describe('gradeTask handler', () => {
           CreatedBy: 'teacher-1',
         },
       }),
+    });
+    dynamoMocks.update.mockReturnValue({
+      promise: jest.fn().mockResolvedValue({}),
+    });
+    dynamoMocks.update.mockReturnValue({
+      promise: jest.fn().mockResolvedValue({}),
     });
 
     const studentClient = {};
@@ -538,6 +549,9 @@ describe('gradeTask handler', () => {
         },
       }),
     });
+    dynamoMocks.update.mockReturnValue({
+      promise: jest.fn().mockResolvedValue({}),
+    });
 
     const studentClient = { setCredentials: jest.fn() };
     const teacherClient = { setCredentials: jest.fn() };
@@ -575,6 +589,26 @@ describe('gradeTask handler', () => {
     expect(response.body).toEqual({
       message: 'Task graded successfully',
     });
+
+    expect(dynamoMocks.update).toHaveBeenCalledWith({
+      TableName: 'TaskInstances',
+      Key: {
+        InstanceId: 'task-1',
+      },
+      UpdateExpression: 'SET #grades = :grades, #updatedAt = :updatedAt',
+      ExpressionAttributeNames: {
+        '#grades': 'Grades',
+        '#updatedAt': 'UpdatedAt',
+      },
+      ExpressionAttributeValues: {
+        ':grades': {
+          'cognito-student-1': 85,
+        },
+        ':updatedAt': expect.any(String),
+      },
+      ReturnValues: 'NONE',
+    });
+    expect(baseRequestArgs.interceptorContext.logger.error).not.toHaveBeenCalled();
 
     expect(studentSubmissionsListMock).toHaveBeenCalledWith(
       expect.objectContaining({
