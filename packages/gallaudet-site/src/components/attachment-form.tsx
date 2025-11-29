@@ -195,7 +195,7 @@ export default function AttachmentForm() {
             </Alert>
           )}
 
-          <div className="rounded-xl border bg-card/60 p-4 shadow-sm">
+          <div className="rounded-xl bg-card/60 p-4 shadow-sm">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-slate-900">{"Browse the partner catalog"}</p>
@@ -260,8 +260,8 @@ export default function AttachmentForm() {
                         </Badge>
                       </div>
 
-                      <div className="relative">
-                        <div className="flex gap-4 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <div className="relative">
+                      <div className="flex gap-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                           {partner.catalogEntries.map((entry) => {
                             const isSelected = assignmentType === entry.entryId
                             return (
