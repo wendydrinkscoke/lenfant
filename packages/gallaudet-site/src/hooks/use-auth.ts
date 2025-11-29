@@ -85,6 +85,16 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [isSignedIn, setIsSignedIn] = useState(false)
 
+  const isLocalMockAuthEnabled = () => {
+    if (typeof window === "undefined") return false
+    if (window.location.hostname !== "localhost") return false
+    try {
+      return window.localStorage.getItem("gallaudet-use-real-auth") !== "true"
+    } catch {
+      return true
+    }
+  }
+
   const clearLocalTokens = () => {
     try {
       window.localStorage.removeItem("id_token")
@@ -94,6 +104,18 @@ export function useAuth() {
   }
 
   const checkAuth = useCallback(async (loginHint?: string | null) => {
+    if (isLocalMockAuthEnabled()) {
+      const mockUser: User = {
+        id: "mock-local-user-dewey-finn",
+        email: "deweyfinn@horacegreenprep.com",
+        name: "Dewey Finn",
+        picture: "https://assets.mycast.io/actor_images/actor-dewey-finn-455157_large.jpg?1655136809",
+      }
+      setUser(mockUser)
+      setIsSignedIn(true)
+      return mockUser
+    }
+
     // 1) Read the Cognito tokens placed by your /cognito/callback page
     const idToken = window.localStorage.getItem("id_token")
 
@@ -158,6 +180,12 @@ export function useAuth() {
 
   const signOut = useCallback(async () => {
     try {
+      if (isLocalMockAuthEnabled()) {
+        setUser(null)
+        setIsSignedIn(false)
+        return
+      }
+
       // Optional: tell your backend (if you maintain server session)
       // Ignore errors; we still clear local side.
       await fetch("/api/auth/signout", { method: "POST" }).catch(() => {})

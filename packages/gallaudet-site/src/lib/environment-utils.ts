@@ -38,9 +38,9 @@ export function getGoogleAuthClientID() {
   let hostname = window.location.hostname;
   if (hostname === "localhost" || hostname === "beta.school.civictech.llc") {
     return "654823757539-0q0430rn8h8bj701aejftdhe62m0qdn7.apps.googleusercontent.com";
-  } else if (hostname == "gamma.school.civictech.llc") {
+  } else if (hostname === "gamma.school.civictech.llc") {
     return "185272164780-trp6n8i60e8d40k07jbn71tsatnekiho.apps.googleusercontent.com";
-  } else if (hostname == "school.civictech.llc") {
+  } else if (hostname === "school.civictech.llc") {
     return "173776540455-uc4nov74t7vb2nsb46jjodfn7g3s7b51.apps.googleusercontent.com";
   } else {
     throw new Error("No Google OAuth Client ID hard-coded.");
