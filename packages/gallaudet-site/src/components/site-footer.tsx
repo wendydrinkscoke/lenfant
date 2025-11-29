@@ -17,6 +17,9 @@ export function SiteFooter() {
           <a href="https://support.google.com/edu/classroom" className="text-muted-foreground hover:text-foreground">
             Support
           </a>
+          <Link to="/privacy-policy" className="text-muted-foreground hover:text-foreground">
+            Privacy Policy
+          </Link>
         </nav>
       </div>
     </footer>

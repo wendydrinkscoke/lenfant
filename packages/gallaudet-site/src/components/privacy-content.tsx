@@ -72,11 +72,8 @@ export default function PrivacyContent() {
               <div>
                 <h4 className="font-semibold text-emerald-700 mb-2">{"Teacher Information"}</h4>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>{"Name and school email address (from Google sign-in)"}</li>
-                  <li>{"School or district affiliation"}</li>
-                  <li>{"Google Classroom data (class names, rosters, assignments)"}</li>
+                  <li>{"Name (from Google sign-in)"}</li>
                   <li>{"Usage data and activity logs"}</li>
-                  <li>{"Communication preferences"}</li>
                 </ul>
               </div>
 
@@ -85,10 +82,9 @@ export default function PrivacyContent() {
               <div>
                 <h4 className="font-semibold text-emerald-700 mb-2">{"Student Information"}</h4>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>{"Name and school email address (from Google Classroom sync)"}</li>
-                  <li>{"Student ID numbers (when provided by Google Classroom)"}</li>
-                  <li>{"Class enrollment information"}</li>
-                  <li>{"Assignment completion status and grades"}</li>
+                  <li>{"Name (from Google Sign-In)"}</li>
+                  <li>{"Roblox username (from Roblox Sign-In)"}</li>
+                  <li>{"Assignment milestone completion status and grades"}</li>
                   <li>{"In-game activity related to educational assignments"}</li>
                 </ul>
                 <p className="text-xs text-muted-foreground mt-2">
@@ -103,8 +99,6 @@ export default function PrivacyContent() {
               <div>
                 <h4 className="font-semibold text-emerald-700 mb-2">{"Technical Information"}</h4>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>{"IP addresses and device information"}</li>
-                  <li>{"Browser type and version"}</li>
                   <li>{"Usage analytics and performance data"}</li>
                   <li>{"Error logs and diagnostic information"}</li>
                 </ul>
@@ -138,8 +132,6 @@ export default function PrivacyContent() {
                 <h4 className="font-semibold text-emerald-700 mb-2">{"Service Operations"}</h4>
                 <ul className="list-disc list-inside space-y-1 text-sm">
                   <li>{"Authenticate users and maintain account security"}</li>
-                  <li>{"Communicate important service updates"}</li>
-                  <li>{"Analyze usage patterns to improve our platform"}</li>
                   <li>{"Ensure compliance with educational regulations"}</li>
                 </ul>
               </div>
@@ -168,10 +160,10 @@ export default function PrivacyContent() {
               <div>
                 <h4 className="font-semibold text-emerald-700 mb-2">{"Data We Access"}</h4>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>{"Class rosters and student information"}</li>
-                  <li>{"Assignment creation and management"}</li>
-                  <li>{"Grade passback and progress tracking"}</li>
-                  <li>{"Course information and metadata"}</li>
+                  <li>{"List the courses a student is enrolled in (used transiently and not stored)"}</li>
+                  <li>{"View metadata about student submissions (used transiently and not stored)"}</li>
+                  <li>{"Create attachments for Google Classroom assignments"}</li>
+                  <li>{"Automatically grade attachments for Google Classroom assignments we created"}</li>
                 </ul>
               </div>
 
@@ -182,15 +174,6 @@ export default function PrivacyContent() {
                     "Our integration with Google Classroom is subject to Google's privacy policies and security standards. We use Google's secure APIs and follow their guidelines for educational applications."
                   }
                 </p>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-emerald-700 mb-2">{"Data Synchronization"}</h4>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>{"Student data is synchronized in real-time with Google Classroom"}</li>
-                  <li>{"Changes in Google Classroom are reflected in our platform within 15 minutes"}</li>
-                  <li>{"We maintain data consistency between both platforms"}</li>
-                </ul>
               </div>
             </CardContent>
           </Card>
@@ -205,11 +188,18 @@ export default function PrivacyContent() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h4 className="font-semibold text-emerald-700 mb-2">{"What We Share with Roblox"}</h4>
+                <h4 className="font-semibold text-emerald-700 mb-2">{"Data We Access"}</h4>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>{"Assignment identifiers (not personal student information)"}</li>
-                  <li>{"Educational activity completion status"}</li>
-                  <li>{"Anonymized usage data for our educational game"}</li>
+                  <li>{"The identity of the user who authenticated to our Roblox OAuth client"}</li>
+                  <li>{"This identity is linked to the user's Google identity."}</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold text-emerald-700 mb-2">{"What We Share with our Roblox \"partners\" (game servers)"}</h4>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>{"View the list of tasks assigned to a particular Roblox user associated with that specific partner's game"}</li>
+                  <li>{"Read the current tentative grade the student has earned for each task associated with that specific partner's game"}</li>
+                  <li>{"Update the current tentative grade the student has earned for each task associated with that specific partner's game"}</li>
                 </ul>
               </div>
 
@@ -217,7 +207,13 @@ export default function PrivacyContent() {
                 <h4 className="font-semibold text-emerald-700 mb-2">{"Roblox's Privacy Policy"}</h4>
                 <p className="text-sm">
                   {
-                    "Students' interactions on the Roblox platform are governed by Roblox's own privacy policy and terms of service. We recommend reviewing Roblox's privacy practices and safety features."
+                  "Students' interactions on the Roblox platform are governed by "
+                  }
+                  <a href="https://en.help.roblox.com/hc/en-us/articles/115004630823-Roblox-Privacy-and-Cookie-Policy" className="text-emerald-600 hover:underline dark:text-emerald-400">
+                  {"Roblox's own privacy policy and terms of service"}
+                  </a>
+                  {
+                  ". We recommend reviewing Roblox's privacy practices and safety features."
                   }
                 </p>
               </div>
@@ -226,7 +222,7 @@ export default function PrivacyContent() {
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
                 <AlertDescription className="text-amber-800 dark:text-amber-200">
                   {
-                    "We do not control Roblox's data practices. Please review Roblox's privacy policy and configure appropriate safety settings for your students."
+                    "We never share with our partners the Google identity linked to a particular Roblox user and partners are unable to view assignemtns or tentative grades other than those which they manage."
                   }
                 </AlertDescription>
               </Alert>
@@ -246,33 +242,14 @@ export default function PrivacyContent() {
                 <h4 className="font-semibold text-emerald-700 mb-2">{"Limited Sharing"}</h4>
                 <p className="text-sm mb-2">{"We only share data in these specific circumstances:"}</p>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>{"With Google Classroom (for assignment and grade sync)"}</li>
-                  <li>{"With Roblox (limited to assignment identifiers only)"}</li>
+                  <li>{"With our Roblox partners (limited to assignment identifiers and tentative grades associated with that specific partner) so they can display grades in-game and update grades based on in-game activity"}</li>
                   <li>
                     {
-                      "With service providers who help us operate our platform (under strict data protection agreements)"
+                      "With our cloud provider (Amazon Web Services) who helps us operate our platform (under strict data protection service-level agreements)"
                     }
                   </li>
                   <li>{"When required by law or to protect safety"}</li>
                 </ul>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h4 className="font-semibold text-emerald-700 mb-2">{"Service Providers"}</h4>
-                <p className="text-sm mb-2">{"We work with trusted service providers for:"}</p>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>{"Cloud hosting and data storage"}</li>
-                  <li>{"Analytics and performance monitoring"}</li>
-                  <li>{"Customer support and communication"}</li>
-                  <li>{"Security and fraud prevention"}</li>
-                </ul>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {
-                    "All service providers are contractually required to protect data and use it only for specified purposes."
-                  }
-                </p>
               </div>
             </CardContent>
           </Card>
@@ -292,7 +269,7 @@ export default function PrivacyContent() {
                   <li>{"Data encryption in transit and at rest"}</li>
                   <li>{"Secure authentication through Google OAuth"}</li>
                   <li>{"Regular security audits and monitoring"}</li>
-                  <li>{"Access controls and employee training"}</li>
+                  <li>{"Fine-grained access controls via IAM"}</li>
                   <li>{"Incident response and breach notification procedures"}</li>
                 </ul>
               </div>
@@ -301,7 +278,7 @@ export default function PrivacyContent() {
                 <h4 className="font-semibold text-emerald-700 mb-2">{"Data Centers"}</h4>
                 <p className="text-sm">
                   {
-                    "Our data is stored in secure, SOC 2 compliant data centers in the United States. We use industry-standard security practices to protect against unauthorized access, alteration, disclosure, or destruction."
+                    "Our data is stored in data centers in the United States. We use industry-standard security practices to protect against unauthorized access, alteration, disclosure, or destruction."
                   }
                 </p>
               </div>
@@ -390,7 +367,7 @@ export default function PrivacyContent() {
                 <h4 className="font-semibold text-emerald-700 mb-2">{"How to Exercise Your Rights"}</h4>
                 <p className="text-sm">
                   {
-                    "Contact us at privacy@civiclarp.com to exercise any of these rights. We will respond within 30 days and verify your identity before processing requests."
+                    "Contact us at cupwendyscup@gmail.com to exercise any of these rights. We will respond within 30 days and verify your identity before processing requests."
                   }
                 </p>
               </div>
@@ -413,15 +390,6 @@ export default function PrivacyContent() {
               </div>
 
               <div>
-                <h4 className="font-semibold text-emerald-700 mb-2">{"Analytics"}</h4>
-                <p className="text-sm">
-                  {
-                    "We use privacy-focused analytics to understand how our platform is used and identify areas for improvement. This data is anonymized and aggregated."
-                  }
-                </p>
-              </div>
-
-              <div>
                 <h4 className="font-semibold text-emerald-700 mb-2">{"No Advertising Tracking"}</h4>
                 <p className="text-sm">
                   {
@@ -429,25 +397,6 @@ export default function PrivacyContent() {
                   }
                 </p>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* International Data Transfers */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>{"International Data Transfers"}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm">
-                {
-                  "Our services are hosted in the United States. If you are accessing our services from outside the US, your data will be transferred to and processed in the United States."
-                }
-              </p>
-              <p className="text-sm">
-                {
-                  "We ensure appropriate safeguards are in place for international data transfers, including standard contractual clauses and adequate security measures."
-                }
-              </p>
             </CardContent>
           </Card>
 
@@ -480,22 +429,8 @@ export default function PrivacyContent() {
             </CardHeader>
             <CardContent>
               <p className="text-sm mb-4">
-                {"If you have questions about this Privacy Policy or our data practices, please contact us:"}
+                {"If you have questions about this Privacy Policy or our data practices, please contact us at cupwendyscup@gmail.com"}
               </p>
-              <div className="space-y-2 text-sm">
-                <p>
-                  <strong>{"Privacy Officer:"}</strong> {"privacy@civiclarp.com"}
-                </p>
-                <p>
-                  <strong>{"General Support:"}</strong> {"support@civiclarp.com"}
-                </p>
-                <p>
-                  <strong>{"Mailing Address:"}</strong> {"[Your Business Address]"}
-                </p>
-                <p>
-                  <strong>{"Phone:"}</strong> {"[Your Phone Number]"}
-                </p>
-              </div>
               <p className="text-xs text-muted-foreground mt-4">
                 {"We are committed to resolving privacy concerns promptly and transparently."}
               </p>
