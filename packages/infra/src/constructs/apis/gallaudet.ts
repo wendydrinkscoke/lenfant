@@ -226,6 +226,7 @@ export class Gallaudet extends Construct {
       {
         environment: {
           TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
+          PARTNERS_TABLE_NAME: props.partnersTable.tableName
         },
         description: [
           "This function returns the catalog of partner-provided tasks",
@@ -235,6 +236,7 @@ export class Gallaudet extends Construct {
       },
     );
     props.taskCatalogTable.grantReadData(getTaskCatalogFunction);
+    props.partnersTable.grantReadData(getTaskCatalogFunction);
 
     const linkRobloxAccountFunction = new LinkRobloxAccountFunction(
       this,

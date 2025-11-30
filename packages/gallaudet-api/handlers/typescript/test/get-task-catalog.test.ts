@@ -1,4 +1,5 @@
 process.env.TASK_CATALOG_TABLE_NAME = 'TaskCatalog';
+process.env.PARTNERS_TABLE_NAME = 'Partners';
 
 import {
   GetTaskCatalogChainedRequestInput,
@@ -9,13 +10,19 @@ import { getTaskCatalog } from '../src/get-task-catalog';
 var dynamoMocks: {
   scan: jest.Mock;
   scanPromise: jest.Mock;
+  batchGet: jest.Mock;
+  batchGetPromise: jest.Mock;
 };
 
 jest.mock('aws-sdk', () => {
   dynamoMocks = {
     scanPromise: jest.fn(),
+    batchGetPromise: jest.fn(),
     scan: jest.fn(() => ({
       promise: dynamoMocks.scanPromise,
+    })),
+    batchGet: jest.fn(() => ({
+      promise: dynamoMocks.batchGetPromise,
     })),
   };
 
@@ -23,6 +30,7 @@ jest.mock('aws-sdk', () => {
     DynamoDB: {
       DocumentClient: jest.fn(() => ({
         scan: dynamoMocks.scan,
+        batchGet: dynamoMocks.batchGet,
       })),
     },
   };
@@ -46,6 +54,11 @@ beforeEach(() => {
   dynamoMocks.scanPromise.mockResolvedValue({
     Items: [],
   });
+  dynamoMocks.batchGetPromise.mockResolvedValue({
+    Responses: {
+      Partners: [],
+    },
+  });
 });
 
 describe('GetTaskCatalog', () => {
@@ -53,16 +66,14 @@ describe('GetTaskCatalog', () => {
     dynamoMocks.scanPromise.mockResolvedValueOnce({
       Items: [
         {
-          PartnerId: 'partnerA',
-          PartnerName: 'Partner Alpha',
+          PartnerId: 'abcdefg',
           EntryId: 'draft-bill',
           Name: 'Draft a Bill',
           Subheading: 'Research and write legislation',
           Instructions: 'Work together to draft your bill.',
         },
         {
-          PartnerId: 'partnerA',
-          PartnerName: 'Partner Alpha',
+          PartnerId: 'abcdefg',
           EntryId: 'tour-whitehouse',
           Name: 'Tour the White House',
           Subheading: 'Guided tour of the White House',
@@ -81,13 +92,23 @@ describe('GetTaskCatalog', () => {
           ],
         },
         {
-          PartnerId: 'partnerB',
+          PartnerId: 'qredasg',
           EntryId: 'press-briefing',
           Name: 'Attend Press Briefing',
           Subheading: 'Answer questions from the press',
           Instructions: 'Hold a press briefing for reporters.',
         },
       ],
+    });
+    dynamoMocks.batchGetPromise.mockResolvedValueOnce({
+      Responses: {
+        Partners: [
+          {
+            PartnerId: 'abcdefg',
+            PartnerName: 'Partner Alpha',
+          },
+        ],
+      },
     });
 
     const response = await getTaskCatalog({
@@ -101,11 +122,25 @@ describe('GetTaskCatalog', () => {
     expect(dynamoMocks.scan).toHaveBeenCalledWith({
       TableName: 'TaskCatalog',
     });
+    expect(dynamoMocks.batchGet).toHaveBeenCalledWith({
+      RequestItems: {
+        Partners: {
+          Keys: [
+            {
+              PartnerId: 'abcdefg',
+            },
+            {
+              PartnerId: 'qredasg',
+            },
+          ],
+        },
+      },
+    });
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
       partners: [
         {
-          partnerId: 'partnerA',
+          partnerId: 'abcdefg',
           partnerName: 'Partner Alpha',
           catalogEntries: [
             {
@@ -135,8 +170,8 @@ describe('GetTaskCatalog', () => {
           ],
         },
         {
-          partnerId: 'partnerB',
-          partnerName: 'partnerB',
+          partnerId: 'qredasg',
+          partnerName: 'qredasg',
           catalogEntries: [
             {
               entryId: 'press-briefing',

@@ -12,11 +12,20 @@ import { isAWSError } from './utils/error-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
 const TASK_CATALOG_TABLE_NAME = getRequiredEnv('TASK_CATALOG_TABLE_NAME');
+const PARTNERS_TABLE_NAME = getRequiredEnv('PARTNERS_TABLE_NAME');
+
+type PartnersItem = {
+  PartnerId?: string;
+  CreatedAt?: string;
+  PartnerName?: string;
+  RobloxGameId?: string;
+  UpdatedAt: string;
+}
 
 type CatalogItem = {
   PartnerId?: string;
-  PartnerName?: string;
   EntryId?: string;
+  CreatedAt: string;
   Name?: string;
   Subheading?: string;
   Instructions?: string;
@@ -66,6 +75,47 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
     catalogEntries: CatalogEntry[];
   }>();
 
+  const partnerIds = Array.from(new Set(
+    items.map((item) => item.PartnerId).filter((partnerId): partnerId is string => !!partnerId),
+  ));
+
+  const partnersById = new Map<string, PartnersItem>();
+  if (partnerIds.length > 0) {
+    try {
+      const partnersResult = await ddbClient.batchGet({
+        RequestItems: {
+          [PARTNERS_TABLE_NAME]: {
+            Keys: partnerIds.map((partnerId) => ({ PartnerId: partnerId })),
+          },
+        },
+      }).promise();
+      const partners = (partnersResult.Responses?.[PARTNERS_TABLE_NAME] as PartnersItem[]) ?? [];
+      partners.forEach((partner) => {
+        if (partner.PartnerId) {
+          partnersById.set(partner.PartnerId, partner);
+        }
+      });
+      const unprocessed = partnersResult.UnprocessedKeys?.[PARTNERS_TABLE_NAME]?.Keys;
+      if (unprocessed?.length) {
+        logger.warn(`Unprocessed partner keys: ${JSON.stringify(unprocessed)}`);
+      }
+      logger.info(`Fetched ${partnersById.size} partners`);
+    } catch (error) {
+      if (isAWSError(error)) {
+        logger.error(`Failed to read partners: ${error.code} - ${error.message}`);
+        return Response.internalFailure({
+          message: 'Failed to load task catalog',
+          details: `DynamoDB error: ${error.code}`,
+        });
+      }
+
+      logger.error(`Unexpected error loading partners: ${JSON.stringify(error)}`);
+      return Response.internalFailure({
+        message: 'Failed to load task catalog',
+      });
+    }
+  }
+
   items.forEach((item) => {
     const partnerId = item.PartnerId;
     const entryId = item.EntryId;
@@ -85,9 +135,10 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
     }
 
     if (!partnersMap.has(partnerId)) {
+      const partnerName = partnersById.get(partnerId)?.PartnerName ?? partnerId;
       partnersMap.set(partnerId, {
         partnerId,
-        partnerName: item.PartnerName ?? partnerId,
+        partnerName,
         catalogEntries: [],
       });
     }
