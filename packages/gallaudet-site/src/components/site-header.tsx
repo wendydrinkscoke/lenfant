@@ -14,7 +14,7 @@ export function SiteHeader() {
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-emerald-600 text-white font-bold">
             {"CTS"}
           </span>
-          <span className="text-sm font-semibold tracking-tight">CivicTech School</span>
+          <span className="text-sm font-semibold tracking-tight">CivicTech for Schools</span>
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">

@@ -15,11 +15,11 @@ export default function Hero() {
             {"Google Classroom-ready"}
           </div>
           <h1 className="text-4xl font-bold leading-tight md:text-5xl">
-            {"Bring U.S. Government to life with Roblox-powered LARP simulations"}
+            {"Bring classwork to life with educational Roblox games"}
           </h1>
           <p className="text-muted-foreground">
             {
-              "Teachers connect Google Classroom, enroll students, and assign live in‑game tasks like drafting bills, filibusters, and press briefings. Students get a focused portal with their assignments."
+              "Our Google Classroom Add-On makes it simple for teachers to assign in-game tasks to students, which are automatically graded upon completion. We've partnered with lots of the best educational Roblox games so you'll never run out of fun worlds to explore!"
             }
           </p>
           <div className="flex flex-wrap items-center gap-3">
@@ -31,38 +31,50 @@ export default function Hero() {
               </Link>
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {"We only support Google sign-in for schools and districts."}
-          </p>
         </div>
 
         <div className="relative">
-          <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border shadow-sm">
+          <div className="group relative aspect-[16/10] w-full overflow-hidden rounded-xl border shadow-sm">
             <Image
-              alt="Preview of the in-game congress floor"
-              src={"/placeholder.svg?height=540&width=960&query=roblox%20congress%20simulation%20wide%20screenshot"}
+              alt="Demo of a student playing 'Run the World', an educational game to learn countries."
+              src={"/run-the-world-gameplay.gif"}
               fill
               className="object-cover"
               priority
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/40 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 flex items-end bg-gradient-to-t from-black/60 via-black/20 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              <p className="text-sm font-medium leading-snug text-white drop-shadow">
+                {"A student playing 'Run the World', an educational game to learn countries. All the tasks they see in-game were assigned via Google Classrooms and are automatically graded when they complete the task."}
+              </p>
+            </div>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3">
-            <div className="relative aspect-[16/10] overflow-hidden rounded-lg border">
+            <div className="group relative aspect-[16/10] overflow-hidden rounded-lg border">
               <Image
-                alt="Students engaged on laptops in class"
-                src={"/placeholder.svg?height=300&width=530&query=students%20in%20class%20computers%20engaged"}
+                alt="Demo of a student playing 'Tour the George W. Bush Presidential Library', an educational game to learn about the presidency and life of the 43rd U.S. President"
+                src={"/gwb-lib-gameplay.gif"}
                 fill
                 className="object-cover"
               />
+              <div className="pointer-events-none absolute inset-0 flex items-end bg-gradient-to-t from-black/60 via-black/20 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <p className="text-xs font-semibold leading-snug text-white drop-shadow">
+                  {"A student playing 'Tour the George W. Bush Presidential Library', an educational game to learn about the presidency and life of the 43rd U.S. President"}
+                </p>
+              </div>
             </div>
-            <div className="relative aspect-[16/10] overflow-hidden rounded-lg border">
+            <div className="group relative aspect-[16/10] overflow-hidden rounded-lg border">
               <Image
-                alt="Teacher dashboard with assignments"
-                src={"/placeholder.svg?height=300&width=530&query=teacher%20dashboard%20assignments%20ui"}
+                alt="A demonstration, from a teacher's perspective, of attaching an in-game task to an assignment using our Google Classroom Add-On"
+                src={"/google-classroom-integration-demo.gif"}
                 fill
                 className="object-cover"
               />
+              <div className="pointer-events-none absolute inset-0 flex items-end bg-gradient-to-t from-black/60 via-black/20 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <p className="text-xs font-semibold leading-snug text-white drop-shadow">
+                  {"A teacher attaching an in-game task to an assignment using our Google Classroom Add-On."}
+                </p>
+              </div>
             </div>
           </div>
         </div>
