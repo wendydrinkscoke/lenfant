@@ -381,6 +381,20 @@ export class Gallaudet extends Construct {
       ],
     });
 
+    const partnerApiKeyUsagePlan = this.api.api.addUsagePlan(
+      "PartnerApiKeyUsagePlan",
+      {
+        name: `partner-api-key-usage-plan-${props.stage}`,
+        throttle: {
+          burstLimit: 25,
+          rateLimit: 10,
+        },
+      },
+    );
+    partnerApiKeyUsagePlan.addApiStage({
+      stage: this.api.api.deploymentStage,
+    });
+
     if (props.stage !== "prod") {
       const postmanApiKey = this.api.api.addApiKey("PostmanTestingApiKey", {
         apiKeyName: `postman-${props.stage}`,
