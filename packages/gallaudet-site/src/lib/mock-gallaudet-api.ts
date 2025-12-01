@@ -9,6 +9,7 @@ import {
   Milestone,
   TaskInstanceView,
 } from "gallaudet-api-typescript-react-query-hooks";
+import { ResponseError } from "gallaudet-api-typescript-react-query-hooks";
 
 const MOCK_LATENCY_MS = 200;
 
@@ -158,8 +159,25 @@ export class MockGallaudetApi extends DefaultApi {
     _request: Parameters<DefaultApi["getLinkedRobloxAccount"]>[0],
   ): Promise<GetLinkedRobloxAccountResponseContent> {
     await delay(MOCK_LATENCY_MS);
-    return {
-      robloxUserId: "FAKE_ROBLOX_USER_ID"
+    try {
+      const shouldReturnLinked =
+        typeof window !== "undefined" &&
+        localStorage.getItem("mock-roblox-linked") === "true";
+      if (shouldReturnLinked) {
+        return {
+          robloxUserId: "FAKE_ROBLOX_USER_ID",
+        };
+      }
+    } catch {
+      // Ignore localStorage issues and fall back to the unlinked mock.
     }
+
+    throw new ResponseError(
+      new Response(JSON.stringify({ message: "Roblox account not linked" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }),
+      "getLinkedRobloxAccount",
+    );
   }
 }

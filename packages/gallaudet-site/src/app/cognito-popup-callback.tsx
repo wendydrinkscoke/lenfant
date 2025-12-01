@@ -144,7 +144,9 @@ export default function CognitoPopupCallback() {
           );
           window.close();
         } else {
-          window.location.replace("/signup/student");
+          window.location.replace(
+            role === "teacher" ? "/teacher-task-view" : "/student-task-view",
+          );
         }
       } catch (e: any) {
         console.error(e);

@@ -8,7 +8,6 @@ const ROLE_PATTERNS: Array<{ role: ClassroomRole; test: (path: string) => boolea
   { role: "teacher", test: (path) => path.startsWith("/student-work-review") },
   { role: "teacher", test: (path) => path.startsWith("/link-upgrade") },
   { role: "student", test: (path) => path.startsWith("/student-task-view") },
-  { role: "student", test: (path) => path.startsWith("/signup/student") },
 ];
 
 export function inferClassroomRoleFromLocation(loc: Location = window.location): ClassroomRole {

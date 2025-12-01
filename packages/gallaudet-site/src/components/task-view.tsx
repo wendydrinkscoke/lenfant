@@ -1,14 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
 import { Button } from "./ui/button";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { AlertTriangle, CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { getGallaudetApi } from "../lib/gallaudet-api";
 import type { GetTaskResponseContent } from "gallaudet-api-typescript-react-query-hooks";
 import { ResponseError } from "gallaudet-api-typescript-react-query-hooks";
 import { CognitoAuthGate } from "./cognito-auth-gate";
 import type { AuthUser } from "../hooks/use-auth";
+import { startCognitoOAuthFlowViaPopup } from "../lib/auth-utils";
 
 type TaskViewProps = {
   audience: "student" | "teacher";
@@ -17,6 +20,7 @@ type TaskViewProps = {
 type TaskViewAuthorizedProps = {
   audience: TaskViewProps["audience"];
   taskId: string | null;
+  loginHint?: string;
   user: AuthUser | null;
   signOut: () => Promise<void>;
 };
@@ -27,9 +31,41 @@ const PREVIEW_CAPTION = "Classroom task preview coming soon.";
 const formatAudienceLabel = (audience: "student" | "teacher") =>
   audience === "teacher" ? "Teacher Preview" : "Student Assignment";
 
+type RobloxLinkStep = {
+  id: string;
+  label: string;
+  messageType:
+    | "google-signin-complete"
+    | "google-oauth-scopes-received"
+    | "roblox-sign-in-complete";
+  completed: boolean;
+};
+
+const createRobloxLinkSteps = (): RobloxLinkStep[] => [
+  {
+    id: "google-signin",
+    label: "Google sign-in",
+    messageType: "google-signin-complete",
+    completed: false,
+  },
+  {
+    id: "oauth-scopes",
+    label: "Classroom access",
+    messageType: "google-oauth-scopes-received",
+    completed: false,
+  },
+  {
+    id: "roblox-link",
+    label: "Roblox link",
+    messageType: "roblox-sign-in-complete",
+    completed: false,
+  },
+];
+
 const TaskViewAuthorized = ({
   audience,
   taskId,
+  loginHint,
   user,
   signOut,
 }: TaskViewAuthorizedProps) => {
@@ -38,6 +74,17 @@ const TaskViewAuthorized = ({
   );
   const [task, setTask] = useState<GetTaskResponseContent["task"] | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [robloxLinkStatus, setRobloxLinkStatus] = useState<
+    "idle" | "loading" | "linked" | "unlinked" | "error"
+  >("idle");
+  const [robloxLinkMessage, setRobloxLinkMessage] = useState<string | null>(
+    null,
+  );
+  const [linkingSteps, setLinkingSteps] = useState<RobloxLinkStep[]>(
+    createRobloxLinkSteps,
+  );
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [hasAttemptedRobloxLink, setHasAttemptedRobloxLink] = useState(false);
 
   useEffect(() => {
     let isCancelled = false;
@@ -108,6 +155,145 @@ const TaskViewAuthorized = ({
       isCancelled = true;
     };
   }, [taskId]);
+
+  const refreshRobloxLinkStatus = useCallback(
+    async (options?: { cancelled?: () => boolean }) => {
+      if (audience !== "student") {
+        return;
+      }
+      const shouldCancel = options?.cancelled ?? (() => false);
+
+      setRobloxLinkStatus("loading");
+      setRobloxLinkMessage(null);
+
+      try {
+        const api = await getGallaudetApi();
+        await api.getLinkedRobloxAccount({});
+        if (shouldCancel()) {
+          return;
+        }
+
+        setRobloxLinkStatus("linked");
+        setLinkingSteps((prev) =>
+          prev.map((step) => ({ ...step, completed: true })),
+        );
+      } catch (error) {
+        if (shouldCancel()) {
+          return;
+        }
+
+        let message = "Unable to verify Roblox link status.";
+
+        if (error instanceof ResponseError) {
+          const statusCode = error.response.status;
+          try {
+            const data = await error.response.clone().json();
+            if (typeof data?.message === "string") {
+              message = data.message;
+            }
+          } catch {
+            // Ignore parse failures and fall back to the default message.
+          }
+
+          if (statusCode === 400 && message === "Roblox account not linked") {
+            setRobloxLinkStatus("unlinked");
+            setRobloxLinkMessage(null);
+            return;
+          }
+
+          if (statusCode === 403) {
+            setRobloxLinkStatus("error");
+            setRobloxLinkMessage(
+              message ??
+                "You must be signed in to verify your Roblox link.",
+            );
+            return;
+          }
+        } else if (error instanceof Error && error.message) {
+          message = error.message;
+        }
+
+        setRobloxLinkStatus("error");
+        setRobloxLinkMessage(message);
+      }
+    },
+    [audience],
+  );
+
+  useEffect(() => {
+    if (audience !== "student") {
+      return;
+    }
+
+    let isCancelled = false;
+    void refreshRobloxLinkStatus({ cancelled: () => isCancelled });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [audience, refreshRobloxLinkStatus]);
+
+  const resetRobloxSteps = useCallback(() => {
+    setLinkingSteps(createRobloxLinkSteps());
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data;
+      if (!data || typeof data !== "object") return;
+
+      const { type } = data as { type?: string };
+
+      if (
+        type === "google-signin-complete" ||
+        type === "google-oauth-scopes-received" ||
+        type === "roblox-sign-in-complete"
+      ) {
+        setLinkingSteps((prevSteps) =>
+          prevSteps.map((step) =>
+            step.messageType === type ? { ...step, completed: true } : step,
+          ),
+        );
+      }
+
+      if (type === "cognito-auth-complete") {
+        setIsPopupOpen(false);
+        if (data.ok) {
+          setRobloxLinkMessage(null);
+          void refreshRobloxLinkStatus();
+        } else {
+          setRobloxLinkStatus("error");
+          setRobloxLinkMessage(
+            "We couldn't finish linking your accounts. Please try again.",
+          );
+        }
+      }
+    };
+
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [refreshRobloxLinkStatus]);
+
+  const handleRobloxLogin = () => {
+    setHasAttemptedRobloxLink(true);
+    setRobloxLinkMessage(null);
+    resetRobloxSteps();
+    const popup = startCognitoOAuthFlowViaPopup({
+      includeRobloxAssociation: true,
+      roleOverride: "student",
+      loginHint,
+    });
+    if (popup) {
+      setIsPopupOpen(true);
+      popup.focus();
+    } else {
+      setIsPopupOpen(false);
+      setRobloxLinkMessage(
+        "We couldn't open a sign-in popup. Please allow popups in your browser and try again.",
+      );
+    }
+  };
 
   const headerTitle = useMemo(() => {
     if (status === "success" && task) {
@@ -184,6 +370,55 @@ const TaskViewAuthorized = ({
     return null;
   }, [status, task]);
 
+  const allRobloxStepsComplete = linkingSteps.every((step) => step.completed);
+  const currentRobloxStepIndex = linkingSteps.findIndex(
+    (step) => !step.completed,
+  );
+  const shouldShowRobloxProgress =
+    (hasAttemptedRobloxLink || isPopupOpen) && !allRobloxStepsComplete;
+  const shouldShowRobloxWarning =
+    audience === "student" && robloxLinkStatus === "unlinked";
+  const loginInProgress = isPopupOpen && currentRobloxStepIndex > 0;
+  const additionalRobloxNote =
+    robloxLinkMessage && robloxLinkMessage !== "Roblox account not linked"
+      ? robloxLinkMessage
+      : null;
+
+  const robloxProgressIndicator = shouldShowRobloxProgress ? (
+    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
+      {linkingSteps.map((step, index) => {
+        const isActive = index === currentRobloxStepIndex;
+        const isComplete = step.completed;
+
+        return (
+          <div
+            key={step.id}
+            className="flex items-center gap-1 rounded-full bg-white/60 px-2 py-1 ring-1 ring-amber-100"
+          >
+            {isComplete ? (
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            ) : isActive ? (
+              <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+            ) : (
+              <Circle className="h-3 w-3 text-slate-300" />
+            )}
+            <span
+              className={
+                isComplete
+                  ? "text-slate-800"
+                  : isActive
+                    ? "text-slate-700"
+                    : "text-slate-400"
+              }
+            >
+              {step.label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  ) : null;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6">
       <div className="mx-auto max-w-4xl space-y-6">
@@ -205,6 +440,54 @@ const TaskViewAuthorized = ({
             Sign out
           </Button>
         </div>
+
+        {audience === "student" && robloxLinkStatus === "loading" && (
+          <Alert className="border-amber-100 bg-amber-50">
+            <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+            <AlertTitle>Checking your Roblox link…</AlertTitle>
+            <AlertDescription>
+              <p className="text-slate-700">
+                Hang tight while we confirm your Roblox account is connected.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {(shouldShowRobloxWarning ||
+          (audience === "student" && robloxLinkStatus === "error")) && (
+          <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+            <AlertTriangle className="text-amber-500" />
+            <AlertTitle>Link your Roblox account</AlertTitle>
+            <AlertDescription className="space-y-3">
+              <p>
+                In order to get credit in Google Classrooms for tasks completed
+                in Roblox, you'll first need to link your Roblox account. If you
+                don't have a Roblox account, you can create one and come back
+                here once you're done.
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  size="sm"
+                  onClick={handleRobloxLogin}
+                  disabled={isPopupOpen}
+                >
+                  {isPopupOpen ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {loginInProgress ? "Continue in popup..." : "Opening..."}
+                    </>
+                  ) : (
+                    "Login with Roblox"
+                  )}
+                </Button>
+                {robloxProgressIndicator}
+              </div>
+              {additionalRobloxNote && (
+                <p className="text-xs text-amber-800">{additionalRobloxNote}</p>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Card className="shadow-lg">
           <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -322,6 +605,7 @@ const TaskView = ({ audience }: TaskViewProps) => {
         <TaskViewAuthorized
           audience={audience}
           taskId={taskId}
+          loginHint={loginHint}
           user={user}
           signOut={signOut}
         />
