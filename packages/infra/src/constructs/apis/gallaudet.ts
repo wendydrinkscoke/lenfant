@@ -36,6 +36,7 @@ import {
   ListTasksForPlayerFunction,
   LinkRobloxAccountFunction,
   PutPartnerFunction,
+  GetLinkedRobloxAccountFunction,
 } from "gallaudet-api-typescript-infra";
 
 /**
@@ -158,6 +159,22 @@ export class Gallaudet extends Construct {
     props.googleOAuthClientSecret.grantRead(
       delegateGoogleClassroomAccessFunction,
     );
+
+    const getLinkedRobloxAccountFunction = new GetLinkedRobloxAccountFunction(
+      this,
+      "GetLinkedRobloxAccountFunction",
+      {
+        environment: {
+          USERS_TABLE_NAME: props.usersTable.tableName,
+        },
+        description: [
+          "Fetches the Roblox user identifier linked to a specific Cognito user",
+          "if a Roblox account has been linked to the user calling the associated",
+          "API. The source of truth for this data is the Users DDB table.",
+        ].join(" "),
+      },
+    );
+    props.usersTable.grantReadData(getLinkedRobloxAccountFunction);
 
     const getTaskFunction = new GetTaskFunction(this, "GetTaskFunction", {
       environment: {
@@ -320,6 +337,9 @@ export class Gallaudet extends Construct {
           integration: Integrations.lambda(
             delegateGoogleClassroomAccessFunction,
           ),
+        },
+        getLinkedRobloxAccount: {
+          integration: Integrations.lambda(getLinkedRobloxAccountFunction),
         },
         getTask: {
           integration: Integrations.lambda(getTaskFunction),

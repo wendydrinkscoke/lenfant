@@ -18,6 +18,7 @@ service Gallaudet {
       GradeTask
       ListTasksForPlayer
       LinkRobloxAccount
+      GetLinkedRobloxAccount
       PutPartner
     ]
     errors: [
