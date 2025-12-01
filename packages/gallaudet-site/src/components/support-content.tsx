@@ -7,42 +7,11 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "..
 import {
   HelpCircle,
   Mail,
-  MessageCircle,
-  BookOpen,
   Settings,
-  Users,
   AlertCircle,
   ExternalLink,
-  Clock,
   CheckCircle,
 } from "lucide-react"
-
-const contactMethods = [
-  {
-    title: "Email Support",
-    description: "Get help via email within 24 hours",
-    icon: Mail,
-    action: "Send Email",
-    href: "mailto:support@beta.school.civictech.llc",
-    availability: "24/7",
-  },
-  {
-    title: "Help Center",
-    description: "Browse our comprehensive documentation",
-    icon: BookOpen,
-    action: "Visit Help Center",
-    href: "#help-center",
-    availability: "Always available",
-  },
-  {
-    title: "Live Chat",
-    description: "Chat with our support team in real-time",
-    icon: MessageCircle,
-    action: "Start Chat",
-    href: "#chat",
-    availability: "Mon-Fri 9AM-5PM EST",
-  },
-]
 
 const faqItems = [
   {
@@ -121,16 +90,15 @@ export default function SupportContent() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative overflow-hidden border-b">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-emerald-50 to-transparent dark:from-emerald-950/30" />
+      <section className="relative overflow-hidden border-b bg-muted/30">
         <div className="mx-auto max-w-4xl px-4 py-16">
           <div className="text-center">
-            <Badge variant="outline" className="mb-4 border-emerald-600 text-emerald-700 dark:text-emerald-300">
+            <Badge variant="outline" className="mb-4">
               {"Support"}
             </Badge>
             <h1 className="text-4xl font-bold">{"How can we help you?"}</h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              {"Get the support you need to make the most of Roblox NUSA Academy in your classroom"}
+              {"We keep support simple: email us and browse the basics below."}
             </p>
           </div>
         </div>
@@ -141,31 +109,52 @@ export default function SupportContent() {
         <section className="mb-16">
           <div className="mb-8 text-center">
             <h2 className="text-2xl font-bold">{"Get in Touch"}</h2>
-            <p className="mt-2 text-muted-foreground">{"Choose the support method that works best for you"}</p>
+            <p className="mt-2 text-muted-foreground">
+              {"We handle all support through a single email so nothing gets lost."}
+            </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
-            {contactMethods.map((method) => (
-              <Card key={method.title} className="relative">
-                <CardHeader className="text-center">
-                  <method.icon className="mx-auto h-8 w-8 text-emerald-600" />
-                  <CardTitle className="text-lg">{method.title}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{method.description}</p>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <div className="mb-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    {method.availability}
-                  </div>
-                  <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700">
-                    <a href={method.href}>
-                      {method.action}
-                      <ExternalLink className="ml-2 h-4 w-4" />
-                    </a>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card className="relative">
+              <CardHeader className="text-center">
+                <Mail className="mx-auto h-8 w-8 text-emerald-600" />
+                <CardTitle className="text-lg">{"Email Support"}</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {"Send us a note and we'll reply as soon as we can."}
+                </p>
+              </CardHeader>
+              <CardContent className="text-center">
+                <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700">
+                  <a href="mailto:cupwendyscup@gmail.com">
+                    {"Email cupwendyscup@gmail.com"}
+                    <ExternalLink className="ml-2 h-4 w-4" />
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-dashed">
+              <CardHeader>
+                <CardTitle className="text-lg">{"What to include in your email"}</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {"Sharing details helps us help you faster."}
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm text-muted-foreground">
+                <p className="flex items-start gap-2">
+                  <CheckCircle className="mt-0.5 h-4 w-4 text-emerald-600" />
+                  {"Your role (teacher/student) and school email"}
+                </p>
+                <p className="flex items-start gap-2">
+                  <CheckCircle className="mt-0.5 h-4 w-4 text-emerald-600" />
+                  {"A short description of the issue"}
+                </p>
+                <p className="flex items-start gap-2">
+                  <CheckCircle className="mt-0.5 h-4 w-4 text-emerald-600" />
+                  {"Any error messages or screenshots (if available)"}
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </section>
 
@@ -177,7 +166,9 @@ export default function SupportContent() {
                 <Settings className="h-5 w-5 text-emerald-600" />
                 {"Quick Troubleshooting"}
               </CardTitle>
-              <p className="text-sm text-muted-foreground">{"Try these common solutions before contacting support"}</p>
+              <p className="text-sm text-muted-foreground">
+                {"Try these common solutions before contacting support."}
+              </p>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2">
@@ -204,7 +195,9 @@ export default function SupportContent() {
               <HelpCircle className="h-6 w-6 text-emerald-600" />
               {"Frequently Asked Questions"}
             </h2>
-            <p className="mt-2 text-muted-foreground">{"Find answers to common questions about Roblox NUSA Academy"}</p>
+            <p className="mt-2 text-muted-foreground">
+              {"Short answers to the most common setup and classroom questions."}
+            </p>
           </div>
 
           <div className="space-y-6">
@@ -287,70 +280,6 @@ export default function SupportContent() {
           </Card>
         </section>
 
-        {/* Resources */}
-        <section className="mb-16">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold">{"Additional Resources"}</h2>
-            <p className="mt-2 text-muted-foreground">{"Helpful guides and documentation to get you started"}</p>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-emerald-600" />
-                  {"Teacher Quick Start Guide"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">
-                  {"Step-by-step setup instructions for new teachers"}
-                </p>
-                <Button variant="outline" size="sm" className="w-full bg-transparent">
-                  {"View Guide"}
-                  <ExternalLink className="ml-2 h-3 w-3" />
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Users className="h-4 w-4 text-emerald-600" />
-                  {"Student Onboarding"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">
-                  {"Help students get started with their first simulation"}
-                </p>
-                <Button variant="outline" size="sm" className="w-full bg-transparent">
-                  {"View Guide"}
-                  <ExternalLink className="ml-2 h-3 w-3" />
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-emerald-600" />
-                  {"Safety & Privacy"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">
-                  {"Important information about student safety and data privacy"}
-                </p>
-                <Button variant="outline" size="sm" className="w-full bg-transparent">
-                  {"Learn More"}
-                  <ExternalLink className="ml-2 h-3 w-3" />
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
         {/* Emergency Contact */}
         <section>
           <Card className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/30">
@@ -363,31 +292,19 @@ export default function SupportContent() {
             <CardContent>
               <p className="text-sm text-orange-700 dark:text-orange-300 mb-4">
                 {
-                  "If you're experiencing a critical issue that's preventing you from using Roblox NUSA Academy during class time, please contact us immediately."
+                  "If you're experiencing a critical issue that's preventing you from using Roblox NUSA Academy during class time, email us and include 'URGENT' in the subject."
                 }
               </p>
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  asChild
-                  variant="outline"
-                  className="border-orange-300 text-orange-800 hover:bg-orange-100 dark:border-orange-700 dark:text-orange-200 bg-transparent"
-                >
-                  <a href="mailto:urgent@beta.school.civictech.llc">
-                    <Mail className="mr-2 h-4 w-4" />
-                    {"Email: urgent@beta.school.civictech.llc"}
-                  </a>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  className="border-orange-300 text-orange-800 hover:bg-orange-100 dark:border-orange-700 dark:text-orange-200 bg-transparent"
-                >
-                  <a href="#chat">
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    {"Start Priority Chat"}
-                  </a>
-                </Button>
-              </div>
+              <Button
+                asChild
+                variant="outline"
+                className="border-orange-300 text-orange-800 hover:bg-orange-100 dark:border-orange-700 dark:text-orange-200 bg-transparent"
+              >
+                <a href="mailto:cupwendyscup@gmail.com?subject=URGENT%20Support">
+                  <Mail className="mr-2 h-4 w-4" />
+                  {"Email cupwendyscup@gmail.com"}
+                </a>
+              </Button>
             </CardContent>
           </Card>
         </section>

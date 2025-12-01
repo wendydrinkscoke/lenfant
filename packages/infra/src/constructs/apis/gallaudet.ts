@@ -226,7 +226,7 @@ export class Gallaudet extends Construct {
       {
         environment: {
           TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
-          PARTNERS_TABLE_NAME: props.partnersTable.tableName
+          PARTNERS_TABLE_NAME: props.partnersTable.tableName,
         },
         description: [
           "This function returns the catalog of partner-provided tasks",

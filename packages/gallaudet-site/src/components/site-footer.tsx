@@ -14,9 +14,9 @@ export function SiteFooter() {
           <Link to="#gallery" className="text-muted-foreground hover:text-foreground">
             Gallery
           </Link>
-          <a href="https://support.google.com/edu/classroom" className="text-muted-foreground hover:text-foreground">
+          <Link to="/support" className="text-muted-foreground hover:text-foreground">
             Support
-          </a>
+          </Link>
           <Link to="/privacy-policy" className="text-muted-foreground hover:text-foreground">
             Privacy Policy
           </Link>
