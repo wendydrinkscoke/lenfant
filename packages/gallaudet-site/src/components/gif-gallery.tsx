@@ -1,7 +1,6 @@
 import { Image } from "../components/ui/image"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
-import { Badge } from "../components/ui/badge"
-import { Gamepad2, Users } from 'lucide-react'
+import { Gamepad2, Users } from "lucide-react"
 
 type Clip = {
   title: string
@@ -26,32 +25,49 @@ const inGameClips: Clip[] = [
     description: "Learn about the 43rd President of the United State by touring a bloxy version of his Presidential library!",
     link: "https://www.roblox.com/games/127120714583341/Tour-The-GWB-Library"
   },
+  {
+    title: "Up for Debate",
+    alt: "Thumbnail for \"Up for Debate\" Roblox game",
+    src: "/up-for-debate-thumbnail.jpg",
+    description: "Debate with a another player on a randomly determined topic. You will either be chosen to argue in favor or against the topic's proposal. At the end of the round, spectators vote on who won the debate!",
+    link: "https://www.roblox.com/games/13781542989/Up-For-Debate"
+  },
 ]
 
 const inClassClips: Clip[] = [
   {
-    title: "Oakwood High School",
-    alt: "Students collaborating on laptops",
-    src: "/engaged-students-laptops-placeholder.png",
-    description: "Engaging age-appropriate content for all ages."
-  },
-  {
-    title: "Mountain View Middle School",
+    title: "How a Middle School Geography Teacher uses CTS and Roblox to Bring Geography to Life",
     alt: "Students planning legislative strategy",
-    src: "/collaborative-students-placeholder.png",
-    description: "Engaged students"
+    src: "/teaching-with-computer.jpg",
+    description: "Learn about how Ms. Honey, a middle school geography teacher, integrates the educational Roblox game \"Run the World\" into her class and about how this improved learning outcomes."
   },
   {
-    title: "Paul J. Rogers Preparatory School",
+    title: "How a High School Debate Team is using CTS and a Roblox-Based Debate Game to Prepare",
+    alt: "Students collaborating on laptops",
+    src: "/debate-club.jpg",
+    description: "Learn about how Mr. Brady, head coach of the Oakwood High School debate team, is using CTS to give his students an edge."
+  },
+  {
+    title: "How a High School History Teacher brought his class to Gettysburg, the Alamo, and Cairo on the same day",
     alt: "Teacher assisting a student at their desk",
-    src: "/teacher-assisting-student-placeholder.png",
-    description: "Better learning outcomes"
+    src: "/history-teacher.jpg",
+    description: "\"It's like we can take a field trip anywhere.\" – Learn about how Mr. Finn takes his students to distant places and bygone times through the power of CTS and Roblox."
   },
 ]
 
-function GalleryGrid({ title, icon, items }: { title: string; icon: React.ReactNode; items: Clip[] }) {
+function GalleryGrid({
+  title,
+  icon,
+  items,
+  id,
+}: {
+  title: string
+  icon: React.ReactNode
+  items: Clip[]
+  id?: string
+}) {
   return (
-    <section className="mx-auto max-w-6xl px-4">
+    <section id={id} className="mx-auto max-w-6xl px-4">
       <div className="mb-6 flex items-center gap-2">
         {icon}
         <h3 className="text-xl font-semibold">{title}</h3>
@@ -63,7 +79,6 @@ function GalleryGrid({ title, icon, items }: { title: string; icon: React.ReactN
             <Card className={`h-full overflow-hidden transition-shadow ${isLinked ? "cursor-pointer hover:shadow-lg focus-within:shadow-lg" : ""}`}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-sm font-medium">{clip.title}</CardTitle>
-                <Badge variant="secondary">{"GIF"}</Badge>
               </CardHeader>
               <CardContent className="relative">
                 <div className="relative aspect-[16/9] w-full overflow-hidden rounded-md border">
@@ -120,11 +135,13 @@ export default function GifGallery() {
         <GalleryGrid
           title="Featured Games"
           icon={<Gamepad2 className="h-5 w-5 text-emerald-600" />}
+          id="featured-games"
           items={inGameClips}
         />
         <GalleryGrid
           title="Success Stories"
           icon={<Users className="h-5 w-5 text-emerald-600" />}
+          id="success-stories"
           items={inClassClips}
         />
       </div>

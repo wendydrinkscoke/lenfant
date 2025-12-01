@@ -13,8 +13,10 @@ export default function ViewInMarketplaceButton({
     const domain = window.location.hostname
     if (domain.includes("beta") || domain.includes("localhost")) {
       return "https://workspace.google.com/marketplace/app/civictech_for_school/654823757539"
+    } else if (domain.includes("gamma")) {
+      return "https://workspace.google.com/marketplace/app/civictech_for_schools_gamma/949890986084"
     } else {
-      throw new Error("No marketplace URL hard-coded for this domain.")
+      return "https://workspace.google.com/marketplace/app/civictech_for_schools/746530268672"
     }
   }
 

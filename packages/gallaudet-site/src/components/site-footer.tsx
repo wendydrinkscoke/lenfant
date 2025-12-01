@@ -5,15 +5,9 @@ export function SiteFooter() {
     <footer className="border-t">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 md:flex-row">
         <p className="text-xs text-muted-foreground">
-          {"©"} {new Date().getFullYear()} {"CivicTech, LLC. All rights reserved."}
+          {"©"} {new Date().getFullYear()} {"Civic Technologies, LLC. All rights reserved."}
         </p>
         <nav className="flex items-center gap-4 text-xs">
-          <Link to="#features" className="text-muted-foreground hover:text-foreground">
-            Features
-          </Link>
-          <Link to="#gallery" className="text-muted-foreground hover:text-foreground">
-            Gallery
-          </Link>
           <Link to="/support" className="text-muted-foreground hover:text-foreground">
             Support
           </Link>

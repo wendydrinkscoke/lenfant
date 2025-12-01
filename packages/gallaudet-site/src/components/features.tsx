@@ -4,25 +4,25 @@ import { Landmark, Gavel, Newspaper, GraduationCap } from 'lucide-react'
 const teacherFeatures = [
   {
     title: "Google Classroom Sync",
-    desc: "Sign in with your school account, import classes, and enroll students automatically.",
+    desc: "Assigning tasks can be done directly within the Google Classrooms website.",
     icon: Landmark,
   },
   {
-    title: "Live Assignments",
-    desc: "Assign tasks like drafting or filibustering a bill—students see them in‑game.",
+    title: "Automatic Grading",
+    desc: "When students complete in-game tasks, CTS automatically updates their grade.",
     icon: Gavel,
   },
 ]
 
 const studentFeatures = [
   {
-    title: "Focused Portal",
-    desc: "Students sign in and see only their assignments, deadlines, and progress.",
+    title: "In-Game Task Management",
+    desc: "Students can see their tasks and progress both in Google Classrooms and in-game for extra convenience.",
     icon: GraduationCap,
   },
   {
-    title: "Authentic Roles",
-    desc: "Play as representatives, journalists, and more to learn civic processes hands-on.",
+    title: "Easy Linking",
+    desc: "Linking your Google Classroom account with your Roblox account takes just a few seconds.",
     icon: Newspaper,
   },
 ]

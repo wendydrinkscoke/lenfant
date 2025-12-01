@@ -1,11 +1,33 @@
 import { Link } from "react-router-dom"
-import { Menu } from 'lucide-react'
-import { useState } from "react"
+import { Menu } from "lucide-react"
+import { useCallback, useState } from "react"
 import { cn } from "../lib/utils"
 import ViewInMarketplaceButton from "./view-in-marketplace-button"
 
+const navItems = [
+  { label: "Games", targetId: "featured-games" },
+  { label: "Stories", targetId: "success-stories" },
+  { label: "Features", targetId: "features" },
+]
+
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
+
+  const handleNavClick = useCallback((targetId: string) => {
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      return
+    }
+    const el = document.getElementById(targetId)
+    if (el) {
+      const header = document.querySelector("header")
+      const headerHeight = header instanceof HTMLElement ? header.offsetHeight : 0
+      const buffer = 8
+      const top = el.getBoundingClientRect().top + window.scrollY - headerHeight - buffer
+      window.scrollTo({ top, behavior: "smooth" })
+      window.history.replaceState(null, "", `#${targetId}`)
+    }
+    setOpen(false)
+  }, [])
   
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -18,15 +40,16 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
-          <Link to="#gallery" className="text-sm text-muted-foreground hover:text-foreground">
-            Gallery
-          </Link>
-          <Link to="#features" className="text-sm text-muted-foreground hover:text-foreground">
-            Features
-          </Link>
-          <Link to="#students" className="text-sm text-muted-foreground hover:text-foreground">
-            Students
-          </Link>
+          {navItems.map((item) => (
+            <button
+              key={item.targetId}
+              type="button"
+              onClick={() => handleNavClick(item.targetId)}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              {item.label}
+            </button>
+          ))}
         </nav>
 
         <div className="hidden md:block">
@@ -50,15 +73,16 @@ export function SiteHeader() {
       >
         <div className="mx-auto max-w-6xl px-4 py-3">
           <div className="grid gap-3">
-            <Link to="#gallery" onClick={() => setOpen(false)} className="text-sm">
-              Gallery
-            </Link>
-            <Link to="#features" onClick={() => setOpen(false)} className="text-sm">
-              Features
-            </Link>
-            <Link to="#students" onClick={() => setOpen(false)} className="text-sm">
-              Students
-            </Link>
+            {navItems.map((item) => (
+              <button
+                key={item.targetId}
+                type="button"
+                onClick={() => handleNavClick(item.targetId)}
+                className="text-left text-sm"
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
