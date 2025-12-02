@@ -13,6 +13,7 @@ service Gallaudet {
       CatalogTask
       CompleteMilestone
       DelegateGoogleClassroomAccess
+      GetGoogleClassroomAccessStatus
       GetTask
       GetTaskCatalog
       GradeTask

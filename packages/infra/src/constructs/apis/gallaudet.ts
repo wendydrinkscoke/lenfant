@@ -37,6 +37,7 @@ import {
   LinkRobloxAccountFunction,
   PutPartnerFunction,
   GetLinkedRobloxAccountFunction,
+  GetGoogleClassroomAccessStatusFunction,
 } from "gallaudet-api-typescript-infra";
 
 /**
@@ -158,6 +159,26 @@ export class Gallaudet extends Construct {
     );
     props.googleOAuthClientSecret.grantRead(
       delegateGoogleClassroomAccessFunction,
+    );
+
+    const getGoogleClassroomAccessStatusFunction =
+      new GetGoogleClassroomAccessStatusFunction(
+        this,
+        "GetGoogleClassroomAccessStatusFunction",
+        {
+          environment: {
+            OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
+          },
+          description: [
+            "Returns whether the calling user has given us the ability to act on",
+            "their behalf while they are offline. That is, whether we've received",
+            "a refresh token from the end user or not.",
+          ].join(" "),
+        },
+      );
+
+    props.oauthTokensTable.grantReadData(
+      getGoogleClassroomAccessStatusFunction,
     );
 
     const getLinkedRobloxAccountFunction = new GetLinkedRobloxAccountFunction(
@@ -336,6 +357,11 @@ export class Gallaudet extends Construct {
         delegateGoogleClassroomAccess: {
           integration: Integrations.lambda(
             delegateGoogleClassroomAccessFunction,
+          ),
+        },
+        getGoogleClassroomAccessStatus: {
+          integration: Integrations.lambda(
+            getGoogleClassroomAccessStatusFunction,
           ),
         },
         getLinkedRobloxAccount: {
