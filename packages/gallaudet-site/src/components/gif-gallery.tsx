@@ -126,7 +126,7 @@ export default function GifGallery() {
         </div>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
           {
-            "Below is a showcase of a few of the games we've partnered with. And every day we're partnering with new game developers who are excited to bring their games to Google Classrooms via our Classrooms Add-On. As well as a gallery showing students engaged in their classrooms."
+            "Below is a showcase of a few of the games we've partnered with. And every day we're partnering with new game developers who are excited to bring their games to Google Classroom™ via our Google Classroom™ Add-On. As well as a gallery showing students engaged in their classrooms."
           }
         </p>
       </div>

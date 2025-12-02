@@ -8,6 +8,9 @@ export function SiteFooter() {
           {"©"} {new Date().getFullYear()} {"Civic Technologies, LLC. All rights reserved."}
         </p>
         <nav className="flex items-center gap-4 text-xs">
+          <Link to="/developer-info" className="text-muted-foreground hover:text-foreground">
+            Developer Info
+          </Link>
           <Link to="/support" className="text-muted-foreground hover:text-foreground">
             Support
           </Link>

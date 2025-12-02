@@ -45,7 +45,7 @@ export default function Hero() {
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/40 to-transparent" />
             <div className="pointer-events-none absolute inset-0 flex items-end bg-gradient-to-t from-black/60 via-black/20 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
               <p className="text-sm font-medium leading-snug text-white drop-shadow">
-                {"A student playing 'Run the World', an educational game to learn countries. All the tasks they see in-game were assigned via Google Classrooms and are automatically graded when they complete the task."}
+                {"A student playing 'Run the World', an educational game to learn countries. All the tasks they see in-game were assigned via Google Classroom™ and are automatically graded when they complete the task."}
               </p>
             </div>
           </div>

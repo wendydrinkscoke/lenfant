@@ -14,6 +14,7 @@ import CognitoPopupCallback from './app/cognito-popup-callback';
 import AuthPopupStart from './app/auth-popup-start';
 import GooglePopupCallback from './app/google-popup-callback';
 import TaskView from './components/task-view';
+import DeveloperInfoPage from './app/developer-info-page';
 
 const container = document.getElementById('root')!;
 const root = ReactDOM.createRoot(container);
@@ -30,6 +31,7 @@ root.render(
         <Route path='/terms-of-service' element={<TermsPage />} />
         <Route path='/support' element={<SupportPage />} />
         <Route path='/privacy-policy' element={<PrivacyPage />} />
+        <Route path='/developer-info' element={<DeveloperInfoPage />} />
         <Route path='/create-attachment' element={<CreateAttachmentContent />} />
         <Route
           path='/student-task-view'

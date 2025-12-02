@@ -4,7 +4,7 @@ import { Landmark, Gavel, Newspaper, GraduationCap } from 'lucide-react'
 const teacherFeatures = [
   {
     title: "Google Classroom Sync",
-    desc: "Assigning tasks can be done directly within the Google Classrooms website.",
+    desc: "Assigning tasks can be done directly within the Google Classroom™ website.",
     icon: Landmark,
   },
   {
@@ -17,7 +17,7 @@ const teacherFeatures = [
 const studentFeatures = [
   {
     title: "In-Game Task Management",
-    desc: "Students can see their tasks and progress both in Google Classrooms and in-game for extra convenience.",
+    desc: "Students can see their tasks and progress both in Google Classroom™ and in-game for extra convenience.",
     icon: GraduationCap,
   },
   {

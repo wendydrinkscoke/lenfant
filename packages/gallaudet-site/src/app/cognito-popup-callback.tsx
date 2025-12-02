@@ -82,7 +82,7 @@ export default function CognitoPopupCallback() {
               ? "https://www.googleapis.com/auth/classroom.addons.teacher"
               : [
                   "https://www.googleapis.com/auth/classroom.addons.student",
-                  "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
+                  "https://www.googleapis.com/auth/classroom.student-submissions.me.readonly",
                   "https://www.googleapis.com/auth/classroom.courses.readonly"
                 ].join(" ");
 

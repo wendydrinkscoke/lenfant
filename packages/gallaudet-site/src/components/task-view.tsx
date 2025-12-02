@@ -460,7 +460,7 @@ const TaskViewAuthorized = ({
             <AlertTitle>Link your Roblox account</AlertTitle>
             <AlertDescription className="space-y-3">
               <p>
-                In order to get credit in Google Classrooms for tasks completed
+                In order to get credit in Google Classroom™ for tasks completed
                 in Roblox, you'll first need to link your Roblox account. If you
                 don't have a Roblox account, you can create one and come back
                 here once you're done.
