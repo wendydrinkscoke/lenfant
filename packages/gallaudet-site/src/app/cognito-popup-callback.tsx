@@ -73,6 +73,16 @@ export default function CognitoPopupCallback() {
             localStorage.setItem("refresh_token", cognitoTokens.refreshToken);
           }
 
+          const apiClient = await getGallaudetApi();
+          let hasDelegatedAccess = false;
+          try {
+            const status = await apiClient.getGoogleClassroomAccessStatus();
+            hasDelegatedAccess = Boolean(status.delegated);
+          } catch (statusError) {
+            console.warn("Unable to verify Classroom delegation status", statusError);
+            // Fall through and force consent to guarantee we capture a refresh token.
+          }
+
           const googleVerifier = generateCodeVerifier();
           const googleChallenge = await generateCodeChallenge(googleVerifier);
           localStorage.setItem("google_pkce_verifier", googleVerifier);
@@ -92,10 +102,15 @@ export default function CognitoPopupCallback() {
             response_type: "code",
             scope: googleScope,
             include_granted_scopes: "true",
-            access_type: "offline",
             code_challenge_method: "S256",
             code_challenge: googleChallenge,
           });
+          if (hasDelegatedAccess) {
+            googleParams.set("access_type", "online");
+          } else {
+            googleParams.set("access_type", "offline");
+            googleParams.set("prompt", "consent");
+          }
           if (loginHint) googleParams.set("login_hint", loginHint);
 
           const googleState = new URLSearchParams({
