@@ -41,7 +41,7 @@ export function getGoogleAuthClientID() {
   } else if (hostname === "gamma.school.civictech.llc") {
     return "949890986084-mdg872q4664ajcfb01sb0htdhrmr3jgu.apps.googleusercontent.com";
   } else if (hostname === "school.civictech.llc") {
-    return "746530268672-kp1vhkspr0k049e04ebvv6os25g5cc66.apps.googleusercontent.com";
+    return "648341560846-hn9anfo8ljdus0emd60hi6vb0t8ver1j.apps.googleusercontent.com";
   } else {
     throw new Error("No Google OAuth Client ID hard-coded.");
   }
