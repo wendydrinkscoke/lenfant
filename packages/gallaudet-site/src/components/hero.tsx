@@ -25,7 +25,7 @@ export default function Hero() {
           <div className="flex flex-wrap items-center gap-3">
             <ViewInMarketplaceButton />
             <Button asChild variant="outline">
-              <Link to="https://www.youtube.com/watch?v=Z6ggpQ-ZV4k" className="inline-flex items-center gap-2">
+              <Link to="https://www.youtube.com/watch?v=zSuMbEFIFMA" className="inline-flex items-center gap-2">
                 <Play className="h-4 w-4" />
                 {"See how it works"}
               </Link>
