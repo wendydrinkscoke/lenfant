@@ -16,7 +16,7 @@ export default function ViewInMarketplaceButton({
     } else if (domain.includes("gamma")) {
       return "https://workspace.google.com/marketplace/app/civictech_for_schools_gamma/949890986084"
     } else {
-      return "https://workspace.google.com/marketplace/app/civictech_for_schools/746530268672"
+      return "https://workspace.google.com/marketplace/app/civictech_for_schools/648341560846"
     }
   }
 

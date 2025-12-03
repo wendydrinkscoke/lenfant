@@ -137,5 +137,5 @@ and created/published a **private** app listing.
 
 ## Marketplace Listings
 - beta: https://workspace.google.com/marketplace/app/civictech_for_school/654823757539
-- gamma: TBD
-- prod: TBD
+- gamma: https://workspace.google.com/marketplace/app/civictech_for_schools_gamma/949890986084
+- prod: https://workspace.google.com/marketplace/app/civictech_for_schools/648341560846
