@@ -10,12 +10,12 @@ export default function Hero() {
       <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-emerald-50 to-transparent dark:from-emerald-950/30" />
       <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-16 md:grid-cols-2 md:py-24">
         <div className="space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs">
+          {/* <div className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs">
             <span className="inline-flex h-2 w-2 rounded-full bg-emerald-600" />
             {"Google Classroom-ready"}
-          </div>
+          </div> */}
           <h1 className="text-4xl font-bold leading-tight md:text-5xl">
-            {"Bring classwork to life with educational Roblox games"}
+            {"Bring Google Classrooms to life with educational Roblox games"}
           </h1>
           <p className="text-muted-foreground">
             {
