@@ -11,6 +11,9 @@ export function SiteFooter() {
           <Link to="/developer-info" className="text-muted-foreground hover:text-foreground">
             Developer Info
           </Link>
+          <Link to="/developer-onboarding" className="text-muted-foreground hover:text-foreground">
+            Partner with Us
+          </Link>
           <Link to="/support" className="text-muted-foreground hover:text-foreground">
             Support
           </Link>

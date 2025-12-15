@@ -15,6 +15,7 @@ import AuthPopupStart from './app/auth-popup-start';
 import GooglePopupCallback from './app/google-popup-callback';
 import TaskView from './components/task-view';
 import DeveloperInfoPage from './app/developer-info-page';
+import DeveloperOnboardingPage from './app/developer-onboarding-page';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -43,6 +44,7 @@ root.render(
         <Route path='/support' element={<SupportPage />} />
         <Route path='/privacy-policy' element={<PrivacyPage />} />
         <Route path='/developer-info' element={<DeveloperInfoPage />} />
+        <Route path='/developer-onboarding' element={<DeveloperOnboardingPage />} />
         <Route path='/create-attachment' element={<CreateAttachmentContent />} />
         <Route
           path='/student-task-view'

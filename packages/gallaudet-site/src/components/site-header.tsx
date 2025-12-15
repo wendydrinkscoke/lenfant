@@ -1,19 +1,34 @@
-import { Link } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { Menu } from "lucide-react"
 import { useCallback, useState } from "react"
 import { cn } from "../lib/utils"
 import ViewInMarketplaceButton from "./view-in-marketplace-button"
 
-const navItems = [
+type NavItem =
+  | { label: string; targetId: string; to?: never }
+  | { label: string; to: string; targetId?: never }
+
+const navItems: NavItem[] = [
   { label: "Games", targetId: "featured-games" },
   { label: "Stories", targetId: "success-stories" },
   { label: "Features", targetId: "features" },
+  { label: "Partner with Us", to: "/developer-onboarding" },
 ]
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
+  const location = useLocation()
+  const navigate = useNavigate()
 
-  const handleNavClick = useCallback((targetId: string) => {
+  const handleNavClick = useCallback((targetId?: string) => {
+    if (!targetId) {
+      return
+    }
+    if (location.pathname !== "/") {
+      navigate("/", { state: { scrollTo: targetId } })
+      setOpen(false)
+      return
+    }
     if (typeof window === "undefined" || typeof document === "undefined") {
       return
     }
@@ -27,7 +42,7 @@ export function SiteHeader() {
       window.history.replaceState(null, "", `#${targetId}`)
     }
     setOpen(false)
-  }, [])
+  }, [location.pathname, navigate])
   
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -40,16 +55,26 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
-          {navItems.map((item) => (
-            <button
-              key={item.targetId}
-              type="button"
-              onClick={() => handleNavClick(item.targetId)}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              {item.label}
-            </button>
-          ))}
+          {navItems.map((item) =>
+            "targetId" in item ? (
+              <button
+                key={item.targetId}
+                type="button"
+                onClick={() => handleNavClick(item.targetId)}
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                {item.label}
+              </button>
+            ) : (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                {item.label}
+              </Link>
+            )
+          )}
         </nav>
 
         <div className="hidden md:block">
@@ -73,16 +98,27 @@ export function SiteHeader() {
       >
         <div className="mx-auto max-w-6xl px-4 py-3">
           <div className="grid gap-3">
-            {navItems.map((item) => (
-              <button
-                key={item.targetId}
-                type="button"
-                onClick={() => handleNavClick(item.targetId)}
-                className="text-left text-sm"
-              >
-                {item.label}
-              </button>
-            ))}
+            {navItems.map((item) =>
+              "targetId" in item ? (
+                <button
+                  key={item.targetId}
+                  type="button"
+                  onClick={() => handleNavClick(item.targetId)}
+                  className="text-left text-sm"
+                >
+                  {item.label}
+                </button>
+              ) : (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className="text-left text-sm text-muted-foreground hover:text-foreground"
+                  onClick={() => setOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              )
+            )}
           </div>
         </div>
       </div>

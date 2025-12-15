@@ -30,26 +30,26 @@ they are implementing this acheivements engine. It seems like, if we want to
 also integrate with Roblox "Badges" at the same time, the game would have to
 manage it.
 
-1. Create studentView and teacherView pages where they can view the assignment
-instructions, details, completion progress, etc.
-
-1. Create a "Enroll Students" task.
-Within the `create-attachment` page, there are various types of tasks that can
-be assigned. For instance, "Fillibuster a Bill". However, we don't yet have a
-task that's like "Enroll Students". I'm thinking the "enroll students" task
-would be assigned to students and it'd be the first task they have to complete.
-Students would view this task within their classrooms UI and complete it by
-logging in with their Google account (Cognito user creation) and then logging 
-in with their Roblox account (to associate their Roblox user ID with their 
-Google account). This is critical since, in order for us to show Classroom tasks
-to Roblox users in-game, we need to know this mapping. Actually doing this will
-likely require we set up Roblox as an OIDC provider on our Cognito user pool and
-then somehow associate the Cognito user created during Google OAuth with the
-Cognito user created during Roblox OAuth, but I'm not sure honestly. All I know
-is it will likely not be a fully frontend solution with changes to 
-`gallaudet-site` but rather will also require infrastructure changes in the
-`gallaudet-api` package.
-
+1. Create a self-service onboarding process where Roblox game developers can
+get an API key based on well-defined criteria. I'm thinking that they would
+do the same sort of two-phase sign-in that teachers/students do where they
+use their Google *and* Roblox accounts. That way, we have their email 
+contact information to send them important updates. And we also can request
+additional scopes from Roblox, such as the ability to read what experiences
+they are an owner of and, if that experience is popular, grant them an API
+key on that basis which will prevent a lot of bad actors. The onboarding
+process whould also have sample code that they can copy and paste into their
+game. It'd also be nice if we could give them a dashboard showing successful
+API calls or failure reasons in gamma so they can be confident its working
+even without having a GWfE license to fully test end-to-end. The steps of
+the self service onboarding will be to 1: prompt Google sign in, 2. Prompt
+Roblox sign-in and delgation of scopes required to vet experiences, 3. Grant
+an API key that works for gamma.school.civictech.llc. 4. Provide a client
+written in Lua (for both knit-based architecture and traditional 
+remote function/event-based scripting) and example code for how ot use it
+to call some sort of a ping endpoint as well as more real endpoints.
+5. Verify that at least one successful ping call and one successful assignment
+grading call has been made to gamma. 6. Vend a production API key.
 
 ## Technology Stack
 
