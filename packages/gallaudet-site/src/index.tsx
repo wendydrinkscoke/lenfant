@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
 import MarketingPage from './app/marketing-page';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import './index.css';
 import { Toaster } from 'sonner';
 import TermsPage from './app/terms-of-service-page';
@@ -16,12 +16,23 @@ import GooglePopupCallback from './app/google-popup-callback';
 import TaskView from './components/task-view';
 import DeveloperInfoPage from './app/developer-info-page';
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [pathname]);
+
+  return null;
+}
+
 const container = document.getElementById('root')!;
 const root = ReactDOM.createRoot(container);
 
 root.render(
   <React.StrictMode>
     <BrowserRouter>
+      <ScrollToTop />
       <Toaster richColors position="top-right" />
       <Routes>
         <Route path='/' element={<MarketingPage />} />
