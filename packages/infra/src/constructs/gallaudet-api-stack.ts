@@ -94,6 +94,12 @@ export class GallaudetApiStack extends Stack {
       "google-oauth-credentials",
     );
 
+    const robloxOAuthClientSecret = Secret.fromSecretNameV2(
+      this,
+      "RobloxOIDCCredentials",
+      "roblox-oauth-credentials",
+    );
+
     this.gallaudet = new Gallaudet(this, "Gallaudet", {
       identityPool: props.identityPool,
       apiSubdomain: "api",
@@ -111,6 +117,7 @@ export class GallaudetApiStack extends Stack {
       partnersTable,
       usersTable,
       googleOAuthClientSecret,
+      robloxOAuthClientSecret,
       emailIdentity: props.emailIdentity,
       userPool: props.userPool,
     });

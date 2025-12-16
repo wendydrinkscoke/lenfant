@@ -30,6 +30,7 @@ import {
   CatalogTaskFunction,
   CompleteMilestoneFunction,
   DelegateGoogleClassroomAccessFunction,
+  DelegateRobloxSecretStoreAccessFunction,
   GetTaskFunction,
   GetTaskCatalogFunction,
   GradeTaskFunction,
@@ -57,6 +58,7 @@ export interface GallaudetProps {
   readonly partnersTable: ITable;
   readonly usersTable: ITable;
   readonly googleOAuthClientSecret: ISecret;
+  readonly robloxOAuthClientSecret: ISecret;
   readonly emailIdentity: EmailIdentity;
   readonly userPool: UserPool;
 }
@@ -159,6 +161,31 @@ export class Gallaudet extends Construct {
     );
     props.googleOAuthClientSecret.grantRead(
       delegateGoogleClassroomAccessFunction,
+    );
+
+    const delegateRobloxSecretStoreAccessFunction =
+      new DelegateRobloxSecretStoreAccessFunction(
+        this,
+        "DelegateRobloxSecretStoreAccessFunction",
+        {
+          environment: {
+            OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
+            ROBLOX_OAUTH_CLIENT_SECRET_ARN:
+              props.robloxOAuthClientSecret.secretArn,
+          },
+          description: [
+            'This function "delegates" access to the Roblox Secret Store',
+            "of a particular experience on behalf of a user (a game",
+            "developer) This involves receiving their Roblox credentials",
+            "and storing them in a DynamoDB table for later use.",
+          ].join(" "),
+        },
+      );
+    props.oauthTokensTable.grantWriteData(
+      delegateRobloxSecretStoreAccessFunction,
+    );
+    props.robloxOAuthClientSecret.grantRead(
+      delegateRobloxSecretStoreAccessFunction,
     );
 
     const getGoogleClassroomAccessStatusFunction =
@@ -357,6 +384,11 @@ export class Gallaudet extends Construct {
         delegateGoogleClassroomAccess: {
           integration: Integrations.lambda(
             delegateGoogleClassroomAccessFunction,
+          ),
+        },
+        delegateRobloxSecretStoreAccess: {
+          integration: Integrations.lambda(
+            delegateRobloxSecretStoreAccessFunction,
           ),
         },
         getGoogleClassroomAccessStatus: {

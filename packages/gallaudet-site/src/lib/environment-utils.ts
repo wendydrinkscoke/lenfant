@@ -15,7 +15,7 @@ export async function getRuntimeConfig(): Promise<RuntimeConfig> {
       region: "us-east-1",
       userPoolId: "us-east-1_VxiLkkU3P",
       userPoolWebClientId: "7ndomh55j4ja578971q5fhipgk",
-      apiBasePath: "https://6vad3pwwa6.execute-api.us-east-1.amazonaws.com/prod/"
+      apiBasePath: "https://6vad3pwwa6.execute-api.us-east-1.amazonaws.com/prod/",
     };
   }
 
@@ -44,5 +44,19 @@ export function getGoogleAuthClientID() {
     return "648341560846-hn9anfo8ljdus0emd60hi6vb0t8ver1j.apps.googleusercontent.com";
   } else {
     throw new Error("No Google OAuth Client ID hard-coded.");
+  }
+}
+
+export function getRobloxOAuthClientId() {
+  // TODO: Fill in the correct Roblox OAuth client IDs per environment.
+  const hostname = window.location.hostname;
+  if (hostname === "localhost" || hostname === "beta.school.civictech.llc") {
+    return "5651729328866129117";
+  } else if (hostname === "gamma.school.civictech.llc") {
+    return "6931351931854279191";
+  } else if (hostname === "school.civictech.llc") {
+    return "2423359673341824485";
+  } else {
+    throw new Error("No Roblox OAuth Client ID hard-coded.");
   }
 }

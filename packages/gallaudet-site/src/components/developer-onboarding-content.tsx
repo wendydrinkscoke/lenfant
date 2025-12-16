@@ -1,7 +1,11 @@
-import { Gauge, HandHeart, Megaphone, ShieldCheck, Sparkles, TerminalSquare } from "lucide-react"
-import { Link } from "react-router-dom"
+import { useEffect, useState } from "react"
+import { Gauge, HandHeart, KeyRound, Megaphone, ShieldCheck, Sparkles, TerminalSquare } from "lucide-react"
+import { startCognitoOAuthFlowViaPopup } from "../lib/auth-utils"
+import { getGallaudetApi } from "../lib/gallaudet-api"
+import { Badge } from "./ui/badge"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
+import { toast } from "sonner"
 
 const sellingPoints = [
   {
@@ -37,6 +41,80 @@ const sellingPoints = [
 ]
 
 export default function DeveloperOnboardingContent() {
+  const [googleSignedIn, setGoogleSignedIn] = useState(false)
+  const [robloxLinked, setRobloxLinked] = useState(false)
+  const [robloxScopesNeeded, setRobloxScopesNeeded] = useState<string[]>([])
+
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return
+      if (!event.data || typeof event.data !== "object") return
+      const { type, scopes, code, codeVerifier, redirectUri } = event.data as {
+        type?: string
+        scopes?: string[]
+        code?: string
+        codeVerifier?: string | null
+        redirectUri?: string
+      }
+      if (type === "google-signin-complete") {
+        setGoogleSignedIn(true)
+        toast.success("Google sign-in complete")
+      }
+      if (type === "roblox-sign-in-complete") {
+        setRobloxLinked(true)
+        toast.success("Roblox sign-in complete")
+      }
+      if (type === "roblox-scopes-required" && Array.isArray(scopes)) {
+        setRobloxScopesNeeded(scopes)
+        toast.message("Roblox scopes needed", { description: scopes.join(", ") })
+        const params = new URLSearchParams({ scopes: scopes.join(",") })
+        const popup = window.open(
+          `${window.location.origin}/roblox/oauth-start?${params.toString()}`,
+          "robloxOAuth",
+          "width=520,height=640"
+        )
+        if (!popup) {
+          toast.error("Please allow popups to approve Roblox scopes.")
+        }
+      }
+      if (type === "roblox-oauth-complete" && code) {
+        setRobloxScopesNeeded([])
+        toast.success("Roblox scopes approved");
+        (async () => {
+          try {
+            const apiClient = await getGallaudetApi()
+            await apiClient.delegateRobloxSecretStoreAccess({
+              delegateRobloxSecretStoreAccessRequestContent: {
+                code,
+                code_verifier: codeVerifier ?? "",
+                redirect_uri: redirectUri ?? `${window.location.origin}/roblox/oauth-callback`,
+              },
+            })
+            toast.success("Roblox secret-store delegation saved")
+          } catch (err: any) {
+            console.error("[Roblox OAuth] backend delegation failed", err)
+            toast.error("Failed to save Roblox delegation", {
+              description: err?.message ?? "Try again or contact support.",
+            })
+          }
+        })()
+      }
+    }
+    window.addEventListener("message", handler)
+    return () => window.removeEventListener("message", handler)
+  }, [])
+
+  const handleStartOnboarding = () => {
+    const popup = startCognitoOAuthFlowViaPopup({
+      roleOverride: "developer",
+      includeRobloxAssociation: true,
+      robloxScopes: ["universe.secret:write", "universe.secret:read"],
+    })
+    if (!popup) {
+      toast.error("Please allow popups to continue onboarding.")
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <section className="relative overflow-hidden border-b">
@@ -52,9 +130,7 @@ export default function DeveloperOnboardingContent() {
               }
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button asChild>
-                <Link to="/">{"Start self-service onboarding"}</Link>
-              </Button>
+              <Button onClick={handleStartOnboarding}>{"Start self-service onboarding"}</Button>
               <Button asChild variant="outline">
                 <a href="mailto:cupwendyscup@gmail.com">{"Talk to our team"}</a>
               </Button>
@@ -77,6 +153,43 @@ export default function DeveloperOnboardingContent() {
             </Card>
           ))}
         </div>
+
+        <Card className="border-emerald-100 bg-gradient-to-br from-white to-emerald-50 shadow-sm dark:from-emerald-950/30 dark:to-background">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-emerald-600" />
+              {"How the self-service flow works"}
+            </CardTitle>
+            <CardDescription>
+              {
+                "Sign in with Google + Roblox (via Cognito), then approve Roblox secret scopes. We rotate the secrets; you just drop the Lua code in."
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={googleSignedIn ? "secondary" : "outline"}>
+                {googleSignedIn ? "Google linked" : "Google pending"}
+              </Badge>
+              <Badge variant={robloxLinked ? "secondary" : "outline"}>
+                {robloxLinked ? "Roblox linked" : "Roblox pending"}
+              </Badge>
+              <Badge variant={robloxScopesNeeded.length ? "secondary" : "outline"}>
+                {robloxScopesNeeded.length ? "Roblox scopes pending" : "Scopes requested on link"}
+              </Badge>
+            </div>
+            <p>{"Requested Roblox scopes: universe.secret:write, universe.secret:read."}</p>
+            {robloxScopesNeeded.length ? (
+              <p className="text-xs text-muted-foreground">
+                {"After signing in, approve these scopes in the Roblox prompt so we can create and rotate secrets for your universe."}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {"When the popup appears, approve the Roblox scopes so we can securely manage secrets your game can read."}
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         <Card className="border-emerald-100 bg-gradient-to-r from-emerald-50 to-white dark:from-emerald-950/30 dark:to-background">
           <CardHeader>

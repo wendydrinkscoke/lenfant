@@ -24,10 +24,12 @@ export default function GooglePopupCallback() {
           stateParams?.get("includeRobloxAssociation") === "1";
         const roleParam = stateParams?.get("role");
         const role =
-          roleParam === "teacher" || roleParam === "student"
+          roleParam === "teacher" || roleParam === "student" || roleParam === "developer"
             ? roleParam
             : undefined;
         const loginHint = stateParams?.get("login_hint") ?? undefined;
+        const robloxScopes =
+          stateParams?.get("robloxScopes")?.split(",").filter(Boolean) ?? [];
 
         const client = await getGallaudetApi();
         await client.delegateGoogleClassroomAccess({
@@ -62,6 +64,7 @@ export default function GooglePopupCallback() {
             login_hint: loginHint,
             includeRobloxAssociation: true,
             stage: "roblox" as const,
+            robloxScopes,
           };
           const robloxState = toB64Url(JSON.stringify(stateObj));
 

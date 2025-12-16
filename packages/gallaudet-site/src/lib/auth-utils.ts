@@ -1,6 +1,7 @@
 import { getRuntimeConfig } from "./environment-utils";
 
 export type ClassroomRole = "teacher" | "student";
+export type AuthRole = ClassroomRole | "developer";
 
 const ROLE_PATTERNS: Array<{ role: ClassroomRole; test: (path: string) => boolean }> = [
   { role: "teacher", test: (path) => path.startsWith("/create-attachment") },
@@ -22,7 +23,8 @@ export function inferClassroomRoleFromLocation(loc: Location = window.location):
 export interface StartCognitoOAuthFlowOptions {
   loginHint?: string;
   includeRobloxAssociation?: boolean;
-  roleOverride?: ClassroomRole;
+  roleOverride?: AuthRole;
+  robloxScopes?: string[];
 }
 
 export function startCognitoOAuthFlowViaPopup(
@@ -38,6 +40,9 @@ export function startCognitoOAuthFlowViaPopup(
   if (options.loginHint) params.set("login_hint", options.loginHint);
   if (options.includeRobloxAssociation) {
     params.set("includeRobloxAssociation", "1");
+  }
+  if (options.robloxScopes?.length) {
+    params.set("robloxScopes", options.robloxScopes.join(","));
   }
   const url = `${window.location.origin}/auth/popup-start?${params}`;
   return window.open(url, "cognitoLogin", "width=520,height=640");
