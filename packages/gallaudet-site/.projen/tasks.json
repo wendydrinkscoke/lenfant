@@ -94,13 +94,13 @@
       },
       "steps": [
         {
-          "exec": "pnpm dlx npm-check-updates@16 --upgrade --target=minor --peer --dep=dev,peer,prod,optional --filter=@testing-library/jest-dom,@testing-library/react,@testing-library/user-event,@types/jest,@types/react,@types/react-dom,@radix-ui/react-accordion,@radix-ui/react-avatar,@radix-ui/react-dialog,@radix-ui/react-label,@radix-ui/react-radio-group,@radix-ui/react-select,@radix-ui/react-separator,@radix-ui/react-slot,@radix-ui/react-tooltip,@shadcn/ui,class-variance-authority,clsx,lucide-react,next-themes,postcss,react,react-dom,react-router-dom,sonner,tailwind-merge,tailwindcss,tailwindcss-animate,web-vitals"
+          "exec": "pnpm dlx npm-check-updates@16 --upgrade --target=minor --peer --dep=dev,peer,prod,optional --filter=@testing-library/jest-dom,@testing-library/react,@testing-library/user-event,@types/jest,@types/react,@types/react-dom,@radix-ui/react-accordion,@radix-ui/react-avatar,@radix-ui/react-dialog,@radix-ui/react-dropdown-menu,@radix-ui/react-label,@radix-ui/react-radio-group,@radix-ui/react-select,@radix-ui/react-separator,@radix-ui/react-slot,@radix-ui/react-tooltip,@shadcn/ui,class-variance-authority,clsx,lucide-react,next-themes,postcss,react,react-dom,react-router-dom,sonner,tailwind-merge,tailwindcss,tailwindcss-animate,web-vitals"
         },
         {
           "exec": "pnpm i --no-frozen-lockfile"
         },
         {
-          "exec": "pnpm update @testing-library/jest-dom @testing-library/react @testing-library/user-event @types/jest @types/node @types/react @types/react-dom react-scripts typescript @radix-ui/react-accordion @radix-ui/react-avatar @radix-ui/react-dialog @radix-ui/react-label @radix-ui/react-radio-group @radix-ui/react-select @radix-ui/react-separator @radix-ui/react-slot @radix-ui/react-tooltip @shadcn/ui class-variance-authority clsx gallaudet-api-typescript-react-query-hooks lucide-react next-themes postcss react react-dom react-router-dom sonner tailwind-merge tailwindcss tailwindcss-animate web-vitals"
+          "exec": "pnpm update @testing-library/jest-dom @testing-library/react @testing-library/user-event @types/jest @types/node @types/react @types/react-dom react-scripts typescript @radix-ui/react-accordion @radix-ui/react-avatar @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-label @radix-ui/react-radio-group @radix-ui/react-select @radix-ui/react-separator @radix-ui/react-slot @radix-ui/react-tooltip @shadcn/ui class-variance-authority clsx gallaudet-api-typescript-react-query-hooks lucide-react next-themes postcss react react-dom react-router-dom sonner tailwind-merge tailwindcss tailwindcss-animate web-vitals"
         },
         {
           "exec": "npx projen"

@@ -136,6 +136,7 @@ new TypeSafeWebsiteProject({
     "@radix-ui/react-accordion",
     "@radix-ui/react-avatar",
     "@radix-ui/react-dialog",
+    "@radix-ui/react-dropdown-menu",
     "@radix-ui/react-label",
     "@radix-ui/react-radio-group",
     "@radix-ui/react-separator",

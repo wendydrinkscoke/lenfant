@@ -62,6 +62,10 @@
       "type": "runtime"
     },
     {
+      "name": "@radix-ui/react-dropdown-menu",
+      "type": "runtime"
+    },
+    {
       "name": "@radix-ui/react-label",
       "type": "runtime"
     },

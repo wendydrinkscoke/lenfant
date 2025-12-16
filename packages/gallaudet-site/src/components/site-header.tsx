@@ -12,7 +12,7 @@ const navItems: NavItem[] = [
   { label: "Games", targetId: "featured-games" },
   { label: "Stories", targetId: "success-stories" },
   { label: "Features", targetId: "features" },
-  { label: "Partner with Us", to: "/developer-onboarding" },
+  { label: "Partner with Us", to: "/partner-with-us" },
 ]
 
 export function SiteHeader() {
