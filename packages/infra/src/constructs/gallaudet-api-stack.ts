@@ -73,6 +73,14 @@ export class GallaudetApiStack extends Stack {
       },
     });
 
+    const projectsTable = new Table(this, "ProjectsDDBTable", {
+      tableName: "Projects",
+      partitionKey: {
+        name: "ExperienceId",
+        type: AttributeType.STRING,
+      },
+    });
+
     const usersTable = new Table(this, "UsersDDBTable", {
       tableName: "Users",
       partitionKey: {
@@ -92,6 +100,12 @@ export class GallaudetApiStack extends Stack {
       this,
       "GoogleOIDCCredentials",
       "google-oauth-credentials",
+    );
+
+    const robloxApiKey = Secret.fromSecretNameV2(
+      this,
+      "RobloxAPIKey",
+      "roblox-api-key",
     );
 
     const robloxOAuthClientSecret = Secret.fromSecretNameV2(
@@ -115,8 +129,10 @@ export class GallaudetApiStack extends Stack {
       taskCatalogTable,
       taskInstanceTable: taskInstancesTable,
       partnersTable,
+      projectsTable,
       usersTable,
       googleOAuthClientSecret,
+      robloxApiKey,
       robloxOAuthClientSecret,
       emailIdentity: props.emailIdentity,
       userPool: props.userPool,

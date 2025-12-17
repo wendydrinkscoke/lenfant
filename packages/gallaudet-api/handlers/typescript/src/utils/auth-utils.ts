@@ -25,6 +25,13 @@ class ApiKeyIdNotParseableFromEventError extends Error {
   }
 }
 
+class RobloxUserNotLinkedError extends Error {
+  constructor(cognitoUserId: string) {
+    super(`Roblox User ID not found for Cognito User ID: ${cognitoUserId}`);
+    this.name = 'RobloxUserNotLinkedError';
+  }
+}
+
 const ddbClient = new DynamoDB.DocumentClient();
 const secretsManager = new SecretsManager();
 let cachedGoogleOAuthClientSecret: { clientId?: string; clientSecret?: string } | null = null;
@@ -85,6 +92,22 @@ export const getCognitoUserIdFromEvent = (event: APIGatewayProxyEvent): string =
     throw new CognitoUserNotParseableFromEventError();
   }
   return cognitoUserId;
+};
+
+export const getRobloxUserIdForCognitoUser = async (cognitoUserId: string): Promise<string> => {
+  const usersTableName = getRequiredEnv('USERS_TABLE_NAME');
+
+  const userRecord = await ddbClient.get({
+    TableName: usersTableName,
+    Key: {
+      CognitoUserId: cognitoUserId,
+    },
+  }).promise();
+
+  if (!userRecord.Item || !userRecord.Item.RobloxUserId) {
+    throw new RobloxUserNotLinkedError(cognitoUserId);
+  }
+  return userRecord.Item.RobloxUserId;
 };
 
 export const getApiKeyIdFromEvent = (event: APIGatewayProxyEvent): string => {

@@ -48,3 +48,20 @@ export const parseIdentitiesClaim = (
   }
   return [];
 };
+
+export const getRobloxUserNameFromUserId = async (userId: string, apiKeyValue: string): Promise<string> => {
+  const robloxUsersEndpoint = `https://users.roblox.com/v1/users/${userId}`;
+
+  const response = await fetch(robloxUsersEndpoint, {
+    headers: {
+      'x-api-key': apiKeyValue,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch user data: ${response.status}`);
+  }
+
+  const userData = await response.json();
+  return userData.name;
+};

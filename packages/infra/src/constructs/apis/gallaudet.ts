@@ -39,6 +39,7 @@ import {
   PutPartnerFunction,
   GetLinkedRobloxAccountFunction,
   GetGoogleClassroomAccessStatusFunction,
+  CreateProjectFunction,
 } from "gallaudet-api-typescript-infra";
 
 /**
@@ -56,8 +57,10 @@ export interface GallaudetProps {
   readonly taskCatalogTable: ITable;
   readonly taskInstanceTable: ITable;
   readonly partnersTable: ITable;
+  readonly projectsTable: ITable;
   readonly usersTable: ITable;
   readonly googleOAuthClientSecret: ISecret;
+  readonly robloxApiKey: ISecret;
   readonly robloxOAuthClientSecret: ISecret;
   readonly emailIdentity: EmailIdentity;
   readonly userPool: UserPool;
@@ -137,6 +140,21 @@ export class Gallaudet extends Construct {
     props.taskInstanceTable.grantReadWriteData(completeMilestoneFunction);
     props.usersTable.grantReadData(completeMilestoneFunction);
     props.googleOAuthClientSecret.grantRead(completeMilestoneFunction);
+
+    const createProjectFunction = new CreateProjectFunction(
+      this,
+      "CreateProjectFunction",
+      {
+        environment: {
+          PROJECTS_TABLE_NAME: props.projectsTable.tableName,
+          ROBLOX_API_KEY_SECRET_ARN: props.robloxApiKey.secretArn,
+          USERS_TABLE_NAME: props.usersTable.tableName,
+        },
+      },
+    );
+    props.projectsTable.grantReadWriteData(createProjectFunction);
+    props.robloxApiKey.grantRead(createProjectFunction);
+    props.usersTable.grantReadData(createProjectFunction);
 
     const delegateGoogleClassroomAccessFunction =
       new DelegateGoogleClassroomAccessFunction(
@@ -380,6 +398,9 @@ export class Gallaudet extends Construct {
           options: {
             apiKeyRequired: true,
           },
+        },
+        createProject: {
+          integration: Integrations.lambda(createProjectFunction),
         },
         delegateGoogleClassroomAccess: {
           integration: Integrations.lambda(

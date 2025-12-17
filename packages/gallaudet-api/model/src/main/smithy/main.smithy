@@ -12,6 +12,7 @@ service Gallaudet {
       AttachTask
       CatalogTask
       CompleteMilestone
+      CreateProject
       DelegateGoogleClassroomAccess
       DelegateRobloxSecretStoreAccess
       GetGoogleClassroomAccessStatus
