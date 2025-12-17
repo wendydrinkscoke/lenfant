@@ -1,5 +1,6 @@
 import {
   AttachTaskResponseContent,
+  CreateProjectResponseContent,
   DefaultApi,
   DelegateGoogleClassroomAccessResponseContent,
   GetLinkedRobloxAccountResponseContent,
@@ -139,6 +140,13 @@ export class MockGallaudetApi extends DefaultApi {
         ? `Mock attachment created for "${entry.name}".`
         : "Mock attachment created for offline preview.",
     };
+  }
+
+  async createProject(
+    request: Parameters<DefaultApi["createProject"]>[0],
+  ): Promise<CreateProjectResponseContent> {
+    await delay(MOCK_LATENCY_MS);
+    return { message: `Mock project created for universe ${request.experienceId}.` };
   }
 
   async linkRobloxAccount(

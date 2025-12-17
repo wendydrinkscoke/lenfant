@@ -1,4 +1,4 @@
-import { Plus, Sparkles, ListChecks, KeySquare, Loader2, AlertCircle, CheckCircle2, Boxes, Users, ChartLine } from "lucide-react"
+import { Plus, Sparkles, ListChecks, KeySquare, Loader2, AlertCircle, Boxes, Users, ChartLine } from "lucide-react"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "./ui/sidebar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
@@ -7,7 +7,9 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 import { Button } from "./ui/button"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
+import { getGallaudetApi } from "../lib/gallaudet-api"
+import { ResponseError } from "gallaudet-api-typescript-react-query-hooks"
 
 type Experience = { id: string; name: string; status?: string }
 type Feature = { id: string; label: string; icon?: React.ComponentType<{ className?: string }> }
@@ -101,73 +103,70 @@ function ExperienceSwitcher({
     ? experiences.find((exp) => exp.id === selectedExperience)
     : undefined
   const hasExperiences = experiences.length > 0
-  const [experienceUrl, setExperienceUrl] = useState("")
-  const [status, setStatus] = useState<"idle" | "checking" | "success" | "error">("idle")
+  const [experienceId, setExperienceId] = useState("")
+  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle")
   const [statusMessage, setStatusMessage] = useState("")
-  const [preview, setPreview] = useState<Experience | null>(null)
-  const debounceRef = useRef<number | null>(null)
-  const pendingRef = useRef<number | null>(null)
+  const isSubmitting = status === "loading"
 
-  const canConfirm = status === "success" && preview
+  const canConfirm = Boolean(experienceId.trim()) && !isSubmitting
 
   useEffect(() => {
     if (!dialogOpen) {
-      setExperienceUrl("")
+      setExperienceId("")
       setStatus("idle")
       setStatusMessage("")
-      setPreview(null)
     }
   }, [dialogOpen])
 
-  useEffect(() => {
-    if (!experienceUrl.trim()) {
-      setStatus("idle")
-      setStatusMessage("")
-      setPreview(null)
+  const handleConfirm = async () => {
+    const trimmedId = experienceId.trim()
+    if (!trimmedId) {
+      setStatus("error")
+      setStatusMessage("Universe ID is required.")
+      return
+    }
+    if (!/^\d+$/.test(trimmedId)) {
+      setStatus("error")
+      setStatusMessage("Universe ID should only contain numbers.")
       return
     }
 
-    if (debounceRef.current) {
-      window.clearTimeout(debounceRef.current)
-    }
+    setStatus("loading")
+    setStatusMessage("Creating project...")
 
-    debounceRef.current = window.setTimeout(() => {
-      if (pendingRef.current) {
-        window.clearTimeout(pendingRef.current)
-      }
-      setStatus("checking")
-      setStatusMessage("Looking up experience…")
-      setPreview(null)
+    try {
+      const apiClient = await getGallaudetApi()
+      await apiClient.createProject({ experienceId: trimmedId })
 
-      pendingRef.current = window.setTimeout(() => {
-        const looksValid = experienceUrl.includes("roblox.com/games")
-        if (looksValid) {
-          const mockName = "Capitol Quest"
-          const mockId = "exp-" + Math.random().toString(36).slice(2, 7)
-          setPreview({ id: mockId, name: mockName, status: "Pending" })
-          setStatus("success")
-          setStatusMessage("Experience found. Confirm to add.")
-        } else {
-          setStatus("error")
-          setStatusMessage("We could not verify this experience. Check the URL and try again.")
+      onAddExperience({
+        id: trimmedId,
+        name: `Universe ${trimmedId}`,
+        status: "Pending",
+      })
+      onDialogOpenChange(false)
+    } catch (error) {
+      let message = "Unable to create the project. Please try again."
+      if (error instanceof ResponseError) {
+        try {
+          const data = await error.response.clone().json()
+          if (typeof data?.message === "string") {
+            message = data.message
+          }
+        } catch {
+          // Fall back to the default error message.
         }
-      }, 5000)
-    }, 2000)
+      } else if (error instanceof Error && error.message) {
+        message = error.message
+      }
 
-    return () => {
-      if (debounceRef.current) {
-        window.clearTimeout(debounceRef.current)
-      }
-      if (pendingRef.current) {
-        window.clearTimeout(pendingRef.current)
-      }
+      setStatus("error")
+      setStatusMessage(message)
     }
-  }, [experienceUrl])
+  }
 
-  const handleConfirm = () => {
-    if (!preview) return
-    onAddExperience(preview)
-    onDialogOpenChange(false)
+  const handleDialogOpenChange = (open: boolean) => {
+    if (isSubmitting) return
+    onDialogOpenChange(open)
   }
 
   return (
@@ -220,61 +219,66 @@ function ExperienceSwitcher({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Dialog open={dialogOpen} onOpenChange={onDialogOpenChange}>
+        <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Add a Roblox experience</DialogTitle>
               <DialogDescription>
-                Paste the game URL and we will verify ownership before adding it to your console.
+                Enter the Roblox universe ID (the number in your experience URL). We will verify ownership when you confirm.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="experience-url">Experience URL</Label>
+                <Label htmlFor="experience-id">Universe ID</Label>
                 <Input
-                  id="experience-url"
-                  placeholder="https://www.roblox.com/games/12345678/Your-Experience"
-                  value={experienceUrl}
-                  onChange={(event) => setExperienceUrl(event.target.value)}
+                  id="experience-id"
+                  placeholder="1278348231"
+                  inputMode="numeric"
+                  value={experienceId}
+                  onChange={(event) => {
+                    setExperienceId(event.target.value)
+                    if (status === "error") {
+                      setStatus("idle")
+                      setStatusMessage("")
+                    }
+                  }}
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
-                {status === "checking" && (
+                {status === "loading" && (
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>{statusMessage}</span>
-                  </div>
-                )}
-                {status === "success" && preview && (
-                  <div className="flex items-start gap-2 text-emerald-700">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4" />
-                    <div>
-                      <p className="font-semibold text-foreground">{preview.name}</p>
-                      <p className="text-xs text-muted-foreground">Status: {preview.status}</p>
-                      <p className="text-xs text-muted-foreground">{statusMessage}</p>
-                    </div>
                   </div>
                 )}
                 {status === "error" && (
                   <div className="flex items-start gap-2 text-rose-600">
                     <AlertCircle className="mt-0.5 h-4 w-4" />
                     <div>
-                      <p className="font-semibold text-foreground">Verification failed</p>
+                      <p className="font-semibold text-foreground">Unable to add experience</p>
                       <p className="text-xs text-muted-foreground">{statusMessage}</p>
                     </div>
                   </div>
                 )}
                 {status === "idle" && (
-                  <p>Paste a Roblox game URL to begin verification.</p>
+                  <p>Enter the Roblox universe ID and click confirm to add it.</p>
                 )}
               </div>
             </div>
             <DialogFooter className="gap-2 sm:justify-between">
               <DialogClose asChild>
-                <Button type="button" variant="ghost">Cancel</Button>
+                <Button type="button" variant="ghost" disabled={isSubmitting}>Cancel</Button>
               </DialogClose>
               <Button type="button" onClick={handleConfirm} disabled={!canConfirm}>
-                Confirm
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Confirm"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
