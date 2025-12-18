@@ -6,6 +6,7 @@ import {
   GetLinkedRobloxAccountResponseContent,
   GetTaskCatalogResponseContent,
   GetTaskResponseContent,
+  ListProjectsResponseContent,
   LinkRobloxAccountResponseContent,
   Milestone,
   TaskInstanceView,
@@ -147,6 +148,16 @@ export class MockGallaudetApi extends DefaultApi {
   ): Promise<CreateProjectResponseContent> {
     await delay(MOCK_LATENCY_MS);
     return { message: `Mock project created for universe ${request.experienceId}.` };
+  }
+
+  async listProjects(): Promise<ListProjectsResponseContent> {
+    await delay(MOCK_LATENCY_MS);
+    return {
+      projects: [
+        { experienceId: "12039485732" },
+        { experienceId: "9876543210" },
+      ],
+    };
   }
 
   async linkRobloxAccount(

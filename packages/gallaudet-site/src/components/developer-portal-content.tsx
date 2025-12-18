@@ -24,6 +24,7 @@ import { AssetManagerPanel } from "./developer-portal/asset-manager"
 import { RolesPanel } from "./developer-portal/roles"
 import { MetricsPanel } from "./developer-portal/metrics"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "./ui/empty"
+import { ResponseError } from "gallaudet-api-typescript-react-query-hooks"
 
 const portalContent: Record<string, ReactNode> = {
   listing: <MarketplaceListingPanel />,
@@ -52,6 +53,7 @@ export function DeveloperPortalContent() {
   const [selectedExperience, setSelectedExperience] = useState<string | null>(null)
   const [selectedFeature, setSelectedFeature] = useState(features[0]?.id ?? "")
   const [addExperienceOpen, setAddExperienceOpen] = useState(false)
+  const [isLoadingExperiences, setIsLoadingExperiences] = useState(false)
 
   useEffect(() => {
     if (!experiences.length && selectedExperience !== null) {
@@ -110,6 +112,65 @@ export function DeveloperPortalContent() {
     }
     window.addEventListener("message", handler)
     return () => window.removeEventListener("message", handler)
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+    ;(async () => {
+      setIsLoadingExperiences(true)
+      try {
+        const apiClient = await getGallaudetApi()
+        const response = await apiClient.listProjects()
+        if (!isMounted) return
+
+        const normalized = (response.projects ?? [])
+          .map((project) => project.experienceId?.trim())
+          .filter((id): id is string => Boolean(id))
+          .map((id) => ({
+            id,
+            name: `Universe ${id}`,
+            status: "Active",
+          }))
+
+        setExperiences((prev) => {
+          const existing = new Set(prev.map((exp) => exp.id))
+          const merged = [...prev]
+          normalized.forEach((exp) => {
+            if (!existing.has(exp.id)) {
+              merged.push(exp)
+            }
+          })
+          return merged
+        })
+        setSelectedExperience((prev) => prev ?? normalized[0]?.id ?? null)
+      } catch (error) {
+        if (!isMounted) return
+        let message = "Unable to load experiences."
+        if (error instanceof ResponseError) {
+          try {
+            const data = await error.response.clone().json()
+            if (typeof data?.message === "string") {
+              message = data.message
+            }
+          } catch {
+            // Ignore parse errors and fall back to default message.
+          }
+        } else if (error instanceof Error && error.message) {
+          message = error.message
+        }
+        toast.error("Failed to load experiences", {
+          description: message,
+        })
+      } finally {
+        if (isMounted) {
+          setIsLoadingExperiences(false)
+        }
+      }
+    })()
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   const selectedExperienceName = experiences.find((e) => e.id === selectedExperience)?.name
@@ -185,11 +246,15 @@ export function DeveloperPortalContent() {
                 </EmptyMedia>
                 <EmptyTitle>No experiences yet</EmptyTitle>
                 <EmptyDescription>
-                  Add your first Roblox experience to configure listings, tasks, and secrets.
+                  {isLoadingExperiences
+                    ? "Fetching your Roblox experiences..."
+                    : "Add your first Roblox experience to configure listings, tasks, and secrets."}
                 </EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
-                <Button onClick={() => setAddExperienceOpen(true)}>Add experience</Button>
+                <Button onClick={() => setAddExperienceOpen(true)} disabled={isLoadingExperiences}>
+                  {isLoadingExperiences ? "Loading..." : "Add experience"}
+                </Button>
               </EmptyContent>
             </Empty>
           )}
