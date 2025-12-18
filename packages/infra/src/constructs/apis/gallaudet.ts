@@ -40,6 +40,7 @@ import {
   GetLinkedRobloxAccountFunction,
   GetGoogleClassroomAccessStatusFunction,
   CreateProjectFunction,
+  ListProjectsFunction,
 } from "gallaudet-api-typescript-infra";
 
 /**
@@ -349,6 +350,25 @@ export class Gallaudet extends Construct {
     );
     props.usersTable.grantWriteData(linkRobloxAccountFunction);
 
+    const listProjectsFunction = new ListProjectsFunction(
+      this,
+      "ListProjectsFunction",
+      {
+        environment: {
+          PROJECTS_TABLE_NAME: props.projectsTable.tableName,
+          USERS_TABLE_NAME: props.usersTable.tableName,
+        },
+        description: [
+          "This function lists all projects created by a particular user.",
+          "In the future, we will not care who originally created the project,",
+          "but rather we will only care about who currently owns it and who's",
+          "been given access via role assignments.",
+        ].join(" "),
+      },
+    );
+    props.projectsTable.grantReadData(listProjectsFunction);
+    props.usersTable.grantReadData(listProjectsFunction);
+
     const putPartnerFunction = new PutPartnerFunction(
       this,
       "PutPartnerFunction",
@@ -432,6 +452,9 @@ export class Gallaudet extends Construct {
           options: {
             apiKeyRequired: true,
           },
+        },
+        listProjects: {
+          integration: Integrations.lambda(listProjectsFunction),
         },
         listTasksForPlayer: {
           integration: Integrations.lambda(listTasksForPlayerFunction),

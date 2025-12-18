@@ -19,6 +19,7 @@ service Gallaudet {
       GetTask
       GetTaskCatalog
       GradeTask
+      ListProjects
       ListTasksForPlayer
       LinkRobloxAccount
       GetLinkedRobloxAccount

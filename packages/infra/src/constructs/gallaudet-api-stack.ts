@@ -80,6 +80,13 @@ export class GallaudetApiStack extends Stack {
         type: AttributeType.STRING,
       },
     });
+    projectsTable.addGlobalSecondaryIndex({
+      indexName: "ProjectCreatorRobloxUserIdIndex",
+      partitionKey: {
+        name: "ProjectCreatorRobloxUserId",
+        type: AttributeType.STRING,
+      },
+    });
 
     const usersTable = new Table(this, "UsersDDBTable", {
       tableName: "Users",
