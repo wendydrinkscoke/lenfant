@@ -18,8 +18,7 @@ import RobloxOAuthCallback from './app/roblox-oauth-callback';
 import TaskView from './components/task-view';
 import DeveloperInfoPage from './app/developer-info-page';
 import DeveloperOnboardingPage from './app/developer-onboarding-page';
-// import DeveloperPortalPage from './app/developer-portal-page';
-import { DeveloperPortalContent } from './components/developer-portal-content';
+import DeveloperPortalPage from './app/developer-portal-page';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -51,7 +50,7 @@ root.render(
         <Route path='/privacy-policy' element={<PrivacyPage />} />
         <Route path='/developer-info' element={<DeveloperInfoPage />} />
         <Route path='/partner-with-us' element={<DeveloperOnboardingPage />} />
-        <Route path='/create' Component={DeveloperPortalContent} />
+        <Route path='/create' element={<DeveloperPortalPage />} />
         <Route path='/create-attachment' element={<CreateAttachmentContent />} />
         <Route
           path='/student-task-view'

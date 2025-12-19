@@ -20,6 +20,7 @@ type CognitoAuthGateContext = {
 
 type CognitoAuthGateProps = {
   loginHint?: string;
+  roleOverride?: "developer" | "teacher" | "student";
   children: ReactNode | ((ctx: CognitoAuthGateContext) => ReactNode);
 };
 
@@ -32,7 +33,7 @@ const renderChildren = (
     : children;
 };
 
-export function CognitoAuthGate({ loginHint, children }: CognitoAuthGateProps) {
+export function CognitoAuthGate({ loginHint, roleOverride, children }: CognitoAuthGateProps) {
   const { user, isSignedIn, checkAuth, signOut } = useAuth();
   const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
   const [showMultiLoginError, setShowMultiLoginError] = useState<boolean>(false);
@@ -98,7 +99,10 @@ export function CognitoAuthGate({ loginHint, children }: CognitoAuthGateProps) {
 
   const handleCognitoSignIn = () => {
     try {
-      startCognitoOAuthFlowViaPopup(loginHint);
+      startCognitoOAuthFlowViaPopup({
+        loginHint,
+        roleOverride,
+      });
     } catch (error: any) {
       if (error?.message !== "POPUP_BLOCKED") {
         console.error(error);
