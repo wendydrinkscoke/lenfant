@@ -40,6 +40,16 @@ structure NotAuthorizedError {
     message: ErrorMessage
 }
 
+/// An error due to the client not being authorized to access the resource
+/// due to not having delegated sufficient OAuth scopes from Roblox.
+@error("client")
+@httpError(403)
+structure MissingRequiredRobloxOAuthScopes {
+    /// Message with details about the error
+    @required
+    message: ErrorMessage
+}
+
 /// An error due to the client not being associated to any Roblox account 
 /// while attempting to perform an operation that uses Roblox account
 /// information to make authorization decisions.
@@ -57,3 +67,11 @@ structure ProjectAlreadyExistsError {
   @required
   message: ErrorMessage
 }
+
+@error("client")
+@httpError(409)
+structure SecretAlreadyExistsError {
+  @required
+  message: ErrorMessage
+}
+

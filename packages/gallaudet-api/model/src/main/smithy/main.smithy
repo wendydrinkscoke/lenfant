@@ -16,14 +16,15 @@ service Gallaudet {
       DelegateGoogleClassroomAccess
       DelegateRobloxSecretStoreAccess
       GetGoogleClassroomAccessStatus
+      GetLinkedRobloxAccount
       GetTask
       GetTaskCatalog
       GradeTask
       ListProjects
       ListTasksForPlayer
       LinkRobloxAccount
-      GetLinkedRobloxAccount
       PutPartner
+      VendSecret
     ]
     errors: [
       BadRequestError

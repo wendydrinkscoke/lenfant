@@ -3,6 +3,7 @@ import {
   CognitoAuthorizer,
   Integrations,
 } from "@aws/pdk/type-safe-api";
+import { Stack } from "aws-cdk-lib";
 import { ApiKeySourceType, Cors } from "aws-cdk-lib/aws-apigateway";
 import { SecurityPolicy } from "aws-cdk-lib/aws-apigatewayv2";
 import {
@@ -41,6 +42,7 @@ import {
   GetGoogleClassroomAccessStatusFunction,
   CreateProjectFunction,
   ListProjectsFunction,
+  VendSecretFunction,
 } from "gallaudet-api-typescript-infra";
 
 /**
@@ -385,6 +387,28 @@ export class Gallaudet extends Construct {
     );
     props.partnersTable.grantWriteData(putPartnerFunction);
 
+    const vendSecretFunction = new VendSecretFunction(
+      this,
+      "VendSecretFunction",
+      {
+        environment: {
+          OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
+          ROBLOX_OAUTH_CLIENT_SECRET_ARN:
+            props.robloxOAuthClientSecret.secretArn,
+          PARTNER_API_KEY_USAGE_PLAN_NAME: `partner-api-key-usage-plan-${props.stage}`,
+          SECRET_DOMAIN: props.websiteDomainName,
+        },
+        description: [
+          "This function vends an API key to access our APIs directly",
+          "to partner experiences' game servers using delegated access",
+          "to the experience's secret store on Roblox.",
+        ].join(" "),
+      },
+    );
+    props.oauthTokensTable.grantReadData(vendSecretFunction);
+    props.robloxOAuthClientSecret.grantRead(vendSecretFunction);
+    props.usersTable.grantReadData(vendSecretFunction);
+
     this.api = new Api(this, id, {
       apiKeyOptions: {
         source: ApiKeySourceType.HEADER,
@@ -473,6 +497,9 @@ export class Gallaudet extends Construct {
             apiKeyRequired: true,
           },
         },
+        vendSecret: {
+          integration: Integrations.lambda(vendSecretFunction),
+        },
       },
       policy: new PolicyDocument({
         statements: [
@@ -516,6 +543,18 @@ export class Gallaudet extends Construct {
     partnerApiKeyUsagePlan.addApiStage({
       stage: this.api.api.deploymentStage,
     });
+    vendSecretFunction.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["apigateway:POST", "apigateway:DELETE", "apigateway:GET"],
+        resources: [
+          `arn:aws:apigateway:${Stack.of(this).region}::/apikeys`,
+          `arn:aws:apigateway:${Stack.of(this).region}::/apikeys/*`,
+          `arn:aws:apigateway:${Stack.of(this).region}::/usageplans`,
+          `arn:aws:apigateway:${Stack.of(this).region}::/usageplans/*`,
+          `arn:aws:apigateway:${Stack.of(this).region}::/usageplans/*/keys`,
+        ],
+      }),
+    );
 
     if (props.stage !== "prod") {
       const postmanApiKey = this.api.api.addApiKey("PostmanTestingApiKey", {
