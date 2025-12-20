@@ -20,6 +20,7 @@ jest.mock('aws-sdk', () => {
   const getUsagePlans = jest.fn();
   const deleteUsagePlanKey = jest.fn();
   const deleteApiKey = jest.fn();
+  const getSecretValue = jest.fn();
   return {
     DynamoDB: {
       DocumentClient: jest.fn(() => ({ get })),
@@ -31,6 +32,9 @@ jest.mock('aws-sdk', () => {
       deleteUsagePlanKey,
       deleteApiKey,
     })),
+    SecretsManager: jest.fn(() => ({
+      getSecretValue,
+    })),
     __mocks: {
       get,
       createApiKey,
@@ -38,6 +42,7 @@ jest.mock('aws-sdk', () => {
       getUsagePlans,
       deleteUsagePlanKey,
       deleteApiKey,
+      getSecretValue,
     },
   };
 });
@@ -60,6 +65,7 @@ const {
     getUsagePlans,
     deleteUsagePlanKey,
     deleteApiKey,
+    getSecretValue,
   },
 } = jest.requireMock('aws-sdk') as {
   __mocks: {
@@ -69,6 +75,7 @@ const {
     getUsagePlans: jest.Mock;
     deleteUsagePlanKey: jest.Mock;
     deleteApiKey: jest.Mock;
+    getSecretValue: jest.Mock;
   };
 };
 
@@ -144,6 +151,11 @@ describe('VendSecret', () => {
     });
     deleteApiKey.mockReturnValue({
       promise: jest.fn().mockResolvedValue({}),
+    });
+    getSecretValue.mockReturnValue({
+      promise: jest.fn().mockResolvedValue({
+        SecretString: JSON.stringify({ clientId: 'client', clientSecret: 'secret' }),
+      }),
     });
 
     decodeUTF8Mock.mockReturnValue(new Uint8Array([1]));

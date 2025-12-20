@@ -26,15 +26,6 @@ import { MetricsPanel } from "./developer-portal/metrics"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "./ui/empty"
 import { ResponseError } from "gallaudet-api-typescript-react-query-hooks"
 
-const portalContent: Record<string, ReactNode> = {
-  listing: <MarketplaceListingPanel />,
-  tasks: <ConfigureTasksPanel />,
-  assets: <AssetManagerPanel />,
-  secrets: <ConfigureSecretsPanel />,
-  roles: <RolesPanel />,
-  metrics: <MetricsPanel />,
-}
-
 export function DeveloperPortalContent() {
   const { user } = useAuth()
   type Experience = { id: string; name: string; status?: string }
@@ -176,6 +167,25 @@ export function DeveloperPortalContent() {
   const selectedExperienceName = experiences.find((e) => e.id === selectedExperience)?.name
   const hasSelection = Boolean(selectedExperienceName)
 
+  const renderFeatureContent = (): ReactNode => {
+    switch (selectedFeature) {
+      case "listing":
+        return <MarketplaceListingPanel />
+      case "tasks":
+        return <ConfigureTasksPanel />
+      case "assets":
+        return <AssetManagerPanel />
+      case "secrets":
+        return <ConfigureSecretsPanel experienceId={selectedExperience} />
+      case "roles":
+        return <RolesPanel />
+      case "metrics":
+        return <MetricsPanel />
+      default:
+        return <p className="text-sm text-muted-foreground">Select a feature to get started.</p>
+    }
+  }
+
   return (
     <SidebarProvider className="bg-background flex min-h-screen w-full">
       <DevPortalSidebar
@@ -233,9 +243,7 @@ export function DeveloperPortalContent() {
           {hasSelection ? (
             <Card>
               <CardContent className="space-y-4 pt-6">
-                {portalContent[selectedFeature] ?? (
-                  <p className="text-sm text-muted-foreground">Select a feature to get started.</p>
-                )}
+                {renderFeatureContent()}
               </CardContent>
             </Card>
           ) : (

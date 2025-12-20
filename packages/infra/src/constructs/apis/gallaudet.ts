@@ -405,7 +405,7 @@ export class Gallaudet extends Construct {
         ].join(" "),
       },
     );
-    props.oauthTokensTable.grantReadData(vendSecretFunction);
+    props.oauthTokensTable.grantReadWriteData(vendSecretFunction);
     props.robloxOAuthClientSecret.grantRead(vendSecretFunction);
     props.usersTable.grantReadData(vendSecretFunction);
 

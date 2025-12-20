@@ -1,5 +1,5 @@
 import { randomBytes } from 'crypto';
-import { DynamoDB, APIGateway } from 'aws-sdk';
+import { DynamoDB, APIGateway, SecretsManager } from 'aws-sdk';
 import {
   vendSecretHandler,
   VendSecretChainedHandlerFunction,
@@ -9,6 +9,7 @@ import {
   MissingRequiredRobloxOAuthScopesResponseContent,
   SecretAlreadyExistsErrorResponseContent,
 } from 'gallaudet-api-typescript-runtime';
+import { request as gaxiosRequest } from 'gaxios';
 import { sealedbox } from 'tweetnacl-ts';
 import { decodeBase64, decodeUTF8, encodeBase64 } from 'tweetnacl-ts/convert';
 import { getCognitoUserIdFromEvent } from './utils/auth-utils';
@@ -17,6 +18,7 @@ import { isAWSError } from './utils/error-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
 const apiGateway = new APIGateway();
+const secretsManager = new SecretsManager();
 
 const generateSecretId = (): string => {
   const alphabet = 'abcdefghijklmnopqrstuvwxyz';
@@ -69,6 +71,60 @@ const resolveUsagePlanId = async (
   throw new Error(`Usage plan not found for name ${usagePlanName}`);
 };
 
+const refreshRobloxAccessToken = async (
+  refreshToken: string,
+  logger: ReturnType<typeof LoggingInterceptor.getLogger>,
+): Promise<string | undefined> => {
+  let clientId: string | undefined;
+  let clientSecret: string | undefined;
+  try {
+    const robloxSecretArn = getRequiredEnv('ROBLOX_OAUTH_CLIENT_SECRET_ARN');
+    const secretValue = await secretsManager.getSecretValue({ SecretId: robloxSecretArn }).promise();
+    if (!secretValue.SecretString) {
+      throw new Error('SecretString was empty for Roblox OAuth secret');
+    }
+    ({ clientId, clientSecret } = JSON.parse(secretValue.SecretString));
+  } catch (err) {
+    logger.error(`Failed to retrieve Roblox OAuth client credentials: ${JSON.stringify(err)}`);
+    return undefined;
+  }
+
+  try {
+    const body = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: clientId ?? '',
+      client_secret: clientSecret ?? '',
+    });
+
+    const resp = await gaxiosRequest<{
+      access_token?: string;
+      refresh_token?: string;
+      scope?: string;
+      token_type?: string;
+      expires_in?: number;
+    }>({
+      url: 'https://apis.roblox.com/oauth/v1/token',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      data: body.toString(),
+    });
+
+    const access = resp.data.access_token;
+    if (access) {
+      logger.info('Refreshed Roblox access token via refresh_token grant');
+      return access;
+    }
+    logger.warn('Roblox token refresh response missing access_token');
+    return undefined;
+  } catch (err) {
+    logger.error(`Roblox token refresh failed: ${JSON.stringify(err)}`);
+    return undefined;
+  }
+};
+
 /**
  * Type-safe handler for the VendSecret operation
  */
@@ -104,6 +160,7 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
   }
 
   let accessToken: string | undefined;
+  let refreshToken: string | undefined;
   try {
     const tokenResponse = await ddbClient.get({
       TableName: oauthTokensTableName,
@@ -113,7 +170,9 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
       },
       ConsistentRead: true,
     }).promise();
-    accessToken = (tokenResponse.Item as { AccessToken?: string } | undefined)?.AccessToken;
+    const tokenItem = tokenResponse.Item as { AccessToken?: string; RefreshToken?: string } | undefined;
+    accessToken = tokenItem?.AccessToken;
+    refreshToken = tokenItem?.RefreshToken;
   } catch (ddbError) {
     if (isAWSError(ddbError)) {
       logger.error(`Failed to read OAuth token from DynamoDB: ${ddbError.code} - ${ddbError.message}`);
@@ -136,13 +195,51 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
 
   let publicKey: string | undefined;
   let keyId: string | undefined;
-  try {
-    const publicKeyResponse = await fetch(publicKeyEndpoint, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+  const fetchPublicKey = async (token: string): Promise<globalThis.Response> => fetch(publicKeyEndpoint, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
+  const parseBody = async (resp: globalThis.Response) => {
+    const text = await resp.text();
+    try {
+      return { text, json: JSON.parse(text) as any };
+    } catch {
+      return { text, json: undefined };
+    }
+  };
+
+  const shouldRefreshForResponse = async (resp: globalThis.Response) => {
+    if (!refreshToken) return false;
+    if (resp.status === 401 || resp.status === 403) return true;
+    const { text } = await parseBody(resp.clone());
+    return text.toLowerCase().includes('invalid token');
+  };
+
+  let publicKeyResponse = await fetchPublicKey(accessToken);
+  if (!publicKeyResponse.ok && (await shouldRefreshForResponse(publicKeyResponse))) {
+    const refreshed = await refreshRobloxAccessToken(refreshToken!, logger);
+    if (refreshed) {
+      try {
+        await ddbClient.update({
+          TableName: oauthTokensTableName,
+          Key: { CognitoUserId: cognitoUserId, Provider: 'roblox' },
+          UpdateExpression: 'SET #A = :a',
+          ExpressionAttributeNames: { '#A': 'AccessToken' },
+          ExpressionAttributeValues: { ':a': refreshed },
+        }).promise();
+      } catch (err) {
+        logger.warn(`Failed to persist refreshed Roblox access token: ${JSON.stringify(err)}`);
+      }
+      accessToken = refreshed;
+      publicKeyResponse = await fetchPublicKey(refreshed);
+    }
+  }
+
+  try {
+    const { json: publicKeyBody, text: bodyText } = await parseBody(publicKeyResponse);
+    logger.info(`Public key API call response: ${bodyText}.`);
     if (publicKeyResponse.status === 403) {
       return Response.notAuthorized({
         message: 'Roblox OAuth scopes have not been delegated for this user.',
@@ -150,13 +247,17 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
     }
 
     if (!publicKeyResponse.ok) {
-      logger.error(`Failed to fetch Roblox public key: ${publicKeyResponse.status}`);
+      logger.error(`Failed to fetch Roblox public key: ${publicKeyResponse.status} ${bodyText}`);
+      if (400 <= publicKeyResponse.status && publicKeyResponse.status < 500) {
+        return Response.notAuthorized({
+          message: 'Roblox OAuth scopes have not been delegated for this user.',
+        });
+      }
       return Response.internalFailure({
         message: 'Failed to fetch Roblox public key.',
       });
     }
 
-    const publicKeyBody = await publicKeyResponse.json();
     publicKey = publicKeyBody.secret;
     keyId = publicKeyBody.key_id ?? publicKeyBody.keyId;
   } catch (err) {
@@ -264,6 +365,9 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
         domain: secretDomain,
       }),
     });
+
+    const json = await secretResponse.json();
+    logger.info(`Roblox secret store POST response: ${JSON.stringify(json)}`);
 
     if (secretResponse.status === 403) {
       await cleanupApiKey(apiKeyId, usagePlanId, logger);
