@@ -46,17 +46,3 @@ export function getGoogleAuthClientID() {
     throw new Error("No Google OAuth Client ID hard-coded.");
   }
 }
-
-export function getRobloxOAuthClientId() {
-  // TODO: Fill in the correct Roblox OAuth client IDs per environment.
-  const hostname = window.location.hostname;
-  if (hostname === "localhost" || hostname === "beta.school.civictech.llc") {
-    return "5651729328866129117";
-  } else if (hostname === "gamma.school.civictech.llc") {
-    return "6931351931854279191";
-  } else if (hostname === "school.civictech.llc") {
-    return "2423359673341824485";
-  } else {
-    throw new Error("No Roblox OAuth Client ID hard-coded.");
-  }
-}

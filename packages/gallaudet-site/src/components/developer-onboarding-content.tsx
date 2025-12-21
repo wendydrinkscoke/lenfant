@@ -1,9 +1,8 @@
 import { useEffect } from "react"
-import { Gauge, HandHeart, KeyRound, Megaphone, ShieldCheck, Sparkles, TerminalSquare } from "lucide-react"
+import { Gauge, HandHeart, Megaphone, ShieldCheck, Sparkles, TerminalSquare } from "lucide-react"
 import { startCognitoOAuthFlowViaPopup } from "../lib/auth-utils"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
-import { Badge } from "./ui/badge"
 import { toast } from "sonner"
 
 const sellingPoints = [
@@ -56,7 +55,6 @@ export default function DeveloperOnboardingContent() {
     const popup = startCognitoOAuthFlowViaPopup({
       roleOverride: "developer",
       includeRobloxAssociation: true,
-      robloxScopes: ["universe.secret:write", "universe.secret:read"],
     })
     if (!popup) {
       toast.error("Please allow popups to continue onboarding.")
@@ -104,23 +102,14 @@ export default function DeveloperOnboardingContent() {
 
         <Card className="border-emerald-100 bg-gradient-to-br from-white to-emerald-50 shadow-sm dark:from-emerald-950/30 dark:to-background">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <KeyRound className="h-5 w-5 text-emerald-600" />
-              {"How the self-service flow works"}
-            </CardTitle>
+            <CardTitle className="flex items-center gap-2">{"How the self-service flow works"}</CardTitle>
             <CardDescription>
-              {
-                "Sign in with Google + Roblox (via Cognito), then approve Roblox secret scopes. We rotate the secrets; you just drop the Lua code in."
-              }
+              {"Sign in with Google + Roblox (via Cognito). Paste your Roblox API key in the console, and we handle the rest."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">Google sign-in</Badge>
-              <Badge variant="outline">Roblox linking</Badge>
-              <Badge variant="outline">Secrets delegated</Badge>
-            </div>
-            <p>{"Requested Roblox scopes: universe.secret:write, universe.secret:read."}</p>
+            <p>{"Use the developer console to save your Roblox API key, then click “Create secret” to install our API key into your universe’s Secret Store."}</p>
+            <p>{"We’ll rotate keys and keep your integration secure—no extra OAuth scope approvals required."}</p>
           </CardContent>
         </Card>
 

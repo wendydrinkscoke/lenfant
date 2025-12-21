@@ -3,6 +3,7 @@ import {
   CognitoAuthorizer,
   Integrations,
 } from "@aws/pdk/type-safe-api";
+import { Stack } from "aws-cdk-lib";
 import { ApiKeySourceType, Cors } from "aws-cdk-lib/aws-apigateway";
 import { SecurityPolicy } from "aws-cdk-lib/aws-apigatewayv2";
 import {
@@ -41,6 +42,7 @@ import {
   GetGoogleClassroomAccessStatusFunction,
   CreateProjectFunction,
   ListProjectsFunction,
+  VendSecretFunction,
 } from "gallaudet-api-typescript-infra";
 
 /**
@@ -59,6 +61,7 @@ export interface GallaudetProps {
   readonly taskInstanceTable: ITable;
   readonly partnersTable: ITable;
   readonly projectsTable: ITable;
+  readonly robloxExperienceApiKeysTable: ITable;
   readonly usersTable: ITable;
   readonly googleOAuthClientSecret: ISecret;
   readonly robloxApiKey: ISecret;
@@ -188,22 +191,18 @@ export class Gallaudet extends Construct {
         "DelegateRobloxSecretStoreAccessFunction",
         {
           environment: {
-            OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
-            ROBLOX_OAUTH_CLIENT_SECRET_ARN:
-              props.robloxOAuthClientSecret.secretArn,
+            ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME: 
+              props.robloxExperienceApiKeysTable.tableName,
           },
           description: [
-            'This function "delegates" access to the Roblox Secret Store',
+            'This function enables access to the Roblox Secret Store',
             "of a particular experience on behalf of a user (a game",
-            "developer) This involves receiving their Roblox credentials",
+            "developer). This involves receiving an API key from the user",
             "and storing them in a DynamoDB table for later use.",
           ].join(" "),
         },
       );
-    props.oauthTokensTable.grantWriteData(
-      delegateRobloxSecretStoreAccessFunction,
-    );
-    props.robloxOAuthClientSecret.grantRead(
+    props.robloxExperienceApiKeysTable.grantWriteData(
       delegateRobloxSecretStoreAccessFunction,
     );
 
@@ -385,6 +384,26 @@ export class Gallaudet extends Construct {
     );
     props.partnersTable.grantWriteData(putPartnerFunction);
 
+    const vendSecretFunction = new VendSecretFunction(
+      this,
+      "VendSecretFunction",
+      {
+        environment: {
+          ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME: 
+            props.robloxExperienceApiKeysTable.tableName,
+          PARTNER_API_KEY_USAGE_PLAN_NAME: `partner-api-key-usage-plan-${props.stage}`,
+          SECRET_DOMAIN: props.websiteDomainName,
+        },
+        description: [
+          "This function vends an API key to access our APIs directly",
+          "to partner experiences' game servers using API key based access",
+          "to the experience's secret store on Roblox.",
+        ].join(" "),
+      },
+    );
+    props.robloxExperienceApiKeysTable.grantReadData(vendSecretFunction);
+    props.usersTable.grantReadData(vendSecretFunction);
+
     this.api = new Api(this, id, {
       apiKeyOptions: {
         source: ApiKeySourceType.HEADER,
@@ -473,6 +492,9 @@ export class Gallaudet extends Construct {
             apiKeyRequired: true,
           },
         },
+        vendSecret: {
+          integration: Integrations.lambda(vendSecretFunction),
+        },
       },
       policy: new PolicyDocument({
         statements: [
@@ -516,6 +538,18 @@ export class Gallaudet extends Construct {
     partnerApiKeyUsagePlan.addApiStage({
       stage: this.api.api.deploymentStage,
     });
+    vendSecretFunction.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["apigateway:POST", "apigateway:DELETE", "apigateway:GET"],
+        resources: [
+          `arn:aws:apigateway:${Stack.of(this).region}::/apikeys`,
+          `arn:aws:apigateway:${Stack.of(this).region}::/apikeys/*`,
+          `arn:aws:apigateway:${Stack.of(this).region}::/usageplans`,
+          `arn:aws:apigateway:${Stack.of(this).region}::/usageplans/*`,
+          `arn:aws:apigateway:${Stack.of(this).region}::/usageplans/*/keys`,
+        ],
+      }),
+    );
 
     if (props.stage !== "prod") {
       const postmanApiKey = this.api.api.addApiKey("PostmanTestingApiKey", {

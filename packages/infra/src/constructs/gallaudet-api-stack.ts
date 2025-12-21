@@ -26,6 +26,21 @@ export class GallaudetApiStack extends Stack {
   constructor(scope: Construct, id: string, props: GallaudetApiStackProps) {
     super(scope, id, props);
 
+    const robloxExperienceApiKeysTable = new Table(this, "RobloxApiKeysTable", {
+      tableName: "RobloxExperienceApiKeys",
+      partitionKey: {
+        name: "ExperienceId",
+        type: AttributeType.STRING,
+      },
+    });
+    robloxExperienceApiKeysTable.addGlobalSecondaryIndex({
+      indexName: "KeyCreatorRobloxUserIdIndex",
+      partitionKey: {
+        name: "KeyCreatorRobloxUserId",
+        type: AttributeType.STRING,
+      },
+    });
+
     const oauthTokensTable = new Table(this, "OAuthTokensDDBTable", {
       tableName: "OAuthTokens",
       partitionKey: {
@@ -137,6 +152,7 @@ export class GallaudetApiStack extends Stack {
       taskInstanceTable: taskInstancesTable,
       partnersTable,
       projectsTable,
+      robloxExperienceApiKeysTable,
       usersTable,
       googleOAuthClientSecret,
       robloxApiKey,

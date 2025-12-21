@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { exchangeCognitoRedirectCodeForCognitoTokens } from "../lib/auth-utils";
-import { getGoogleAuthClientID, getRuntimeConfig } from "../lib/environment-utils";
+import { getGoogleAuthClientID } from "../lib/environment-utils";
 import { getGallaudetApi } from "../lib/gallaudet-api";
 import { generateCodeChallenge, generateCodeVerifier } from "../lib/pkce-utils";
 
@@ -9,8 +9,6 @@ const fromB64Url = (s: string) => {
   const pad = "=".repeat((4 - (s.length % 4)) % 4);
   return atob(s.replace(/-/g, "+").replace(/_/g, "/") + pad);
 };
-const toB64Url = (s: string) =>
-  btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 
 export default function CognitoPopupCallback() {
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +29,6 @@ export default function CognitoPopupCallback() {
           login_hint?: string | undefined;
           includeRobloxAssociation?: boolean;
           stage?: "google" | "roblox";
-          robloxScopes?: string[];
         } = {};
         if (rawState) {
           try {
@@ -44,9 +41,6 @@ export default function CognitoPopupCallback() {
         const loginHint = parsedState.login_hint;
         const stage = parsedState.stage === "roblox" ? "roblox" : "google";
         const includeRobloxAssociation = Boolean(parsedState.includeRobloxAssociation);
-        const robloxScopes = Array.isArray(parsedState.robloxScopes)
-          ? parsedState.robloxScopes.filter(Boolean)
-          : [];
         if (!role) {
           throw new Error("Missing role in state parameter");
         }
@@ -56,41 +50,6 @@ export default function CognitoPopupCallback() {
         }
 
         const origin = window.location.origin;
-
-        const beginRobloxCognitoAuth = async () => {
-          const runtimeConfig = await getRuntimeConfig();
-          const clientId = runtimeConfig.userPoolWebClientId;
-          const domainPrefix = runtimeConfig.cognitoDomainPrefix;
-          const domain = `https://${domainPrefix}.auth.us-east-1.amazoncognito.com`;
-          const redirectUri = `${window.location.origin}/cognito/popup-callback`;
-
-          const robloxVerifier = generateCodeVerifier();
-          const robloxChallenge = await generateCodeChallenge(robloxVerifier);
-          localStorage.setItem("cognito_pkce_code_verifier", robloxVerifier);
-
-          const stateObj = {
-            role,
-            login_hint: loginHint,
-            includeRobloxAssociation: true,
-            stage: "roblox" as const,
-            robloxScopes,
-          };
-          const robloxState = toB64Url(JSON.stringify(stateObj));
-
-          const robloxParams = new URLSearchParams({
-            client_id: clientId,
-            response_type: "code",
-            scope: "openid email phone profile",
-            redirect_uri: redirectUri,
-            code_challenge: robloxChallenge,
-            code_challenge_method: "S256",
-            identity_provider: "RobloxOIDC",
-            state: robloxState,
-          });
-          if (loginHint) robloxParams.set("login_hint", loginHint);
-
-          window.location.replace(`${domain}/oauth2/authorize?${robloxParams}`);
-        };
 
         const cognitoTokens =
           await exchangeCognitoRedirectCodeForCognitoTokens(code);
@@ -108,29 +67,6 @@ export default function CognitoPopupCallback() {
           localStorage.setItem("access_token", cognitoTokens.accessToken);
           if (cognitoTokens.refreshToken) {
             localStorage.setItem("refresh_token", cognitoTokens.refreshToken);
-          }
-
-          if (role === "developer") {
-            if (includeRobloxAssociation) {
-              await beginRobloxCognitoAuth();
-              return;
-            }
-
-            if (window.opener && window.opener !== window) {
-              window.opener.postMessage(
-                {
-                  type: "cognito-auth-complete",
-                  ok: true,
-                  role,
-                  idToken: cognitoTokens.idToken,
-                  accessToken: cognitoTokens.accessToken,
-                  refreshToken: cognitoTokens.refreshToken,
-                },
-                origin,
-              );
-              window.close();
-              return;
-            }
           }
 
           const apiClient = await getGallaudetApi();
@@ -180,9 +116,6 @@ export default function CognitoPopupCallback() {
           if (loginHint) {
             googleState.set("login_hint", loginHint);
           }
-          if (robloxScopes.length) {
-            googleState.set("robloxScopes", robloxScopes.join(","));
-          }
           googleParams.set("state", googleState.toString());
 
           window.location.replace(
@@ -204,12 +137,6 @@ export default function CognitoPopupCallback() {
             { type: "roblox-sign-in-complete" },
             origin,
           );
-          if (robloxScopes.length) {
-            window.opener.postMessage(
-              { type: "roblox-scopes-required", scopes: robloxScopes },
-              origin,
-            );
-          }
           const idToken =
             localStorage.getItem("id_token") ??
             localStorage.getItem("cognito_id_token");

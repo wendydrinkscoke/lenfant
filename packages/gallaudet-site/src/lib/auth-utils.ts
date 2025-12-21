@@ -37,7 +37,6 @@ export interface StartCognitoOAuthFlowOptions {
   loginHint?: string;
   includeRobloxAssociation?: boolean;
   roleOverride?: AuthRole;
-  robloxScopes?: string[];
 }
 
 export function startCognitoOAuthFlowViaPopup(
@@ -53,9 +52,6 @@ export function startCognitoOAuthFlowViaPopup(
   if (options.loginHint) params.set("login_hint", options.loginHint);
   if (options.includeRobloxAssociation) {
     params.set("includeRobloxAssociation", "1");
-  }
-  if (options.robloxScopes?.length) {
-    params.set("robloxScopes", options.robloxScopes.join(","));
   }
   const url = `${window.location.origin}/auth/popup-start?${params}`;
   return window.open(url, "cognitoLogin", "width=520,height=640");

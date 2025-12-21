@@ -120,6 +120,7 @@ gallaudetApi.handlers.typescript?.addDeps(
   "aws-sdk", 
   "gaxios",
   "google-auth-library",
+  "tweetnacl-ts"
 );
 if (gallaudetApi.handlers.typescript?.jest) {
   gallaudetApi.handlers.typescript.jest.config.maxWorkers = 1;

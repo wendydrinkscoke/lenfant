@@ -19,8 +19,6 @@ export default function AuthPopupStart() {
       const roleParam  = url.searchParams.get("role");
       const includeRobloxAssociation =
         url.searchParams.get("includeRobloxAssociation") === "1";
-      const robloxScopes =
-        url.searchParams.get("robloxScopes")?.split(",").filter(Boolean) ?? [];
 
       if (!roleParam) {
         throw new Error("Missing required parameters");
@@ -44,7 +42,6 @@ export default function AuthPopupStart() {
         login_hint: loginHint,
         includeRobloxAssociation,
         stage: "google" as const,
-        robloxScopes,
       };
       const state = toB64Url(JSON.stringify(stateObj));
 
