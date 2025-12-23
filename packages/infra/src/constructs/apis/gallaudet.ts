@@ -191,11 +191,11 @@ export class Gallaudet extends Construct {
         "DelegateRobloxSecretStoreAccessFunction",
         {
           environment: {
-            ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME: 
+            ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME:
               props.robloxExperienceApiKeysTable.tableName,
           },
           description: [
-            'This function enables access to the Roblox Secret Store',
+            "This function enables access to the Roblox Secret Store",
             "of a particular experience on behalf of a user (a game",
             "developer). This involves receiving an API key from the user",
             "and storing them in a DynamoDB table for later use.",
@@ -389,7 +389,7 @@ export class Gallaudet extends Construct {
       "VendSecretFunction",
       {
         environment: {
-          ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME: 
+          ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME:
             props.robloxExperienceApiKeysTable.tableName,
           PARTNER_API_KEY_USAGE_PLAN_NAME: `partner-api-key-usage-plan-${props.stage}`,
           SECRET_DOMAIN: props.websiteDomainName,

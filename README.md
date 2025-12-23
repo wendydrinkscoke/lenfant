@@ -31,7 +31,7 @@ Roblox account.
 
 ## Quick Start
 To get a workspace cloned and built, run the following shell commands:
-```
+```sh
 git clone https://github.com/wendydrinkscoke/lenfant.git &&
 cd lenfant &&
 brew install openjdk@17 &&
@@ -43,6 +43,45 @@ pnpm i
 Enter your local user password.
 ```
 pdk build
+```
+
+## CLI-Based SSO Access
+
+```sh
+brew install awscli
+aws configure sso
+```
+For each parameter, put the suggested respnse:
+- **SSO start URL:** `https://d-90663e9023.awsapps.com/start`
+- **SSO region:** `us-east-1`
+Then confirm the request in the browser session that was opened.
+
+![](./documentation-assets/sso-login-1.png)
+
+Choose from one of the specified roles and follow the guided setup. The only
+account it really makes sense to use is 115690362259 (lenfant-app) since the
+other accounts are only deployed to via CI/CD pipelines. It also only really
+makes sense to use the Administrator role since the 
+`CodePipelineDeveloperAccess` role is really just meant to allow you to view
+the code pipeline UI. To log into a particular profile, run the following.
+```sh
+aws sso login --profile Administrator-115690362259
+```
+
+## CLI-Based Deployment of Stacks to Root Account
+As mentioned previously, CLI-based deployment is available only for stacks
+in the root account, such as `ManagementStack` or one of the pipeline stacks.
+All service-specific stacks can only be deployed via a Git push. But to deploy
+changes to the root account, you can use the CDK CLI as follows.
+
+```sh
+brew install aws-cdk
+
+cd ~/Workplace/lenfant && 
+pdk build
+
+cd ~/Workplace/lenfant/packages/infra && 
+cdk deploy ManagementStack --profile Administrator-115690362259
 ```
 
 ## Editing sub-project settings
@@ -67,7 +106,8 @@ To test changes on localhost, run `projen dev` in the
 
 All projects are leveraging CI/CD via GitHub and AWS CodePipelines. Simply
 pushing a commit to the GitHub repo will trigger a deployment via CodePipelines.
-Additionally, to check the progress of any deployment, you may log into the `lenfant-app` account (`115690362259`) from the 
+Additionally, to check the progress of any deployment, you may log into the
+`lenfant-app` account (`115690362259`) from the 
 [AWS Access Portal](https://d-90663e9023.awsapps.com/start/#/?tab=accounts)
 using the `CodePipelineReader` role. The management stack, which provisions new
 AWS accounts and assigns permissions for them to user groups, must be deployed
