@@ -43,6 +43,7 @@ import {
   CreateProjectFunction,
   ListProjectsFunction,
   VendSecretFunction,
+  SayHelloFunction,
 } from "gallaudet-api-typescript-infra";
 
 /**
@@ -491,6 +492,12 @@ export class Gallaudet extends Construct {
           options: {
             apiKeyRequired: true,
           },
+        },
+        sayHello: {
+          integration: Integrations.lambda(new SayHelloFunction(this, "SayHelloFunction", {
+            environment: {},
+            description: "A simple function to test connectivity to the Gallaudet API.",
+          })),
         },
         vendSecret: {
           integration: Integrations.lambda(vendSecretFunction),

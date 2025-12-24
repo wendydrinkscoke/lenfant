@@ -24,6 +24,7 @@ service Gallaudet {
       ListTasksForPlayer
       LinkRobloxAccount
       PutPartner
+      SayHello
       VendSecret
     ]
     errors: [
