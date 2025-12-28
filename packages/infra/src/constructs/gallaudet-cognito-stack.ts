@@ -78,7 +78,7 @@ export class GallaudetCognitoStack extends Stack {
         userPool: this.userPool,
         clientId: googleOAuthClientID,
         clientSecret: googleOAuthClientSecret,
-        scopes: ["email", "profile"],
+        scopes: ["openid", "email", "profile"],
         attributeMapping: {
           givenName: ProviderAttribute.GOOGLE_GIVEN_NAME,
           familyName: ProviderAttribute.GOOGLE_FAMILY_NAME,
@@ -125,9 +125,14 @@ export class GallaudetCognitoStack extends Stack {
       })
       .withCustomAttributes("custom:robloxUserId");
 
-    const writeAttributes = new ClientAttributes().withCustomAttributes(
-      "custom:robloxUserId",
-    );
+    const writeAttributes = new ClientAttributes()
+      .withStandardAttributes({
+        email: true,
+        familyName: true,
+        givenName: true,
+        profilePicture: true,
+      })
+      .withCustomAttributes("custom:robloxUserId");
 
     this.userPoolClient = this.userPool.addClient(
       `${GALLAUDET_SERVICE_NAME}Client`,
@@ -141,12 +146,7 @@ export class GallaudetCognitoStack extends Stack {
         ],
         oAuth: {
           flows: { authorizationCodeGrant: true },
-          scopes: [
-            OAuthScope.OPENID,
-            OAuthScope.EMAIL,
-            OAuthScope.PHONE,
-            OAuthScope.PROFILE,
-          ],
+          scopes: [OAuthScope.OPENID, OAuthScope.EMAIL, OAuthScope.PROFILE],
           callbackUrls: props.callbackUrls,
         },
         refreshTokenValidity: Duration.days(3),

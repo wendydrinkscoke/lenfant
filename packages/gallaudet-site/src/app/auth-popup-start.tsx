@@ -48,7 +48,7 @@ export default function AuthPopupStart() {
       const params = new URLSearchParams({
         client_id: clientId,
         response_type: "code",
-        scope: "openid email phone profile",
+        scope: "openid email profile",
         redirect_uri: redirectUri,
         code_challenge: codeChallenge,
         code_challenge_method: "S256",

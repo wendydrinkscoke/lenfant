@@ -68,7 +68,7 @@ export default function GooglePopupCallback() {
           const robloxParams = new URLSearchParams({
             client_id: clientId,
             response_type: "code",
-            scope: "openid email phone profile",
+            scope: "openid email profile",
             redirect_uri: redirectUri,
             code_challenge: robloxChallenge,
             code_challenge_method: "S256",
