@@ -32,7 +32,7 @@ structure TaskCatalogEntry {
 
 /// Catalog entries grouped by partner.
 structure PartnerTaskCatalog {
-    /// Unique identifier assigned to the partner.
+    /// Roblox experience identifier assigned to the partner.
     @required
     partnerId: PartnerId
 

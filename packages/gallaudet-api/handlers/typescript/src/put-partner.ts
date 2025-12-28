@@ -6,7 +6,7 @@ import {
   Response,
   LoggingInterceptor,
 } from 'gallaudet-api-typescript-runtime';
-import { getApiKeyIdFromEvent } from './utils/auth-utils';
+import { getExperienceIdFromEvent } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError } from './utils/error-utils';
 
@@ -20,10 +20,10 @@ export const putPartner: PutPartnerChainedHandlerFunction = async (request) => {
   const logger = LoggingInterceptor.getLogger(request);
   logger.info('Start PutPartner Operation');
 
-  let partnerId: string;
+  let experienceId: string;
   try {
-    partnerId = getApiKeyIdFromEvent(request.event);
-    logger.info(`Resolved partner ID from API key: ${partnerId}`);
+    experienceId = await getExperienceIdFromEvent(request.event);
+    logger.info(`Resolved experience ID from API key: ${experienceId}`);
   } catch (error) {
     logger.warn((error as Error).message);
     return Response.notAuthorized({
@@ -41,7 +41,7 @@ export const putPartner: PutPartnerChainedHandlerFunction = async (request) => {
   const nowIso = new Date().toISOString();
 
   logger.info(
-    `Upserting partner profile (partner=${partnerId}, robloxGameId=${robloxGameId})`,
+    `Upserting partner profile (experienceId=${experienceId}, robloxGameId=${robloxGameId})`,
   );
 
   try {
@@ -49,7 +49,7 @@ export const putPartner: PutPartnerChainedHandlerFunction = async (request) => {
       .update({
         TableName: PARTNERS_TABLE_NAME,
         Key: {
-          PartnerId: partnerId,
+          ExperienceId: experienceId,
         },
         UpdateExpression: [
           'SET #partnerName = :partnerName',
@@ -75,7 +75,7 @@ export const putPartner: PutPartnerChainedHandlerFunction = async (request) => {
   } catch (error) {
     if (isAWSError(error)) {
       logger.error(
-        `Failed to upsert partner profile (partner=${partnerId}): ${error.code} - ${error.message}`,
+        `Failed to upsert partner profile (experienceId=${experienceId}): ${error.code} - ${error.message}`,
       );
       return Response.internalFailure({
         message: 'Failed to save partner profile',
@@ -84,7 +84,7 @@ export const putPartner: PutPartnerChainedHandlerFunction = async (request) => {
     }
 
     logger.error(
-      `Unexpected error while saving partner profile (partner=${partnerId}): ${JSON.stringify(error)}`,
+      `Unexpected error while saving partner profile (experienceId=${experienceId}): ${JSON.stringify(error)}`,
     );
     return Response.internalFailure({
       message: 'Failed to save partner profile',
@@ -92,7 +92,7 @@ export const putPartner: PutPartnerChainedHandlerFunction = async (request) => {
   }
 
   logger.info(
-    `Successfully saved partner profile (partner=${partnerId}, robloxGameId=${robloxGameId})`,
+    `Successfully saved partner profile (experienceId=${experienceId}, robloxGameId=${robloxGameId})`,
   );
 
   return Response.success({

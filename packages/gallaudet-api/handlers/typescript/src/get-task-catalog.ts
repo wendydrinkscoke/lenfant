@@ -15,7 +15,7 @@ const TASK_CATALOG_TABLE_NAME = getRequiredEnv('TASK_CATALOG_TABLE_NAME');
 const PARTNERS_TABLE_NAME = getRequiredEnv('PARTNERS_TABLE_NAME');
 
 type PartnersItem = {
-  PartnerId?: string;
+  ExperienceId?: string;
   CreatedAt?: string;
   PartnerName?: string;
   RobloxGameId?: string;
@@ -23,7 +23,7 @@ type PartnersItem = {
 }
 
 type CatalogItem = {
-  PartnerId?: string;
+  ExperienceId?: string;
   EntryId?: string;
   CreatedAt: string;
   Name?: string;
@@ -76,7 +76,7 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
   }>();
 
   const partnerIds = Array.from(new Set(
-    items.map((item) => item.PartnerId).filter((partnerId): partnerId is string => !!partnerId),
+    items.map((item) => item.ExperienceId).filter((partnerId): partnerId is string => !!partnerId),
   ));
 
   const partnersById = new Map<string, PartnersItem>();
@@ -85,14 +85,14 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
       const partnersResult = await ddbClient.batchGet({
         RequestItems: {
           [PARTNERS_TABLE_NAME]: {
-            Keys: partnerIds.map((partnerId) => ({ PartnerId: partnerId })),
+            Keys: partnerIds.map((partnerId) => ({ ExperienceId: partnerId })),
           },
         },
       }).promise();
       const partners = (partnersResult.Responses?.[PARTNERS_TABLE_NAME] as PartnersItem[]) ?? [];
       partners.forEach((partner) => {
-        if (partner.PartnerId) {
-          partnersById.set(partner.PartnerId, partner);
+        if (partner.ExperienceId) {
+          partnersById.set(partner.ExperienceId, partner);
         }
       });
       const unprocessed = partnersResult.UnprocessedKeys?.[PARTNERS_TABLE_NAME]?.Keys;
@@ -117,7 +117,7 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
   }
 
   items.forEach((item) => {
-    const partnerId = item.PartnerId;
+    const partnerId = item.ExperienceId;
     const entryId = item.EntryId;
     const name = item.Name;
     const subheading = item.Subheading;

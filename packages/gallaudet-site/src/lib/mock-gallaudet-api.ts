@@ -199,4 +199,16 @@ export class MockGallaudetApi extends DefaultApi {
       "getLinkedRobloxAccount",
     );
   }
+
+  async vendSecret(
+    request: Parameters<DefaultApi["vendSecret"]>[0],
+  ): Promise<{ secretId: string; expiresAt?: string; previousSecretId?: string }> {
+    await delay(MOCK_LATENCY_MS);
+    const now = Date.now();
+    return {
+      secretId: `mock-${request.experienceId}-${now}`,
+      previousSecretId: "mock-previous-secret",
+      expiresAt: new Date(now + 3 * 60 * 60 * 1000).toISOString(),
+    };
+  }
 }

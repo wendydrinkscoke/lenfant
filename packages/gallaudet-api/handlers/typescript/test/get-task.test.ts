@@ -79,7 +79,7 @@ beforeEach(() => {
       },
       TaskCatalog: {
         Item: {
-          PartnerId: 'studio-42',
+          ExperienceId: 'studio-42',
           PartnerName: 'Studio Forty Two',
           EntryId: 'demo-task',
           Name: 'Explore the Capitol',
@@ -101,7 +101,7 @@ beforeEach(() => {
       },
       Partners: {
         Item: {
-          PartnerId: 'studio-42',
+          ExperienceId: 'studio-42',
           PartnerName: 'Studio Forty Two',
           RobloxGameId: '1213026131',
         },

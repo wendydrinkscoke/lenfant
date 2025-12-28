@@ -6,6 +6,15 @@ import {
   PutPartnerChainedRequestInput,
 } from 'gallaudet-api-typescript-runtime';
 import { putPartner } from '../src/put-partner';
+import { getExperienceIdFromEvent } from '../src/utils/auth-utils';
+
+jest.mock('../src/utils/auth-utils', () => {
+  const actual = jest.requireActual('../src/utils/auth-utils');
+  return {
+    ...actual,
+    getExperienceIdFromEvent: jest.fn(),
+  };
+});
 
 jest.mock('aws-sdk', () => {
   const updatePromise = jest.fn();
@@ -62,10 +71,12 @@ beforeEach(() => {
   }
   jest.clearAllMocks();
   dynamoMocks.updatePromise.mockResolvedValue({});
+  (getExperienceIdFromEvent as jest.Mock).mockResolvedValue('partner-123');
 });
 
 describe('PutPartner', () => {
   it('returns 403 when API key is missing', async () => {
+    (getExperienceIdFromEvent as jest.Mock).mockRejectedValueOnce(new Error('Missing API key'));
     const response = await putPartner({
       ...buildRequestArgs({
         event: { requestContext: { identity: {} } } as any,
@@ -105,7 +116,7 @@ describe('PutPartner', () => {
     }
     expect(updateArgs.TableName).toBe('Partners');
     expect(updateArgs.Key).toEqual({
-      PartnerId: 'api-key-123',
+      ExperienceId: 'partner-123',
     });
     expect(updateArgs.ExpressionAttributeValues).toMatchObject({
       ':partnerName': 'National USA Game',

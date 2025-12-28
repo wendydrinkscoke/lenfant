@@ -7,7 +7,7 @@ import {
   Response,
   LoggingInterceptor,
 } from 'gallaudet-api-typescript-runtime';
-import { getApiKeyIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
+import { getExperienceIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError, isGaxiosError } from './utils/error-utils';
 import { extractGoogleUserIdFromUsername } from './utils/google-utils';
@@ -52,16 +52,16 @@ export const gradeTask: GradeTaskChainedHandlerFunction = async (request) => {
   const logger = LoggingInterceptor.getLogger(request);
   logger.info('Start GradeTask Operation');
 
-  let partnerId: string;
+  let experienceId: string;
   try {
-    partnerId = getApiKeyIdFromEvent(request.event);
+    experienceId = await getExperienceIdFromEvent(request.event);
   } catch (error) {
     logger.warn((error as Error).message);
     return Response.notAuthorized({
       message: 'Valid API key required',
     });
   }
-  logger.info(`Resolved partnerId=${partnerId} from API key`);
+  logger.info(`Resolved experienceId=${experienceId} from API key`);
 
   const { input } = request;
   const robloxUserId = input.requestParameters?.robloxUserId?.trim();
@@ -204,9 +204,9 @@ export const gradeTask: GradeTaskChainedHandlerFunction = async (request) => {
   }
 
   // Verification 1: Confirm the task belongs to the invoking partner.
-  if (taskInstance.PartnerId?.trim() !== partnerId) {
+  if (taskInstance.PartnerId?.trim() !== experienceId) {
     logger.warn(
-      `Partner mismatch while grading task ${taskId}: expected ${taskInstance.PartnerId}, received ${partnerId}`,
+      `Partner mismatch while grading task ${taskId}: expected ${taskInstance.PartnerId}, received ${experienceId}`,
     );
     return Response.notAuthorized({
       message: 'Partner not authorized to grade this task',

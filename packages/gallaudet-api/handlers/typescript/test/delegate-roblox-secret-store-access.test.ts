@@ -1,3 +1,5 @@
+process.env.ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME = 'RobloxExperienceApiKeys';
+
 import {
   DelegateRobloxSecretStoreAccessChainedRequestInput,
   InternalFailureErrorResponseContent,
@@ -5,24 +7,14 @@ import {
 import { delegateRobloxSecretStoreAccess } from '../src/delegate-roblox-secret-store-access';
 
 jest.mock('aws-sdk', () => {
-  const getSecretValue = jest.fn();
-  const update = jest.fn();
-  const mockDocClient = jest.fn(() => ({ update }));
-  const mockSecrets = jest.fn(() => ({ getSecretValue }));
-
+  const put = jest.fn();
   return {
-    DynamoDB: { DocumentClient: mockDocClient },
-    SecretsManager: mockSecrets,
-    __mocks: { getSecretValue, update },
+    DynamoDB: { DocumentClient: jest.fn(() => ({ put })) },
+    __mocks: { put },
   };
 });
 
-jest.mock('gaxios', () => ({
-  request: jest.fn(),
-}));
-
-const { getSecretValue, update } = (jest.requireMock('aws-sdk') as any).__mocks;
-const gaxios = jest.requireMock('gaxios');
+const { put } = (jest.requireMock('aws-sdk') as any).__mocks;
 
 const baseRequest: Omit<DelegateRobloxSecretStoreAccessChainedRequestInput, 'input'> = {
   chain: undefined as never,
@@ -44,76 +36,71 @@ const baseRequest: Omit<DelegateRobloxSecretStoreAccessChainedRequestInput, 'inp
 describe('DelegateRobloxSecretStoreAccess', () => {
   beforeEach(() => {
     jest.resetAllMocks();
-    process.env.OAUTH_TOKENS_TABLE_NAME = 'Tokens';
-    process.env.ROBLOX_OAUTH_CLIENT_SECRET_ARN = 'arn:aws:secretsmanager:us-east-1:123:secret';
 
-    getSecretValue.mockReturnValue({
-      promise: () =>
-        Promise.resolve({
-          SecretString: JSON.stringify({ clientId: 'roblox-client', clientSecret: 'roblox-secret' }),
-        }),
-    });
-
-    update.mockReturnValue({ promise: () => Promise.resolve({}) });
+    put.mockReturnValue({ promise: () => Promise.resolve({}) });
   });
 
-  it('exchanges code and stores tokens', async () => {
-    gaxios.request.mockResolvedValue({
-      status: 200,
-      data: { access_token: 'access', refresh_token: 'refresh', scope: 'universe.secret:write' },
-    });
-
+  it('stores API key for an experience', async () => {
     const response = await delegateRobloxSecretStoreAccess({
       ...baseRequest,
       input: {
         requestParameters: {} as any,
         body: {
-          code: 'roblox-code',
-          code_verifier: 'verifier',
-          redirect_uri: 'https://example.com/callback',
-        },
+          apiKey: 'roblox-api-key',
+          experienceId: '1234567890',
+        } as any,
       },
     });
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({ message: 'Success' });
-    expect(gaxios.request).toHaveBeenCalledWith(
+    expect(put).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: 'https://apis.roblox.com/oauth/v1/token',
+        TableName: 'RobloxExperienceApiKeys',
+        Item: expect.objectContaining({
+          ExperienceId: '1234567890',
+          ApiKey: 'roblox-api-key',
+          KeyCreatorCognitoUserId: 'cognito-user-123',
+        }),
       }),
     );
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        TableName: 'Tokens',
-        Key: { CognitoUserId: 'cognito-user-123', Provider: 'roblox' },
-      }),
-    );
+  });
+
+  it('returns bad request when parameters are missing', async () => {
+    const response = await delegateRobloxSecretStoreAccess({
+      ...baseRequest,
+      input: { requestParameters: {} as any, body: { apiKey: '', experienceId: '' } as any },
+    });
+
+    expect(response.statusCode).toBe(400);
   });
 
   it('returns not authorized when no user id is present', async () => {
     const response = await delegateRobloxSecretStoreAccess({
       ...baseRequest,
       event: { requestContext: { authorizer: {} } } as any,
-      input: { requestParameters: {} as any, body: { code: 'c', code_verifier: 'v', redirect_uri: 'u' } },
+      input: { requestParameters: {} as any, body: { apiKey: 'k', experienceId: '1' } as any },
     });
 
     expect(response.statusCode).toBe(403);
   });
 
-  it('handles missing access token from Roblox', async () => {
-    gaxios.request.mockResolvedValue({ status: 200, data: {} });
+  it('handles DynamoDB failures', async () => {
+    put.mockReturnValue({
+      promise: jest.fn().mockRejectedValue(new Error('ddb error')),
+    });
 
     const response = await delegateRobloxSecretStoreAccess({
       ...baseRequest,
       input: {
         requestParameters: {} as any,
-        body: { code: 'c', code_verifier: 'v', redirect_uri: 'u' },
+        body: { apiKey: 'key', experienceId: '1' } as any,
       },
     });
 
     expect(response.statusCode).toBe(500);
-    expect((response.body as InternalFailureErrorResponseContent).message).toBe(
-      'Failed to exchange authorization code for tokens',
+    expect((response.body as InternalFailureErrorResponseContent).message).toContain(
+      'Failed to store API key',
     );
   });
 });

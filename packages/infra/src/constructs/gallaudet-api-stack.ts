@@ -1,12 +1,17 @@
 import { CognitoAuthorizer } from "@aws/pdk/type-safe-api";
-import { Stack, StackProps } from "aws-cdk-lib";
+import { Duration, Stack, StackProps } from "aws-cdk-lib";
 import { UserPool } from "aws-cdk-lib/aws-cognito";
 import { IdentityPool } from "aws-cdk-lib/aws-cognito-identitypool";
 import { AttributeType, Table } from "aws-cdk-lib/aws-dynamodb";
+import { Rule, Schedule } from "aws-cdk-lib/aws-events";
+import { LambdaFunction } from "aws-cdk-lib/aws-events-targets";
+import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { HostedZone } from "aws-cdk-lib/aws-route53";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import { EmailIdentity } from "aws-cdk-lib/aws-ses";
+import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { Construct } from "constructs";
+import path from "path";
 import { CIVICTECH_FOR_SCHOOLS_HOSTED_ZONE_NAME } from "../constants";
 import { Gallaudet } from "./apis/gallaudet";
 
@@ -26,6 +31,21 @@ export class GallaudetApiStack extends Stack {
   constructor(scope: Construct, id: string, props: GallaudetApiStackProps) {
     super(scope, id, props);
 
+    const robloxExperienceApiKeysTable = new Table(this, "RobloxApiKeysTable", {
+      tableName: "RobloxExperienceApiKeys",
+      partitionKey: {
+        name: "ExperienceId",
+        type: AttributeType.STRING,
+      },
+    });
+    robloxExperienceApiKeysTable.addGlobalSecondaryIndex({
+      indexName: "KeyCreatorRobloxUserIdIndex",
+      partitionKey: {
+        name: "KeyCreatorRobloxUserId",
+        type: AttributeType.STRING,
+      },
+    });
+
     const oauthTokensTable = new Table(this, "OAuthTokensDDBTable", {
       tableName: "OAuthTokens",
       partitionKey: {
@@ -41,7 +61,7 @@ export class GallaudetApiStack extends Stack {
     const taskCatalogTable = new Table(this, "TaskCatalogDDBTable", {
       tableName: "TaskCatalog",
       partitionKey: {
-        name: "PartnerId",
+        name: "ExperienceId",
         type: AttributeType.STRING,
       },
       sortKey: {
@@ -68,7 +88,23 @@ export class GallaudetApiStack extends Stack {
     const partnersTable = new Table(this, "PartnersDDBTable", {
       tableName: "Partners",
       partitionKey: {
-        name: "PartnerId",
+        name: "ExperienceId",
+        type: AttributeType.STRING,
+      },
+    });
+
+    const partnerApiKeysTable = new Table(this, "PartnerApiKeysDDBTable", {
+      tableName: "PartnerApiKeys",
+      partitionKey: {
+        name: "ApiKeyId",
+        type: AttributeType.STRING,
+      },
+      timeToLiveAttribute: "ExpiresAt",
+    });
+    partnerApiKeysTable.addGlobalSecondaryIndex({
+      indexName: "ExperienceIdIndex",
+      partitionKey: {
+        name: "ExperienceId",
         type: AttributeType.STRING,
       },
     });
@@ -136,13 +172,57 @@ export class GallaudetApiStack extends Stack {
       taskCatalogTable,
       taskInstanceTable: taskInstancesTable,
       partnersTable,
+      partnerApiKeysTable,
       projectsTable,
+      robloxExperienceApiKeysTable,
       usersTable,
       googleOAuthClientSecret,
       robloxApiKey,
       robloxOAuthClientSecret,
       emailIdentity: props.emailIdentity,
       userPool: props.userPool,
+    });
+
+    const cleanupPartnerApiKeysFunction = new NodejsFunction(
+      this,
+      "CleanupPartnerApiKeysFunction",
+      {
+        entry: path.join(
+          __dirname,
+          "..",
+          "handlers",
+          "cleanup-partner-api-keys.ts",
+        ),
+        handler: "handler",
+        timeout: Duration.minutes(5),
+        environment: {
+          PARTNER_API_KEYS_TABLE_NAME: partnerApiKeysTable.tableName,
+          ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME:
+            robloxExperienceApiKeysTable.tableName,
+          PARTNER_API_KEY_USAGE_PLAN_NAME: `partner-api-key-usage-plan-${props.stage}`,
+        },
+      },
+    );
+    partnerApiKeysTable.grantReadWriteData(cleanupPartnerApiKeysFunction);
+    robloxExperienceApiKeysTable.grantReadData(
+      cleanupPartnerApiKeysFunction,
+    );
+    cleanupPartnerApiKeysFunction.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["apigateway:DELETE", "apigateway:GET"],
+        resources: [
+          `arn:aws:apigateway:${Stack.of(this).region}::/apikeys`,
+          `arn:aws:apigateway:${Stack.of(this).region}::/apikeys/*`,
+          `arn:aws:apigateway:${Stack.of(this).region}::/usageplans`,
+          `arn:aws:apigateway:${Stack.of(this).region}::/usageplans/*`,
+          `arn:aws:apigateway:${Stack.of(this).region}::/usageplans/*/keys`,
+        ],
+      }),
+    );
+
+    new Rule(this, "PartnerApiKeyCleanupSchedule", {
+      schedule: Schedule.rate(Duration.hours(1)),
+      targets: [new LambdaFunction(cleanupPartnerApiKeysFunction)],
     });
   }
 }

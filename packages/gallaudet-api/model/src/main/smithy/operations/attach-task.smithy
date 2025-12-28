@@ -30,7 +30,7 @@ operation AttachTask {
         @required
         addOnToken: AddOnToken
 
-        /// The partner that owns the catalog entry selected in the iframe UI.
+        /// The partner experience ID that owns the catalog entry selected in the iframe UI.
         @required
         partnerId: PartnerId
 

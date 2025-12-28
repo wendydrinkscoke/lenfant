@@ -12,7 +12,7 @@ import {
   CompleteMilestone404OperationResponse,
   CompleteMilestone500OperationResponse,
 } from 'gallaudet-api-typescript-runtime';
-import { getApiKeyIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
+import { getExperienceIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError, isGaxiosError } from './utils/error-utils';
 import { extractGoogleUserIdFromUsername } from './utils/google-utils';
@@ -44,7 +44,7 @@ type TaskInstanceRecord = {
 };
 
 type CatalogEntryRecord = {
-  PartnerId?: string;
+  ExperienceId?: string;
   EntryId?: string;
   Milestones?: Milestone[];
 };
@@ -168,19 +168,19 @@ const loadTaskInstance = async (
 };
 
 const loadCatalogEntry = async (
-  partnerId: string,
+  experienceId: string,
   entryId: string,
   logger: Logger,
 ) : Promise<HandlerResult<CatalogEntryRecord | undefined>> => {
   try {
     logger.info(
-      `Loading catalog entry for partnerId=${partnerId}, entryId=${entryId} from TaskCatalog`,
+      `Loading catalog entry for experienceId=${experienceId}, entryId=${entryId} from TaskCatalog`,
     );
     const catalogResult = await ddbClient
       .get({
         TableName: TASK_CATALOG_TABLE_NAME,
         Key: {
-          PartnerId: partnerId,
+          ExperienceId: experienceId,
           EntryId: entryId,
         },
       })
@@ -189,7 +189,7 @@ const loadCatalogEntry = async (
   } catch (error) {
     if (isAWSError(error)) {
       logger.error(
-        `Failed loading catalog entry ${partnerId}/${entryId}: ${error.code} - ${error.message}`,
+        `Failed loading catalog entry ${experienceId}/${entryId}: ${error.code} - ${error.message}`,
       );
       return {
         ok: false,
@@ -201,7 +201,7 @@ const loadCatalogEntry = async (
     }
 
     logger.error(
-      `Unexpected error reading catalog entry ${partnerId}/${entryId}: ${JSON.stringify(error)}`,
+      `Unexpected error reading catalog entry ${experienceId}/${entryId}: ${JSON.stringify(error)}`,
     );
     return {
       ok: false,
@@ -484,16 +484,16 @@ export const completeMilestone: CompleteMilestoneChainedHandlerFunction = async 
   const logger = LoggingInterceptor.getLogger(request);
   logger.info('Start CompleteMilestone Operation');
 
-  let partnerId: string;
+  let experienceId: string;
   try {
-    partnerId = getApiKeyIdFromEvent(request.event);
+    experienceId = await getExperienceIdFromEvent(request.event);
   } catch (error) {
     logger.warn((error as Error).message);
     return Response.notAuthorized({
       message: 'Valid API key required',
     });
   }
-  logger.info(`Resolved partnerId=${partnerId} from API key`);
+  logger.info(`Resolved experienceId=${experienceId} from API key`);
 
   const { input } = request;
   const robloxUserId = input.requestParameters?.robloxUserId?.trim();
@@ -547,9 +547,9 @@ export const completeMilestone: CompleteMilestoneChainedHandlerFunction = async 
     });
   }
 
-  if (taskInstance.PartnerId?.trim() !== partnerId) {
+  if (taskInstance.PartnerId?.trim() !== experienceId) {
     logger.warn(
-      `Partner mismatch while completing milestone ${milestoneId} on task ${taskId}: expected ${taskInstance.PartnerId}, received ${partnerId}`,
+      `Partner mismatch while completing milestone ${milestoneId} on task ${taskId}: expected ${taskInstance.PartnerId}, received ${experienceId}`,
     );
     return Response.notAuthorized({
       message: 'Partner not authorized to update this task',
@@ -572,7 +572,7 @@ export const completeMilestone: CompleteMilestoneChainedHandlerFunction = async 
   }
 
   // Step 3: Load the catalog entry to understand milestone definitions.
-  const catalogEntryResult = await loadCatalogEntry(partnerId, catalogEntryId, logger);
+  const catalogEntryResult = await loadCatalogEntry(experienceId, catalogEntryId, logger);
   if (!catalogEntryResult.ok) {
     return catalogEntryResult.response;
   }
@@ -582,7 +582,7 @@ export const completeMilestone: CompleteMilestoneChainedHandlerFunction = async 
   const catalogMilestones = catalogEntry?.Milestones ?? [];
   if (catalogMilestones.length === 0) {
     logger.warn(
-      `Catalog entry ${partnerId}/${catalogEntryId} has no milestones; cannot complete milestone ${milestoneId}`,
+      `Catalog entry ${experienceId}/${catalogEntryId} has no milestones; cannot complete milestone ${milestoneId}`,
     );
     return Response.badRequest({
       message: 'Task does not define milestones',
@@ -600,7 +600,7 @@ export const completeMilestone: CompleteMilestoneChainedHandlerFunction = async 
 
   if ('error' in normalizationResult) {
     logger.warn(
-      `Milestone ${milestoneId} not defined for catalog entry ${partnerId}/${catalogEntryId}`,
+      `Milestone ${milestoneId} not defined for catalog entry ${experienceId}/${catalogEntryId}`,
     );
     return Response.badRequest({
       message: 'Milestone not defined for task',

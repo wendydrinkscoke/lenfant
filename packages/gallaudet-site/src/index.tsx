@@ -13,13 +13,10 @@ import CreateAttachmentContent from './components/create-attachment-content';
 import CognitoPopupCallback from './app/cognito-popup-callback';
 import AuthPopupStart from './app/auth-popup-start';
 import GooglePopupCallback from './app/google-popup-callback';
-import RobloxOAuthStart from './app/roblox-oauth-start';
-import RobloxOAuthCallback from './app/roblox-oauth-callback';
 import TaskView from './components/task-view';
 import DeveloperInfoPage from './app/developer-info-page';
 import DeveloperOnboardingPage from './app/developer-onboarding-page';
-// import DeveloperPortalPage from './app/developer-portal-page';
-import { DeveloperPortalContent } from './components/developer-portal-content';
+import DeveloperPortalPage from './app/developer-portal-page';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -44,14 +41,12 @@ root.render(
         <Route path="/auth/popup-start" element={<AuthPopupStart />} />
         <Route path="/cognito/popup-callback" element={<CognitoPopupCallback />} />
         <Route path="/google/popup-callback" element={<GooglePopupCallback />} />
-        <Route path="/roblox/oauth-start" element={<RobloxOAuthStart />} />
-        <Route path="/roblox/oauth-callback" element={<RobloxOAuthCallback />} />
         <Route path='/terms-of-service' element={<TermsPage />} />
         <Route path='/support' element={<SupportPage />} />
         <Route path='/privacy-policy' element={<PrivacyPage />} />
         <Route path='/developer-info' element={<DeveloperInfoPage />} />
         <Route path='/partner-with-us' element={<DeveloperOnboardingPage />} />
-        <Route path='/create' Component={DeveloperPortalContent} />
+        <Route path='/create' element={<DeveloperPortalPage />} />
         <Route path='/create-attachment' element={<CreateAttachmentContent />} />
         <Route
           path='/student-task-view'

@@ -6,6 +6,15 @@ import {
   NotAuthorizedErrorResponseContent,
 } from 'gallaudet-api-typescript-runtime';
 import { catalogTask } from '../src/catalog-task';
+import { getExperienceIdFromEvent } from '../src/utils/auth-utils';
+
+jest.mock('../src/utils/auth-utils', () => {
+  const actual = jest.requireActual('../src/utils/auth-utils');
+  return {
+    ...actual,
+    getExperienceIdFromEvent: jest.fn(),
+  };
+});
 
 var dynamoMocks: {
   updatePromise: jest.Mock;
@@ -61,10 +70,12 @@ beforeEach(() => {
   }
   jest.clearAllMocks();
   dynamoMocks.updatePromise.mockResolvedValue({});
+  (getExperienceIdFromEvent as jest.Mock).mockResolvedValue('partner-123');
 });
 
 describe('CatalogTask', () => {
   it('returns 403 when API key is missing', async () => {
+    (getExperienceIdFromEvent as jest.Mock).mockRejectedValueOnce(new Error('Missing API key'));
     const response = await catalogTask({
       ...buildRequestArgs({
         event: { requestContext: { identity: {} } } as any,
@@ -115,7 +126,7 @@ describe('CatalogTask', () => {
     const updateArgsRecord = updateArgs as any;
     expect(updateArgsRecord.TableName).toBe('TaskCatalog');
     expect(updateArgsRecord.Key).toEqual({
-      PartnerId: 'api-key-123',
+      ExperienceId: 'partner-123',
       EntryId: 'draft-a-bill',
     });
     expect(response.statusCode).toBe(200);

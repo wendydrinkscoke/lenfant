@@ -3,28 +3,40 @@ import { getRuntimeConfig } from "./environment-utils";
 export type ClassroomRole = "teacher" | "student";
 export type AuthRole = ClassroomRole | "developer";
 
-const ROLE_PATTERNS: Array<{ role: ClassroomRole; test: (path: string) => boolean }> = [
+const ROLE_PATTERNS: Array<{ role: AuthRole; test: (path: string) => boolean }> = [
   { role: "teacher", test: (path) => path.startsWith("/create-attachment") },
   { role: "teacher", test: (path) => path.startsWith("/teacher-task-view") },
   { role: "teacher", test: (path) => path.startsWith("/student-work-review") },
   { role: "teacher", test: (path) => path.startsWith("/link-upgrade") },
   { role: "student", test: (path) => path.startsWith("/student-task-view") },
+  { role: "developer", test: (path) => path.startsWith("/create") },
+  { role: "developer", test: (path) => path.startsWith("/developer") },
+  { role: "developer", test: (path) => path.startsWith("/partner-with-us") },
 ];
 
-export function inferClassroomRoleFromLocation(loc: Location = window.location): ClassroomRole {
+export function inferUserRoleFromLocation(loc: Location = window.location): AuthRole {
   const trimmedPath = loc.pathname.replace(/\/+$/, "") || "/";
+
   const match = ROLE_PATTERNS.find(({ test }) => test(trimmedPath));
-  if (!match) {
-    throw new Error(`Unsupported Classroom iframe path: ${trimmedPath}`);
+  if (match) {
+    return match.role;
   }
-  return match.role;
+
+  return "developer";
+}
+
+export function inferClassroomRoleFromLocation(loc: Location = window.location): ClassroomRole {
+  const role = inferUserRoleFromLocation(loc);
+  if (role === "developer") {
+    throw new Error(`Unsupported Classroom iframe path: ${loc.pathname}`);
+  }
+  return role;
 }
 
 export interface StartCognitoOAuthFlowOptions {
   loginHint?: string;
   includeRobloxAssociation?: boolean;
   roleOverride?: AuthRole;
-  robloxScopes?: string[];
 }
 
 export function startCognitoOAuthFlowViaPopup(
@@ -35,14 +47,11 @@ export function startCognitoOAuthFlowViaPopup(
       ? { loginHint: optionsOrLoginHint }
       : optionsOrLoginHint;
 
-  const role = options.roleOverride ?? inferClassroomRoleFromLocation();
+  const role: AuthRole = options.roleOverride ?? inferUserRoleFromLocation();
   const params = new URLSearchParams({ role });
   if (options.loginHint) params.set("login_hint", options.loginHint);
   if (options.includeRobloxAssociation) {
     params.set("includeRobloxAssociation", "1");
-  }
-  if (options.robloxScopes?.length) {
-    params.set("robloxScopes", options.robloxScopes.join(","));
   }
   const url = `${window.location.origin}/auth/popup-start?${params}`;
   return window.open(url, "cognitoLogin", "width=520,height=640");

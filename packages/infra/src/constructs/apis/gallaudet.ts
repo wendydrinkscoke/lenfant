@@ -3,6 +3,7 @@ import {
   CognitoAuthorizer,
   Integrations,
 } from "@aws/pdk/type-safe-api";
+import { Stack } from "aws-cdk-lib";
 import { ApiKeySourceType, Cors } from "aws-cdk-lib/aws-apigateway";
 import { SecurityPolicy } from "aws-cdk-lib/aws-apigatewayv2";
 import {
@@ -41,6 +42,7 @@ import {
   GetGoogleClassroomAccessStatusFunction,
   CreateProjectFunction,
   ListProjectsFunction,
+  VendSecretFunction,
 } from "gallaudet-api-typescript-infra";
 
 /**
@@ -58,7 +60,9 @@ export interface GallaudetProps {
   readonly taskCatalogTable: ITable;
   readonly taskInstanceTable: ITable;
   readonly partnersTable: ITable;
+  readonly partnerApiKeysTable: ITable;
   readonly projectsTable: ITable;
+  readonly robloxExperienceApiKeysTable: ITable;
   readonly usersTable: ITable;
   readonly googleOAuthClientSecret: ISecret;
   readonly robloxApiKey: ISecret;
@@ -112,6 +116,7 @@ export class Gallaudet extends Construct {
       "CatalogTaskFunction",
       {
         environment: {
+          PARTNER_API_KEYS_TABLE_NAME: props.partnerApiKeysTable.tableName,
           TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
         },
         description: [
@@ -121,6 +126,7 @@ export class Gallaudet extends Construct {
       },
     );
     props.taskCatalogTable.grantWriteData(catalogTaskFunction);
+    props.partnerApiKeysTable.grantReadData(catalogTaskFunction);
 
     const completeMilestoneFunction = new CompleteMilestoneFunction(
       this,
@@ -130,6 +136,7 @@ export class Gallaudet extends Construct {
           GOOGLE_OAUTH_CLIENT_SECRET_ARN:
             props.googleOAuthClientSecret.secretArn,
           OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
+          PARTNER_API_KEYS_TABLE_NAME: props.partnerApiKeysTable.tableName,
           TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
           TASK_INSTANCE_TABLE_NAME: props.taskInstanceTable.tableName,
           USERS_TABLE_NAME: props.usersTable.tableName,
@@ -140,6 +147,7 @@ export class Gallaudet extends Construct {
     props.taskCatalogTable.grantReadData(completeMilestoneFunction);
     props.taskInstanceTable.grantReadWriteData(completeMilestoneFunction);
     props.usersTable.grantReadData(completeMilestoneFunction);
+    props.partnerApiKeysTable.grantReadData(completeMilestoneFunction);
     props.googleOAuthClientSecret.grantRead(completeMilestoneFunction);
 
     const createProjectFunction = new CreateProjectFunction(
@@ -188,22 +196,18 @@ export class Gallaudet extends Construct {
         "DelegateRobloxSecretStoreAccessFunction",
         {
           environment: {
-            OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
-            ROBLOX_OAUTH_CLIENT_SECRET_ARN:
-              props.robloxOAuthClientSecret.secretArn,
+            ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME:
+              props.robloxExperienceApiKeysTable.tableName,
           },
           description: [
-            'This function "delegates" access to the Roblox Secret Store',
+            "This function enables access to the Roblox Secret Store",
             "of a particular experience on behalf of a user (a game",
-            "developer) This involves receiving their Roblox credentials",
+            "developer). This involves receiving an API key from the user",
             "and storing them in a DynamoDB table for later use.",
           ].join(" "),
         },
       );
-    props.oauthTokensTable.grantWriteData(
-      delegateRobloxSecretStoreAccessFunction,
-    );
-    props.robloxOAuthClientSecret.grantRead(
+    props.robloxExperienceApiKeysTable.grantWriteData(
       delegateRobloxSecretStoreAccessFunction,
     );
 
@@ -267,6 +271,7 @@ export class Gallaudet extends Construct {
         TASK_INSTANCE_TABLE_NAME: props.taskInstanceTable.tableName,
         OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
         GOOGLE_OAUTH_CLIENT_SECRET_ARN: props.googleOAuthClientSecret.secretArn,
+        PARTNER_API_KEYS_TABLE_NAME: props.partnerApiKeysTable.tableName,
         USERS_TABLE_NAME: props.usersTable.tableName,
       },
       description: [
@@ -278,6 +283,7 @@ export class Gallaudet extends Construct {
     props.oauthTokensTable.grantReadData(gradeTaskFunction);
     props.googleOAuthClientSecret.grantRead(gradeTaskFunction);
     props.usersTable.grantReadData(gradeTaskFunction);
+    props.partnerApiKeysTable.grantReadData(gradeTaskFunction);
 
     const listTasksForPlayerFunction = new ListTasksForPlayerFunction(
       this,
@@ -287,6 +293,7 @@ export class Gallaudet extends Construct {
           GOOGLE_OAUTH_CLIENT_SECRET_ARN:
             props.googleOAuthClientSecret.secretArn,
           OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
+          PARTNER_API_KEYS_TABLE_NAME: props.partnerApiKeysTable.tableName,
           TASK_INSTANCE_TABLE_NAME: props.taskInstanceTable.tableName,
           TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
           USERS_TABLE_NAME: props.usersTable.tableName,
@@ -303,6 +310,7 @@ export class Gallaudet extends Construct {
     props.oauthTokensTable.grantReadData(listTasksForPlayerFunction);
     props.googleOAuthClientSecret.grantRead(listTasksForPlayerFunction);
     props.usersTable.grantReadData(listTasksForPlayerFunction);
+    props.partnerApiKeysTable.grantReadData(listTasksForPlayerFunction);
 
     const getTaskCatalogFunction = new GetTaskCatalogFunction(
       this,
@@ -375,6 +383,7 @@ export class Gallaudet extends Construct {
       {
         environment: {
           PARTNERS_TABLE_NAME: props.partnersTable.tableName,
+          PARTNER_API_KEYS_TABLE_NAME: props.partnerApiKeysTable.tableName,
         },
         description: [
           "This function records partner-supplied profile metadata so",
@@ -384,6 +393,29 @@ export class Gallaudet extends Construct {
       },
     );
     props.partnersTable.grantWriteData(putPartnerFunction);
+    props.partnerApiKeysTable.grantReadData(putPartnerFunction);
+
+    const vendSecretFunction = new VendSecretFunction(
+      this,
+      "VendSecretFunction",
+      {
+        environment: {
+          ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME:
+            props.robloxExperienceApiKeysTable.tableName,
+          PARTNER_API_KEYS_TABLE_NAME: props.partnerApiKeysTable.tableName,
+          PARTNER_API_KEY_USAGE_PLAN_NAME: `partner-api-key-usage-plan-${props.stage}`,
+          SECRET_DOMAIN: props.websiteDomainName,
+        },
+        description: [
+          "This function vends an API key to access our APIs directly",
+          "to partner experiences' game servers using API key based access",
+          "to the experience's secret store on Roblox.",
+        ].join(" "),
+      },
+    );
+    props.robloxExperienceApiKeysTable.grantReadData(vendSecretFunction);
+    props.partnerApiKeysTable.grantReadWriteData(vendSecretFunction);
+    props.usersTable.grantReadData(vendSecretFunction);
 
     this.api = new Api(this, id, {
       apiKeyOptions: {
@@ -473,6 +505,9 @@ export class Gallaudet extends Construct {
             apiKeyRequired: true,
           },
         },
+        vendSecret: {
+          integration: Integrations.lambda(vendSecretFunction),
+        },
       },
       policy: new PolicyDocument({
         statements: [
@@ -516,6 +551,18 @@ export class Gallaudet extends Construct {
     partnerApiKeyUsagePlan.addApiStage({
       stage: this.api.api.deploymentStage,
     });
+    vendSecretFunction.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["apigateway:POST", "apigateway:DELETE", "apigateway:GET"],
+        resources: [
+          `arn:aws:apigateway:${Stack.of(this).region}::/apikeys`,
+          `arn:aws:apigateway:${Stack.of(this).region}::/apikeys/*`,
+          `arn:aws:apigateway:${Stack.of(this).region}::/usageplans`,
+          `arn:aws:apigateway:${Stack.of(this).region}::/usageplans/*`,
+          `arn:aws:apigateway:${Stack.of(this).region}::/usageplans/*/keys`,
+        ],
+      }),
+    );
 
     if (props.stage !== "prod") {
       const postmanApiKey = this.api.api.addApiKey("PostmanTestingApiKey", {

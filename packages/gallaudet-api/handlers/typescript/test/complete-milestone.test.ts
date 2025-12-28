@@ -12,13 +12,14 @@ import {
 } from 'gallaudet-api-typescript-runtime';
 import { GaxiosError } from 'gaxios';
 import { completeMilestone } from '../src/complete-milestone';
-import { getGoogleOAuthClient } from '../src/utils/auth-utils';
+import { getExperienceIdFromEvent, getGoogleOAuthClient } from '../src/utils/auth-utils';
 
 jest.mock('../src/utils/auth-utils', () => {
   const actual = jest.requireActual('../src/utils/auth-utils');
   return {
     ...actual,
     getGoogleOAuthClient: jest.fn(),
+    getExperienceIdFromEvent: jest.fn(),
   };
 });
 
@@ -123,6 +124,7 @@ describe('CompleteMilestone', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedGetGoogleOAuthClient.mockReset();
+    (getExperienceIdFromEvent as jest.Mock).mockResolvedValue('partner-123');
     dynamoMocks.query.mockReset();
     dynamoMocks.get.mockReset();
     dynamoMocks.update.mockReset();

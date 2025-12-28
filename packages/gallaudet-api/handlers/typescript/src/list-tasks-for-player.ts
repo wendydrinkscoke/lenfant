@@ -9,7 +9,7 @@ import {
   Milestone,
 } from 'gallaudet-api-typescript-runtime';
 
-import { getApiKeyIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
+import { getExperienceIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError, isGaxiosError } from './utils/error-utils';
 import { computeMilestoneProgress } from './utils/milestone-utils';
@@ -31,7 +31,7 @@ type TaskInstanceRecord = {
 };
 
 type CatalogEntryRecord = {
-  PartnerId?: string;
+  ExperienceId?: string;
   EntryId?: string;
   Milestones?: Milestone[];
   Name?: string;
@@ -170,10 +170,10 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
     )}`,
   );
 
-  let partnerId: string;
+  let experienceId: string;
   try {
-    partnerId = getApiKeyIdFromEvent(request.event);
-    logger.info(`Resolved partner ID from API key: ${partnerId}`);
+    experienceId = await getExperienceIdFromEvent(request.event);
+    logger.info(`Resolved experience ID from API key: ${experienceId}`);
     logger.info(
       `API Gateway identity context: ${JSON.stringify(
         request.event.requestContext?.identity ?? {},
@@ -197,7 +197,7 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
     });
   }
   logger.info(
-    `Fetching tasks for robloxUserId=${robloxUserId} (partner=${partnerId})`,
+    `Fetching tasks for robloxUserId=${robloxUserId} (experienceId=${experienceId})`,
   );
 
   let cognitoUserSub: string | undefined;
@@ -450,7 +450,7 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
       continue;
     }
 
-    if (taskRecord.PartnerId !== partnerId) {
+    if (taskRecord.PartnerId !== experienceId) {
       logger.info(
         `Skipping attachmentId=${attachmentId} because it is owned by partner=${taskRecord.PartnerId}`,
       );
@@ -480,13 +480,13 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
     let catalogEntry: CatalogEntryRecord | null = null;
     try {
       logger.info(
-        `Loading catalog entry to compute milestones for partnerId=${partnerId}, entryId=${taskRecord.EntryId}`,
+        `Loading catalog entry to compute milestones for experienceId=${experienceId}, entryId=${taskRecord.EntryId}`,
       );
       const catalogResult = await ddbClient
         .get({
           TableName: TASK_CATALOG_TABLE_NAME,
           Key: {
-            PartnerId: partnerId,
+            ExperienceId: experienceId,
             EntryId: taskRecord.EntryId,
           },
         })
@@ -495,7 +495,7 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
     } catch (error) {
       if (isAWSError(error)) {
         logger.error(
-          `Failed loading catalog entry ${partnerId}/${taskRecord.EntryId}: ${error.code} - ${error.message}`,
+          `Failed loading catalog entry ${experienceId}/${taskRecord.EntryId}: ${error.code} - ${error.message}`,
         );
         return Response.internalFailure({
           message: 'Failed to load task catalog entry',
@@ -504,7 +504,7 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
       }
 
       logger.error(
-        `Unexpected error reading catalog entry ${partnerId}/${taskRecord.EntryId}: ${JSON.stringify(error)}`,
+        `Unexpected error reading catalog entry ${experienceId}/${taskRecord.EntryId}: ${JSON.stringify(error)}`,
       );
       return Response.internalFailure({
         message: 'Failed to load task catalog entry',
@@ -516,7 +516,7 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
     const instructions = catalogEntry?.Instructions?.trim();
     if (!name || !subheading || !instructions) {
       logger.warn(
-        `Catalog entry ${partnerId}/${taskRecord.EntryId} missing name, subheading, or instructions; skipping`,
+        `Catalog entry ${experienceId}/${taskRecord.EntryId} missing name, subheading, or instructions; skipping`,
       );
       continue;
     }
@@ -547,7 +547,7 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
   }
 
   logger.info(
-    `Returning ${tasks.length} assignments for partner ${partnerId} and robloxUserId=${robloxUserId}`,
+    `Returning ${tasks.length} assignments for partner ${experienceId} and robloxUserId=${robloxUserId}`,
   );
   logger.info(`Response payload: ${JSON.stringify({ tasks })}`);
 

@@ -63,7 +63,7 @@ export const attachTask: AttachTaskChainedHandlerFunction = async (request) => {
         .get({
           TableName: TASK_CATALOG_TABLE_NAME,
           Key: {
-            PartnerId: partnerId,
+            ExperienceId: partnerId,
             EntryId: entryId,
           },
         })

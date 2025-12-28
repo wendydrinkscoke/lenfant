@@ -26,15 +26,6 @@ import { MetricsPanel } from "./developer-portal/metrics"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "./ui/empty"
 import { ResponseError } from "gallaudet-api-typescript-react-query-hooks"
 
-const portalContent: Record<string, ReactNode> = {
-  listing: <MarketplaceListingPanel />,
-  tasks: <ConfigureTasksPanel />,
-  assets: <AssetManagerPanel />,
-  secrets: <ConfigureSecretsPanel />,
-  roles: <RolesPanel />,
-  metrics: <MetricsPanel />,
-}
-
 export function DeveloperPortalContent() {
   const { user } = useAuth()
   type Experience = { id: string; name: string; status?: string }
@@ -65,50 +56,12 @@ export function DeveloperPortalContent() {
     const handler = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return
       if (!event.data || typeof event.data !== "object") return
-      const { type, scopes, code, codeVerifier, redirectUri } = event.data as {
-        type?: string
-        scopes?: string[]
-        code?: string
-        codeVerifier?: string | null
-        redirectUri?: string
-      }
+      const { type } = event.data as { type?: string }
 
       if (type === "roblox-sign-in-complete") {
         toast.success("Roblox sign-in complete")
       }
-      if (type === "roblox-scopes-required" && Array.isArray(scopes)) {
-        toast.message("Roblox scopes needed", { description: scopes.join(", ") })
-        const params = new URLSearchParams({ scopes: scopes.join(",") })
-        const popup = window.open(
-          `${window.location.origin}/roblox/oauth-start?${params.toString()}`,
-          "robloxOAuth",
-          "width=520,height=640"
-        )
-        if (!popup) {
-          toast.error("Please allow popups to approve Roblox scopes.")
-        }
-      }
-      if (type === "roblox-oauth-complete" && code) {
-        toast.success("Roblox scopes approved")
-        ;(async () => {
-          try {
-            const apiClient = await getGallaudetApi()
-            await apiClient.delegateRobloxSecretStoreAccess({
-              delegateRobloxSecretStoreAccessRequestContent: {
-                code,
-                code_verifier: codeVerifier ?? "",
-                redirect_uri: redirectUri ?? `${window.location.origin}/roblox/oauth-callback`,
-              },
-            })
-            toast.success("Roblox secret-store delegation saved")
-          } catch (err: any) {
-            console.error("[Roblox OAuth] backend delegation failed", err)
-            toast.error("Failed to save Roblox delegation", {
-              description: err?.message ?? "Try again or contact support.",
-            })
-          }
-        })()
-      }
+      // Roblox OAuth-based flows removed; API key delegation is now manual via UI.
     }
     window.addEventListener("message", handler)
     return () => window.removeEventListener("message", handler)
@@ -176,6 +129,25 @@ export function DeveloperPortalContent() {
   const selectedExperienceName = experiences.find((e) => e.id === selectedExperience)?.name
   const hasSelection = Boolean(selectedExperienceName)
 
+  const renderFeatureContent = (): ReactNode => {
+    switch (selectedFeature) {
+      case "listing":
+        return <MarketplaceListingPanel />
+      case "tasks":
+        return <ConfigureTasksPanel />
+      case "assets":
+        return <AssetManagerPanel />
+      case "secrets":
+        return <ConfigureSecretsPanel experienceId={selectedExperience} />
+      case "roles":
+        return <RolesPanel />
+      case "metrics":
+        return <MetricsPanel />
+      default:
+        return <p className="text-sm text-muted-foreground">Select a feature to get started.</p>
+    }
+  }
+
   return (
     <SidebarProvider className="bg-background flex min-h-screen w-full">
       <DevPortalSidebar
@@ -233,9 +205,7 @@ export function DeveloperPortalContent() {
           {hasSelection ? (
             <Card>
               <CardContent className="space-y-4 pt-6">
-                {portalContent[selectedFeature] ?? (
-                  <p className="text-sm text-muted-foreground">Select a feature to get started.</p>
-                )}
+                {renderFeatureContent()}
               </CardContent>
             </Card>
           ) : (

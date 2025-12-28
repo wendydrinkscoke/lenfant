@@ -25,6 +25,27 @@ class ApiKeyIdNotParseableFromEventError extends Error {
   }
 }
 
+class PartnerExperienceNotResolvedError extends Error {
+  constructor(apiKeyId: string) {
+    super(`No partner experience mapping found for API key: ${apiKeyId}`);
+    this.name = 'PartnerExperienceNotResolvedError';
+  }
+}
+
+class PartnerApiKeyExpiredError extends Error {
+  constructor(apiKeyId: string) {
+    super(`API key ${apiKeyId} has expired.`);
+    this.name = 'PartnerApiKeyExpiredError';
+  }
+}
+
+class PartnerApiKeyInactiveError extends Error {
+  constructor(apiKeyId: string) {
+    super(`API key ${apiKeyId} is not active.`);
+    this.name = 'PartnerApiKeyInactiveError';
+  }
+}
+
 class RobloxUserNotLinkedError extends Error {
   constructor(cognitoUserId: string) {
     super(`Roblox User ID not found for Cognito User ID: ${cognitoUserId}`);
@@ -116,4 +137,47 @@ export const getApiKeyIdFromEvent = (event: APIGatewayProxyEvent): string => {
     throw new ApiKeyIdNotParseableFromEventError();
   }
   return apiKeyId;
+};
+
+export const getExperienceIdFromEvent = async (
+  event: APIGatewayProxyEvent,
+): Promise<string> => {
+  const apiKeyId = getApiKeyIdFromEvent(event);
+  const partnerApiKeysTableName = getRequiredEnv('PARTNER_API_KEYS_TABLE_NAME');
+
+  const mapping = await ddbClient.get({
+    TableName: partnerApiKeysTableName,
+    Key: {
+      ApiKeyId: apiKeyId,
+    },
+  }).promise();
+
+  const item = mapping.Item as {
+    ExperienceId?: string;
+    ExpiresAt?: number;
+    Status?: string;
+  } | undefined;
+
+  const experienceId = item?.ExperienceId?.trim();
+  if (!experienceId) {
+    throw new PartnerExperienceNotResolvedError(apiKeyId);
+  }
+
+  const status = item?.Status?.trim();
+  if (status && status !== 'Active' && status !== 'Expiring') {
+    throw new PartnerApiKeyInactiveError(apiKeyId);
+  }
+
+  const expiresAt =
+    typeof item?.ExpiresAt === 'number'
+      ? item.ExpiresAt
+      : typeof item?.ExpiresAt === 'string'
+        ? Number.parseInt(item.ExpiresAt, 10)
+        : undefined;
+  const now = Math.floor(Date.now() / 1000);
+  if (expiresAt && expiresAt <= now) {
+    throw new PartnerApiKeyExpiredError(apiKeyId);
+  }
+
+  return experienceId;
 };

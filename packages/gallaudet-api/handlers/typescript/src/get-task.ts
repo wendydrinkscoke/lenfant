@@ -28,7 +28,7 @@ type TaskInstanceItem = {
 };
 
 type CatalogEntryItem = {
-  PartnerId?: string;
+  ExperienceId?: string;
   EntryId?: string;
   Name?: string;
   Subheading?: string;
@@ -37,7 +37,7 @@ type CatalogEntryItem = {
 };
 
 type PartnerItem = {
-  PartnerId: string;
+  ExperienceId: string;
   PartnerName: string;
   RobloxGameId: string;
 }
@@ -263,7 +263,7 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
         .get({
           TableName: TASK_CATALOG_TABLE_NAME,
           Key: {
-            PartnerId: partnerId,
+            ExperienceId: partnerId,
             EntryId: entryId,
           },
         })
@@ -324,7 +324,7 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
         .get({
           TableName: PARTNERS_TABLE_NAME,
           Key: {
-            PartnerId: partnerId,
+            ExperienceId: partnerId,
           },
         })
         .promise();

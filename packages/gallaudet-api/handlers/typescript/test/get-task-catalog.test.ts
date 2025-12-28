@@ -66,14 +66,14 @@ describe('GetTaskCatalog', () => {
     dynamoMocks.scanPromise.mockResolvedValueOnce({
       Items: [
         {
-          PartnerId: 'abcdefg',
+          ExperienceId: 'abcdefg',
           EntryId: 'draft-bill',
           Name: 'Draft a Bill',
           Subheading: 'Research and write legislation',
           Instructions: 'Work together to draft your bill.',
         },
         {
-          PartnerId: 'abcdefg',
+          ExperienceId: 'abcdefg',
           EntryId: 'tour-whitehouse',
           Name: 'Tour the White House',
           Subheading: 'Guided tour of the White House',
@@ -92,7 +92,7 @@ describe('GetTaskCatalog', () => {
           ],
         },
         {
-          PartnerId: 'qredasg',
+          ExperienceId: 'qredasg',
           EntryId: 'press-briefing',
           Name: 'Attend Press Briefing',
           Subheading: 'Answer questions from the press',
@@ -104,7 +104,7 @@ describe('GetTaskCatalog', () => {
       Responses: {
         Partners: [
           {
-            PartnerId: 'abcdefg',
+            ExperienceId: 'abcdefg',
             PartnerName: 'Partner Alpha',
           },
         ],
@@ -127,10 +127,10 @@ describe('GetTaskCatalog', () => {
         Partners: {
           Keys: [
             {
-              PartnerId: 'abcdefg',
+              ExperienceId: 'abcdefg',
             },
             {
-              PartnerId: 'qredasg',
+              ExperienceId: 'qredasg',
             },
           ],
         },
