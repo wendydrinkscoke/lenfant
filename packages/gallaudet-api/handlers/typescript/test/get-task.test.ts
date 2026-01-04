@@ -3,6 +3,9 @@ process.env.TASK_CATALOG_TABLE_NAME = 'TaskCatalog';
 process.env.OAUTH_TOKENS_TABLE_NAME = 'OAuthTokens';
 process.env.GOOGLE_OAUTH_CLIENT_SECRET_ARN = 'secretArn';
 process.env.PARTNERS_TABLE_NAME = 'Partners';
+process.env.PARTNERS_V2_TABLE_NAME = 'PartnersV2';
+process.env.PARTNER_API_KEY_TO_EXPERIENCE_TABLE_NAME =
+  'PartnerApiKeyToExperience';
 
 import {
   GetTaskChainedRequestInput,
@@ -97,6 +100,20 @@ beforeEach(() => {
               percentageContribution: 50,
             },
           ],
+        },
+      },
+      PartnerApiKeyToExperience: {
+        Item: {
+          ApiKeyId: 'studio-42',
+          ExperienceId: 'exp-42',
+        },
+      },
+      PartnersV2: {
+        Item: {
+          ExperienceId: 'exp-42',
+          PartnerId: 'studio-42',
+          PartnerName: 'Studio Forty Two',
+          RobloxGameId: '1213026131',
         },
       },
       Partners: {

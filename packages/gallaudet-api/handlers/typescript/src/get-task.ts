@@ -16,6 +16,11 @@ import { isAWSError, isGaxiosError } from './utils/error-utils';
 const ddbClient = new DynamoDB.DocumentClient();
 const TASK_INSTANCE_TABLE_NAME = getRequiredEnv('TASK_INSTANCE_TABLE_NAME');
 const TASK_CATALOG_TABLE_NAME = getRequiredEnv('TASK_CATALOG_TABLE_NAME');
+const PARTNERS_TABLE_NAME = getRequiredEnv('PARTNERS_TABLE_NAME');
+const PARTNERS_V2_TABLE_NAME = getRequiredEnv('PARTNERS_V2_TABLE_NAME');
+const PARTNER_API_KEY_TO_EXPERIENCE_TABLE_NAME = getRequiredEnv(
+  'PARTNER_API_KEY_TO_EXPERIENCE_TABLE_NAME',
+);
 
 type TaskInstanceItem = {
   InstanceId?: string;
@@ -37,9 +42,10 @@ type CatalogEntryItem = {
 };
 
 type PartnerItem = {
-  PartnerId: string;
-  PartnerName: string;
-  RobloxGameId: string;
+  PartnerId?: string;
+  ExperienceId?: string;
+  PartnerName?: string;
+  RobloxGameId?: string;
 }
 
 
@@ -317,29 +323,77 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
       `Returning task content for taskId=${taskId}, role=${resolvedRole}, title="${title}"`,
     );
 
-    const PARTNERS_TABLE_NAME = getRequiredEnv('PARTNERS_TABLE_NAME');
     let partner: PartnerItem | undefined;
     try {
-      const partnerResult = await ddbClient
-        .get({
-          TableName: PARTNERS_TABLE_NAME,
-          Key: {
-            PartnerId: partnerId,
-          },
-        })
-        .promise();
-      partner = partnerResult.Item as PartnerItem | undefined;
-      if (!partner) {
-        logger.error(
-          `Partner entry missing for partnerId=${partnerId}, taskId=${taskId}`,
+      let experienceId: string | undefined;
+      try {
+        const mappingResult = await ddbClient
+          .get({
+            TableName: PARTNER_API_KEY_TO_EXPERIENCE_TABLE_NAME,
+            Key: {
+              ApiKeyId: partnerId,
+            },
+            ConsistentRead: true,
+          })
+          .promise();
+        experienceId = (mappingResult.Item as { ExperienceId?: string } | undefined)
+          ?.ExperienceId?.trim();
+      } catch (mappingError) {
+        logger.warn(
+          `Failed to resolve partner mapping for partnerId=${partnerId}: ${JSON.stringify(mappingError)}`,
         );
-        return Response.internalFailure({
-          message: 'Task content no longer available',
-        });
       }
-      logger.info(
-        `Loaded partner entry for partnerId=${partnerId}, Name=${partner.PartnerName}`,
-      );
+
+      if (experienceId) {
+        try {
+          const partnerV2Result = await ddbClient
+            .get({
+              TableName: PARTNERS_V2_TABLE_NAME,
+              Key: {
+                ExperienceId: experienceId,
+              },
+            })
+            .promise();
+          partner = partnerV2Result.Item as PartnerItem | undefined;
+          if (partner?.RobloxGameId) {
+            logger.info(
+              `Loaded partner v2 entry for partnerId=${partnerId}, experienceId=${experienceId}`,
+            );
+          } else if (partner) {
+            logger.warn(
+              `Partner v2 entry missing RobloxGameId for partnerId=${partnerId}, experienceId=${experienceId}; falling back to legacy table.`,
+            );
+            partner = undefined;
+          }
+        } catch (v2Error) {
+          logger.warn(
+            `Failed to read partner v2 for partnerId=${partnerId}: ${JSON.stringify(v2Error)}`,
+          );
+        }
+      }
+
+      if (!partner) {
+        const partnerResult = await ddbClient
+          .get({
+            TableName: PARTNERS_TABLE_NAME,
+            Key: {
+              PartnerId: partnerId,
+            },
+          })
+          .promise();
+        partner = partnerResult.Item as PartnerItem | undefined;
+        if (!partner) {
+          logger.error(
+            `Partner entry missing for partnerId=${partnerId}, taskId=${taskId}`,
+          );
+          return Response.internalFailure({
+            message: 'Task content no longer available',
+          });
+        }
+        logger.info(
+          `Loaded partner entry for partnerId=${partnerId}, Name=${partner.PartnerName}`,
+        );
+      }
     } catch (ddbError) {
       if (isAWSError(ddbError)) {
         logger.error(
@@ -358,7 +412,15 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
       });
     }
     const partnerName = partner?.PartnerName ?? partnerId;
-    const robloxGameId = partner?.RobloxGameId;
+    const robloxGameId = partner?.RobloxGameId?.trim();
+    if (!robloxGameId) {
+      logger.error(
+        `Partner entry missing RobloxGameId for partnerId=${partnerId}, taskId=${taskId}`,
+      );
+      return Response.internalFailure({
+        message: 'Task content incomplete',
+      });
+    }
 
     return Response.success({
       task: {

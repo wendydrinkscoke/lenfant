@@ -250,6 +250,9 @@ export class Gallaudet extends Construct {
         TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
         OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
         PARTNERS_TABLE_NAME: props.partnersTable.tableName,
+        PARTNERS_V2_TABLE_NAME: props.partnersV2Table.tableName,
+        PARTNER_API_KEY_TO_EXPERIENCE_TABLE_NAME:
+          props.partnerApiKeyToExperienceTable.tableName,
         GOOGLE_OAUTH_CLIENT_SECRET_ARN: props.googleOAuthClientSecret.secretArn,
       },
       description: [
@@ -261,6 +264,8 @@ export class Gallaudet extends Construct {
     props.taskCatalogTable.grantReadData(getTaskFunction);
     props.oauthTokensTable.grantReadData(getTaskFunction);
     props.partnersTable.grantReadData(getTaskFunction);
+    props.partnersV2Table.grantReadData(getTaskFunction);
+    props.partnerApiKeyToExperienceTable.grantReadData(getTaskFunction);
     props.googleOAuthClientSecret.grantRead(getTaskFunction);
 
     const gradeTaskFunction = new GradeTaskFunction(this, "GradeTaskFunction", {
@@ -312,6 +317,9 @@ export class Gallaudet extends Construct {
         environment: {
           TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
           PARTNERS_TABLE_NAME: props.partnersTable.tableName,
+          PARTNERS_V2_TABLE_NAME: props.partnersV2Table.tableName,
+          PARTNER_API_KEY_TO_EXPERIENCE_TABLE_NAME:
+            props.partnerApiKeyToExperienceTable.tableName,
         },
         description: [
           "This function returns the catalog of partner-provided tasks",
@@ -322,6 +330,8 @@ export class Gallaudet extends Construct {
     );
     props.taskCatalogTable.grantReadData(getTaskCatalogFunction);
     props.partnersTable.grantReadData(getTaskCatalogFunction);
+    props.partnersV2Table.grantReadData(getTaskCatalogFunction);
+    props.partnerApiKeyToExperienceTable.grantReadData(getTaskCatalogFunction);
 
     const linkRobloxAccountFunction = new LinkRobloxAccountFunction(
       this,

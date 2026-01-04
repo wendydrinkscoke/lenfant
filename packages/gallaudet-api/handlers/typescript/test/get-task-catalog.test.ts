@@ -1,5 +1,8 @@
 process.env.TASK_CATALOG_TABLE_NAME = 'TaskCatalog';
 process.env.PARTNERS_TABLE_NAME = 'Partners';
+process.env.PARTNERS_V2_TABLE_NAME = 'PartnersV2';
+process.env.PARTNER_API_KEY_TO_EXPERIENCE_TABLE_NAME =
+  'PartnerApiKeyToExperience';
 
 import {
   GetTaskCatalogChainedRequestInput,
@@ -11,19 +14,15 @@ var dynamoMocks: {
   scan: jest.Mock;
   scanPromise: jest.Mock;
   batchGet: jest.Mock;
-  batchGetPromise: jest.Mock;
 };
 
 jest.mock('aws-sdk', () => {
   dynamoMocks = {
     scanPromise: jest.fn(),
-    batchGetPromise: jest.fn(),
     scan: jest.fn(() => ({
       promise: dynamoMocks.scanPromise,
     })),
-    batchGet: jest.fn(() => ({
-      promise: dynamoMocks.batchGetPromise,
-    })),
+    batchGet: jest.fn(),
   };
 
   return {
@@ -53,11 +52,6 @@ beforeEach(() => {
   jest.clearAllMocks();
   dynamoMocks.scanPromise.mockResolvedValue({
     Items: [],
-  });
-  dynamoMocks.batchGetPromise.mockResolvedValue({
-    Responses: {
-      Partners: [],
-    },
   });
 });
 
@@ -100,16 +94,38 @@ describe('GetTaskCatalog', () => {
         },
       ],
     });
-    dynamoMocks.batchGetPromise.mockResolvedValueOnce({
-      Responses: {
-        Partners: [
-          {
-            PartnerId: 'abcdefg',
-            PartnerName: 'Partner Alpha',
+    dynamoMocks.batchGet
+      .mockImplementationOnce(() => ({
+        promise: jest.fn().mockResolvedValue({
+          Responses: {
+            PartnerApiKeyToExperience: [
+              {
+                ApiKeyId: 'abcdefg',
+                ExperienceId: 'exp-1',
+              },
+            ],
           },
-        ],
-      },
-    });
+        }),
+      }))
+      .mockImplementationOnce(() => ({
+        promise: jest.fn().mockResolvedValue({
+          Responses: {
+            PartnersV2: [
+              {
+                ExperienceId: 'exp-1',
+                PartnerName: 'Partner Alpha V2',
+              },
+            ],
+          },
+        }),
+      }))
+      .mockImplementationOnce(() => ({
+        promise: jest.fn().mockResolvedValue({
+          Responses: {
+            Partners: [],
+          },
+        }),
+      }));
 
     const response = await getTaskCatalog({
       ...baseArgs,
@@ -122,13 +138,35 @@ describe('GetTaskCatalog', () => {
     expect(dynamoMocks.scan).toHaveBeenCalledWith({
       TableName: 'TaskCatalog',
     });
-    expect(dynamoMocks.batchGet).toHaveBeenCalledWith({
+    expect(dynamoMocks.batchGet).toHaveBeenNthCalledWith(1, {
+      RequestItems: {
+        PartnerApiKeyToExperience: {
+          Keys: [
+            {
+              ApiKeyId: 'abcdefg',
+            },
+            {
+              ApiKeyId: 'qredasg',
+            },
+          ],
+        },
+      },
+    });
+    expect(dynamoMocks.batchGet).toHaveBeenNthCalledWith(2, {
+      RequestItems: {
+        PartnersV2: {
+          Keys: [
+            {
+              ExperienceId: 'exp-1',
+            },
+          ],
+        },
+      },
+    });
+    expect(dynamoMocks.batchGet).toHaveBeenNthCalledWith(3, {
       RequestItems: {
         Partners: {
           Keys: [
-            {
-              PartnerId: 'abcdefg',
-            },
             {
               PartnerId: 'qredasg',
             },
@@ -141,7 +179,7 @@ describe('GetTaskCatalog', () => {
       partners: [
         {
           partnerId: 'abcdefg',
-          partnerName: 'Partner Alpha',
+          partnerName: 'Partner Alpha V2',
           catalogEntries: [
             {
               entryId: 'draft-bill',
@@ -178,6 +216,66 @@ describe('GetTaskCatalog', () => {
               name: 'Attend Press Briefing',
               subheading: 'Answer questions from the press',
               instructions: 'Hold a press briefing for reporters.',
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  it('falls back to the legacy partners table when v2 is missing', async () => {
+    dynamoMocks.scanPromise.mockResolvedValueOnce({
+      Items: [
+        {
+          PartnerId: 'abcdefg',
+          EntryId: 'draft-bill',
+          Name: 'Draft a Bill',
+          Subheading: 'Research and write legislation',
+          Instructions: 'Work together to draft your bill.',
+        },
+      ],
+    });
+    dynamoMocks.batchGet
+      .mockImplementationOnce(() => ({
+        promise: jest.fn().mockResolvedValue({
+          Responses: {
+            PartnerApiKeyToExperience: [],
+          },
+        }),
+      }))
+      .mockImplementationOnce(() => ({
+        promise: jest.fn().mockResolvedValue({
+          Responses: {
+            Partners: [
+              {
+                PartnerId: 'abcdefg',
+                PartnerName: 'Partner Alpha',
+              },
+            ],
+          },
+        }),
+      }));
+
+    const response = await getTaskCatalog({
+      ...baseArgs,
+      input: {
+        requestParameters: {},
+        body: undefined as never,
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual({
+      partners: [
+        {
+          partnerId: 'abcdefg',
+          partnerName: 'Partner Alpha',
+          catalogEntries: [
+            {
+              entryId: 'draft-bill',
+              name: 'Draft a Bill',
+              subheading: 'Research and write legislation',
+              instructions: 'Work together to draft your bill.',
             },
           ],
         },
