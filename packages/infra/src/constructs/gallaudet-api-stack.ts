@@ -88,6 +88,14 @@ export class GallaudetApiStack extends Stack {
       },
     });
 
+    const partnersV2Table = new Table(this, "PartnersV2DDBTable", {
+      tableName: "PartnersV2",
+      partitionKey: {
+        name: "ExperienceId",
+        type: AttributeType.STRING,
+      },
+    });
+
     const projectsTable = new Table(this, "ProjectsDDBTable", {
       tableName: "Projects",
       partitionKey: {
