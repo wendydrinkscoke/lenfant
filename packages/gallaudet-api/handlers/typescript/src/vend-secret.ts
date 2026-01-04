@@ -30,7 +30,25 @@ const cleanupApiKey = async (
   apiKeyId: string,
   usagePlanId: string,
   logger: ReturnType<typeof LoggingInterceptor.getLogger>,
+  apiKeyMappingTableName?: string,
 ) => {
+  if (apiKeyMappingTableName) {
+    try {
+      await ddbClient
+        .delete({
+          TableName: apiKeyMappingTableName,
+          Key: {
+            ApiKeyId: apiKeyId,
+          },
+        })
+        .promise();
+    } catch (err) {
+      logger.warn(
+        `Failed to delete API key mapping for ${apiKeyId}: ${JSON.stringify(err)}`,
+      );
+    }
+  }
+
   try {
     if (usagePlanId) {
       await apiGateway.deleteUsagePlanKey({
@@ -80,10 +98,14 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
   const { experienceId } = input.requestParameters;
 
   let apiKeysTableName: string;
+  let apiKeyMappingTableName: string;
   let usagePlanName: string;
   let secretDomain: string;
   try {
     apiKeysTableName = getRequiredEnv('ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME');
+    apiKeyMappingTableName = getRequiredEnv(
+      'PARTNER_API_KEY_TO_EXPERIENCE_TABLE_NAME',
+    );
     usagePlanName = getRequiredEnv('PARTNER_API_KEY_USAGE_PLAN_NAME');
     secretDomain = getRequiredEnv('SECRET_DOMAIN');
   } catch (err) {
@@ -215,7 +237,7 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
     usagePlanId = await resolveUsagePlanId(usagePlanName, logger);
   } catch (err) {
     logger.error((err as Error).message);
-    await cleanupApiKey(apiKeyId, '', logger);
+    await cleanupApiKey(apiKeyId, '', logger, apiKeyMappingTableName);
     return Response.internalFailure({
       message: 'Failed to resolve usage plan for partner API keys.',
     });
@@ -234,9 +256,29 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
     } else {
       logger.error(`Unexpected error attaching API key to usage plan: ${JSON.stringify(apiError)}`);
     }
-    await cleanupApiKey(apiKeyId, usagePlanId, logger);
+    await cleanupApiKey(apiKeyId, usagePlanId, logger, apiKeyMappingTableName);
     return Response.internalFailure({
       message: 'Failed to attach API key to usage plan.',
+    });
+  }
+
+  try {
+    await ddbClient
+      .put({
+        TableName: apiKeyMappingTableName,
+        Item: {
+          ApiKeyId: apiKeyId,
+          ExperienceId: experienceId,
+        },
+      })
+      .promise();
+  } catch (err) {
+    logger.error(
+      `Failed to store API key mapping for ${apiKeyId}: ${JSON.stringify(err)}`,
+    );
+    await cleanupApiKey(apiKeyId, usagePlanId, logger, apiKeyMappingTableName);
+    return Response.internalFailure({
+      message: 'Failed to store API key mapping.',
     });
   }
 
@@ -246,7 +288,7 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
     encryptedSecret = encodeBase64(sealed);
   } catch (err) {
     logger.error(`Failed to encrypt API key for Roblox secret store: ${(err as Error).message}`);
-    await cleanupApiKey(apiKeyId, usagePlanId, logger);
+    await cleanupApiKey(apiKeyId, usagePlanId, logger, apiKeyMappingTableName);
     return Response.internalFailure({
       message: 'Failed to encrypt API key for Roblox secret store.',
     });
@@ -276,14 +318,14 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
     logger.info(`Roblox secret store POST response: ${JSON.stringify(json)}`);
 
     if (secretResponse.status === 403) {
-      await cleanupApiKey(apiKeyId, usagePlanId, logger);
+      await cleanupApiKey(apiKeyId, usagePlanId, logger, apiKeyMappingTableName);
       return Response.notAuthorized({
         message: 'Roblox secret store access has not been delegated for this user.',
       } as MissingRequiredRobloxOAuthScopesResponseContent);
     }
 
     if (secretResponse.status === 409) {
-      await cleanupApiKey(apiKeyId, usagePlanId, logger);
+      await cleanupApiKey(apiKeyId, usagePlanId, logger, apiKeyMappingTableName);
       return {
         statusCode: 409,
         body: {
@@ -295,14 +337,14 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
     if (!secretResponse.ok) {
       const errorBody = await secretResponse.text();
       logger.error(`Failed to store secret in Roblox: ${secretResponse.status} - ${errorBody}`);
-      await cleanupApiKey(apiKeyId, usagePlanId, logger);
+      await cleanupApiKey(apiKeyId, usagePlanId, logger, apiKeyMappingTableName);
       return Response.internalFailure({
         message: 'Failed to store secret in Roblox.',
       });
     }
   } catch (err) {
     logger.error(`Error while storing Roblox secret: ${(err as Error).message}`);
-    await cleanupApiKey(apiKeyId, usagePlanId, logger);
+    await cleanupApiKey(apiKeyId, usagePlanId, logger, apiKeyMappingTableName);
     return Response.internalFailure({
       message: 'Failed to store secret in Roblox.',
     });

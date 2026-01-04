@@ -96,6 +96,18 @@ export class GallaudetApiStack extends Stack {
       },
     });
 
+    const partnerApiKeyToExperienceTable = new Table(
+      this,
+      "PartnerApiKeyToExperienceDDBTable",
+      {
+        tableName: "PartnerApiKeyToExperience",
+        partitionKey: {
+          name: "ApiKeyId",
+          type: AttributeType.STRING,
+        },
+      },
+    );
+
     const projectsTable = new Table(this, "ProjectsDDBTable", {
       tableName: "Projects",
       partitionKey: {
@@ -160,6 +172,7 @@ export class GallaudetApiStack extends Stack {
       taskInstanceTable: taskInstancesTable,
       partnersTable,
       partnersV2Table,
+      partnerApiKeyToExperienceTable,
       projectsTable,
       robloxExperienceApiKeysTable,
       usersTable,

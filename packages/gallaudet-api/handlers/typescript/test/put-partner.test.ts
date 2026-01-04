@@ -1,5 +1,7 @@
 process.env.PARTNERS_TABLE_NAME = 'Partners';
 process.env.PARTNERS_V2_TABLE_NAME = 'PartnersV2';
+process.env.PARTNER_API_KEY_TO_EXPERIENCE_TABLE_NAME =
+  'PartnerApiKeyToExperience';
 
 import {
   InternalFailureErrorResponseContent,
@@ -10,6 +12,10 @@ import {
 import { putPartner } from '../src/put-partner';
 
 jest.mock('aws-sdk', () => {
+  const getPromise = jest.fn();
+  const get = jest.fn(() => ({
+    promise: getPromise,
+  }));
   const updatePromise = jest.fn();
   const update = jest.fn(() => ({
     promise: updatePromise,
@@ -18,10 +24,13 @@ jest.mock('aws-sdk', () => {
   return {
     DynamoDB: {
       DocumentClient: jest.fn(() => ({
+        get,
         update,
       })),
     },
     __mock: {
+      get,
+      getPromise,
       update,
       updatePromise,
     },
@@ -30,6 +39,8 @@ jest.mock('aws-sdk', () => {
 
 const { __mock: dynamoMocks } = jest.requireMock('aws-sdk') as {
   __mock: {
+    get: jest.Mock;
+    getPromise: jest.Mock;
     update: jest.Mock;
     updatePromise: jest.Mock;
   };
@@ -67,6 +78,7 @@ beforeEach(() => {
     throw new Error('DynamoDB mocks were not initialised');
   }
   jest.clearAllMocks();
+  dynamoMocks.getPromise.mockResolvedValue({});
   dynamoMocks.updatePromise.mockResolvedValue({});
 });
 

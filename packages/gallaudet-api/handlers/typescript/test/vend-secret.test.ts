@@ -1,4 +1,6 @@
 process.env.ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME = 'RobloxExperienceApiKeys';
+process.env.PARTNER_API_KEY_TO_EXPERIENCE_TABLE_NAME =
+  'PartnerApiKeyToExperience';
 process.env.PARTNER_API_KEY_USAGE_PLAN_NAME = 'partner-api-key-usage-plan-beta';
 process.env.SECRET_DOMAIN = 'beta.school.civictech.llc';
 
@@ -14,6 +16,8 @@ import { vendSecret } from '../src/vend-secret';
 
 jest.mock('aws-sdk', () => {
   const get = jest.fn();
+  const put = jest.fn();
+  const del = jest.fn();
   const createApiKey = jest.fn();
   const createUsagePlanKey = jest.fn();
   const getUsagePlans = jest.fn();
@@ -21,7 +25,7 @@ jest.mock('aws-sdk', () => {
   const deleteApiKey = jest.fn();
   return {
     DynamoDB: {
-      DocumentClient: jest.fn(() => ({ get })),
+      DocumentClient: jest.fn(() => ({ get, put, delete: del })),
     },
     APIGateway: jest.fn(() => ({
       createApiKey,
@@ -32,6 +36,8 @@ jest.mock('aws-sdk', () => {
     })),
     __mocks: {
       get,
+      put,
+      del,
       createApiKey,
       createUsagePlanKey,
       getUsagePlans,
@@ -54,6 +60,8 @@ jest.mock('tweetnacl-ts/convert', () => ({
 const {
   __mocks: {
     get,
+    put,
+    del,
     createApiKey,
     createUsagePlanKey,
     getUsagePlans,
@@ -63,6 +71,8 @@ const {
 } = jest.requireMock('aws-sdk') as {
   __mocks: {
     get: jest.Mock;
+    put: jest.Mock;
+    del: jest.Mock;
     createApiKey: jest.Mock;
     createUsagePlanKey: jest.Mock;
     getUsagePlans: jest.Mock;
@@ -124,6 +134,12 @@ describe('VendSecret', () => {
         Item: { ApiKey: 'roblox-api-key' },
       }),
     });
+    put.mockReturnValue({
+      promise: jest.fn().mockResolvedValue({}),
+    });
+    del.mockReturnValue({
+      promise: jest.fn().mockResolvedValue({}),
+    });
     createApiKey.mockReturnValue({
       promise: jest.fn().mockResolvedValue({
         id: 'api-key-id',
@@ -178,6 +194,13 @@ describe('VendSecret', () => {
       usagePlanId: 'usage-plan-123',
     });
     expect(getUsagePlans).toHaveBeenCalled();
+    expect(put).toHaveBeenCalledWith({
+      TableName: 'PartnerApiKeyToExperience',
+      Item: {
+        ApiKeyId: 'api-key-id',
+        ExperienceId: '1234567890',
+      },
+    });
 
     const secretCall = fetchMock.mock.calls[1];
     expect(secretCall[0]).toBe(

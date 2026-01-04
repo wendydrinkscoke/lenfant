@@ -13,6 +13,9 @@ import { isAWSError } from './utils/error-utils';
 const ddbClient = new DynamoDB.DocumentClient();
 const PARTNERS_TABLE_NAME = getRequiredEnv('PARTNERS_TABLE_NAME');
 const PARTNERS_V2_TABLE_NAME = getRequiredEnv('PARTNERS_V2_TABLE_NAME');
+const PARTNER_API_KEY_TO_EXPERIENCE_TABLE_NAME = getRequiredEnv(
+  'PARTNER_API_KEY_TO_EXPERIENCE_TABLE_NAME',
+);
 
 /**
  * Type-safe handler for the PutPartner operation
@@ -44,13 +47,40 @@ export const putPartner: PutPartnerChainedHandlerFunction = async (request) => {
     typeof body.experienceId === 'string' ? body.experienceId : undefined;
   const partnerName = partnerNameRaw.trim();
   const robloxGameId = robloxGameIdRaw.trim();
-  const experienceId = experienceIdRaw?.trim();
+  let experienceId = experienceIdRaw?.trim();
 
   const nowIso = new Date().toISOString();
 
   logger.info(
     `Upserting partner profile (partner=${partnerId}, robloxGameId=${robloxGameId})`,
   );
+
+  if (!experienceId) {
+    try {
+      const mappingResponse = await ddbClient
+        .get({
+          TableName: PARTNER_API_KEY_TO_EXPERIENCE_TABLE_NAME,
+          Key: {
+            ApiKeyId: partnerId,
+          },
+          ConsistentRead: true,
+        })
+        .promise();
+      const mappedExperienceId = (mappingResponse.Item as
+        | { ExperienceId?: string }
+        | undefined)?.ExperienceId;
+      if (mappedExperienceId) {
+        experienceId = mappedExperienceId.trim();
+        logger.info(
+          `Resolved experienceId ${experienceId} from API key mapping.`,
+        );
+      }
+    } catch (error) {
+      logger.warn(
+        `Failed to resolve experienceId mapping for partner ${partnerId}: ${JSON.stringify(error)}`,
+      );
+    }
+  }
 
   try {
     await ddbClient
@@ -113,7 +143,6 @@ export const putPartner: PutPartnerChainedHandlerFunction = async (request) => {
         })
         .promise();
     } else {
-      // TODO: Populate ExperienceId using an API key -> ExperienceId mapping once available.
       logger.info(
         `Skipping PartnersV2 write; missing experienceId for partner ${partnerId}.`,
       );

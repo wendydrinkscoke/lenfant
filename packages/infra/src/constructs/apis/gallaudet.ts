@@ -61,6 +61,7 @@ export interface GallaudetProps {
   readonly taskInstanceTable: ITable;
   readonly partnersTable: ITable;
   readonly partnersV2Table: ITable;
+  readonly partnerApiKeyToExperienceTable: ITable;
   readonly projectsTable: ITable;
   readonly robloxExperienceApiKeysTable: ITable;
   readonly usersTable: ITable;
@@ -376,6 +377,8 @@ export class Gallaudet extends Construct {
         environment: {
           PARTNERS_TABLE_NAME: props.partnersTable.tableName,
           PARTNERS_V2_TABLE_NAME: props.partnersV2Table.tableName,
+          PARTNER_API_KEY_TO_EXPERIENCE_TABLE_NAME:
+            props.partnerApiKeyToExperienceTable.tableName,
         },
         description: [
           "This function records partner-supplied profile metadata so",
@@ -386,6 +389,7 @@ export class Gallaudet extends Construct {
     );
     props.partnersTable.grantWriteData(putPartnerFunction);
     props.partnersV2Table.grantWriteData(putPartnerFunction);
+    props.partnerApiKeyToExperienceTable.grantReadData(putPartnerFunction);
 
     const vendSecretFunction = new VendSecretFunction(
       this,
@@ -394,6 +398,8 @@ export class Gallaudet extends Construct {
         environment: {
           ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME:
             props.robloxExperienceApiKeysTable.tableName,
+          PARTNER_API_KEY_TO_EXPERIENCE_TABLE_NAME:
+            props.partnerApiKeyToExperienceTable.tableName,
           PARTNER_API_KEY_USAGE_PLAN_NAME: `partner-api-key-usage-plan-${props.stage}`,
           SECRET_DOMAIN: props.websiteDomainName,
         },
@@ -406,6 +412,7 @@ export class Gallaudet extends Construct {
     );
     props.robloxExperienceApiKeysTable.grantReadData(vendSecretFunction);
     props.usersTable.grantReadData(vendSecretFunction);
+    props.partnerApiKeyToExperienceTable.grantWriteData(vendSecretFunction);
 
     this.api = new Api(this, id, {
       apiKeyOptions: {
