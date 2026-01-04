@@ -1,9 +1,11 @@
 process.env.PARTNERS_TABLE_NAME = 'Partners';
+process.env.PARTNERS_V2_TABLE_NAME = 'PartnersV2';
 
 import {
   InternalFailureErrorResponseContent,
   NotAuthorizedErrorResponseContent,
   PutPartnerChainedRequestInput,
+  PutPartnerRequestContent,
 } from 'gallaudet-api-typescript-runtime';
 import { putPartner } from '../src/put-partner';
 
@@ -56,6 +58,10 @@ const buildRequestArgs = (
     ...overrides,
   }) as Omit<PutPartnerChainedRequestInput, 'input'>;
 
+type PutPartnerBody = PutPartnerRequestContent & {
+  experienceId?: string;
+};
+
 beforeEach(() => {
   if (!dynamoMocks) {
     throw new Error('DynamoDB mocks were not initialised');
@@ -86,7 +92,7 @@ describe('PutPartner', () => {
     expect(dynamoMocks.update).not.toHaveBeenCalled();
   });
 
-  it('persists the partner profile and returns success', async () => {
+  it('persists the partner profile in both tables and returns success', async () => {
     const response = await putPartner({
       ...buildRequestArgs(),
       input: {
@@ -94,22 +100,32 @@ describe('PutPartner', () => {
         body: {
           partnerName: '  National USA Game ',
           robloxGameId: '  1213026131 ',
-        },
+          experienceId: '  98765 ',
+        } as PutPartnerBody,
       },
     });
 
-    expect(dynamoMocks.update).toHaveBeenCalledTimes(1);
-    const updateArgs = dynamoMocks.update.mock.calls[0]?.[0];
-    if (!updateArgs) {
-      throw new Error('Expected DynamoDB update arguments to be provided');
-    }
-    expect(updateArgs.TableName).toBe('Partners');
-    expect(updateArgs.Key).toEqual({
+    expect(dynamoMocks.update).toHaveBeenCalledTimes(2);
+    const partnersUpdateArgs = dynamoMocks.update.mock.calls[0]?.[0];
+    const partnersV2UpdateArgs = dynamoMocks.update.mock.calls[1]?.[0];
+
+    expect(partnersUpdateArgs?.TableName).toBe('Partners');
+    expect(partnersUpdateArgs?.Key).toEqual({
       PartnerId: 'api-key-123',
     });
-    expect(updateArgs.ExpressionAttributeValues).toMatchObject({
+    expect(partnersUpdateArgs?.ExpressionAttributeValues).toMatchObject({
       ':partnerName': 'National USA Game',
       ':robloxGameId': '1213026131',
+    });
+
+    expect(partnersV2UpdateArgs?.TableName).toBe('PartnersV2');
+    expect(partnersV2UpdateArgs?.Key).toEqual({
+      ExperienceId: '98765',
+    });
+    expect(partnersV2UpdateArgs?.ExpressionAttributeValues).toMatchObject({
+      ':partnerName': 'National USA Game',
+      ':robloxGameId': '1213026131',
+      ':partnerId': 'api-key-123',
     });
 
     expect(response.statusCode).toBe(200);

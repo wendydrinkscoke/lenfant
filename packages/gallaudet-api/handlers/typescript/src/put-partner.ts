@@ -12,6 +12,7 @@ import { isAWSError } from './utils/error-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
 const PARTNERS_TABLE_NAME = getRequiredEnv('PARTNERS_TABLE_NAME');
+const PARTNERS_V2_TABLE_NAME = getRequiredEnv('PARTNERS_V2_TABLE_NAME');
 
 /**
  * Type-safe handler for the PutPartner operation
@@ -32,11 +33,18 @@ export const putPartner: PutPartnerChainedHandlerFunction = async (request) => {
   }
 
   const { input } = request;
-  const body = input.body;
+  const body = input.body as {
+    partnerName: string;
+    robloxGameId: string;
+    experienceId?: string;
+  };
   const partnerNameRaw = body.partnerName;
   const robloxGameIdRaw = body.robloxGameId;
+  const experienceIdRaw =
+    typeof body.experienceId === 'string' ? body.experienceId : undefined;
   const partnerName = partnerNameRaw.trim();
   const robloxGameId = robloxGameIdRaw.trim();
+  const experienceId = experienceIdRaw?.trim();
 
   const nowIso = new Date().toISOString();
 
@@ -72,6 +80,44 @@ export const putPartner: PutPartnerChainedHandlerFunction = async (request) => {
         ReturnValues: 'NONE',
       })
       .promise();
+
+    if (experienceId) {
+      await ddbClient
+        .update({
+          TableName: PARTNERS_V2_TABLE_NAME,
+          Key: {
+            ExperienceId: experienceId,
+          },
+          UpdateExpression: [
+            'SET #partnerName = :partnerName',
+            '#robloxGameId = :robloxGameId',
+            '#partnerId = :partnerId',
+            '#updatedAt = :updatedAt',
+            '#createdAt = if_not_exists(#createdAt, :createdAt)',
+          ].join(', '),
+          ExpressionAttributeNames: {
+            '#partnerName': 'PartnerName',
+            '#robloxGameId': 'RobloxGameId',
+            '#partnerId': 'PartnerId',
+            '#updatedAt': 'UpdatedAt',
+            '#createdAt': 'CreatedAt',
+          },
+          ExpressionAttributeValues: {
+            ':partnerName': partnerName,
+            ':robloxGameId': robloxGameId,
+            ':partnerId': partnerId,
+            ':updatedAt': nowIso,
+            ':createdAt': nowIso,
+          },
+          ReturnValues: 'NONE',
+        })
+        .promise();
+    } else {
+      // TODO: Populate ExperienceId using an API key -> ExperienceId mapping once available.
+      logger.info(
+        `Skipping PartnersV2 write; missing experienceId for partner ${partnerId}.`,
+      );
+    }
   } catch (error) {
     if (isAWSError(error)) {
       logger.error(

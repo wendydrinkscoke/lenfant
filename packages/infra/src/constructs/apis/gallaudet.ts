@@ -60,6 +60,7 @@ export interface GallaudetProps {
   readonly taskCatalogTable: ITable;
   readonly taskInstanceTable: ITable;
   readonly partnersTable: ITable;
+  readonly partnersV2Table: ITable;
   readonly projectsTable: ITable;
   readonly robloxExperienceApiKeysTable: ITable;
   readonly usersTable: ITable;
@@ -374,6 +375,7 @@ export class Gallaudet extends Construct {
       {
         environment: {
           PARTNERS_TABLE_NAME: props.partnersTable.tableName,
+          PARTNERS_V2_TABLE_NAME: props.partnersV2Table.tableName,
         },
         description: [
           "This function records partner-supplied profile metadata so",
@@ -383,6 +385,7 @@ export class Gallaudet extends Construct {
       },
     );
     props.partnersTable.grantWriteData(putPartnerFunction);
+    props.partnersV2Table.grantWriteData(putPartnerFunction);
 
     const vendSecretFunction = new VendSecretFunction(
       this,

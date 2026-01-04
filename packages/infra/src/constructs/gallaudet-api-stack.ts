@@ -159,6 +159,7 @@ export class GallaudetApiStack extends Stack {
       taskCatalogTable,
       taskInstanceTable: taskInstancesTable,
       partnersTable,
+      partnersV2Table,
       projectsTable,
       robloxExperienceApiKeysTable,
       usersTable,
