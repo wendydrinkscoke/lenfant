@@ -14,6 +14,9 @@ export function SiteFooter() {
           <Link to="/partner-with-us" className="text-muted-foreground hover:text-foreground">
             Partner with Us
           </Link>
+          <Link to="/create/docs" className="text-muted-foreground hover:text-foreground">
+            Partner Docs
+          </Link>
           <Link to="/support" className="text-muted-foreground hover:text-foreground">
             Support
           </Link>

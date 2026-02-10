@@ -17,6 +17,13 @@ import TaskView from './components/task-view';
 import DeveloperInfoPage from './app/developer-info-page';
 import DeveloperOnboardingPage from './app/developer-onboarding-page';
 import DeveloperPortalPage from './app/developer-portal-page';
+import DeveloperDocsHomePage from './app/developer-docs-home-page';
+import DeveloperDocsApiPage from './app/developer-docs-api-page';
+import DeveloperDocsGuidesPage from './app/developer-docs-guides-page';
+import DeveloperDocsGuideDetailPage from './app/developer-docs-guide-detail-page';
+import DeveloperDocsExplainersPage from './app/developer-docs-explainers-page';
+import DeveloperDocsExplainerDetailPage from './app/developer-docs-explainer-detail-page';
+import DeveloperDocsDownloadsPage from './app/developer-docs-downloads-page';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -46,6 +53,13 @@ root.render(
         <Route path='/privacy-policy' element={<PrivacyPage />} />
         <Route path='/developer-info' element={<DeveloperInfoPage />} />
         <Route path='/partner-with-us' element={<DeveloperOnboardingPage />} />
+        <Route path='/create/docs' element={<DeveloperDocsHomePage />} />
+        <Route path='/create/docs/api' element={<DeveloperDocsApiPage />} />
+        <Route path='/create/docs/guides' element={<DeveloperDocsGuidesPage />} />
+        <Route path='/create/docs/guides/:slug' element={<DeveloperDocsGuideDetailPage />} />
+        <Route path='/create/docs/explainers' element={<DeveloperDocsExplainersPage />} />
+        <Route path='/create/docs/explainers/:slug' element={<DeveloperDocsExplainerDetailPage />} />
+        <Route path='/create/docs/downloads' element={<DeveloperDocsDownloadsPage />} />
         <Route path='/create' element={<DeveloperPortalPage />} />
         <Route path='/create-attachment' element={<CreateAttachmentContent />} />
         <Route
