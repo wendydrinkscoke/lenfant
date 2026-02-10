@@ -161,6 +161,14 @@ describe('VendSecret', () => {
     expect(response.statusCode).toBe(200);
     const secretId = (response.body as { secretId: string }).secretId;
     expect(secretId).toMatch(/^[a-z]{12}$/);
+    expect(get).toHaveBeenCalledWith({
+      TableName: 'RobloxExperienceApiKeys',
+      Key: {
+        CognitoUserId: 'cognito-user-123',
+        ExperienceId: '1234567890',
+      },
+      ConsistentRead: true,
+    });
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,

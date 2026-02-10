@@ -64,7 +64,6 @@ export interface GallaudetProps {
   readonly robloxExperienceApiKeysTable: ITable;
   readonly usersTable: ITable;
   readonly googleOAuthClientSecret: ISecret;
-  readonly robloxApiKey: ISecret;
   readonly robloxOAuthClientSecret: ISecret;
   readonly emailIdentity: EmailIdentity;
   readonly userPool: UserPool;
@@ -151,14 +150,10 @@ export class Gallaudet extends Construct {
       {
         environment: {
           PROJECTS_TABLE_NAME: props.projectsTable.tableName,
-          ROBLOX_API_KEY_SECRET_ARN: props.robloxApiKey.secretArn,
-          USERS_TABLE_NAME: props.usersTable.tableName,
         },
       },
     );
     props.projectsTable.grantReadWriteData(createProjectFunction);
-    props.robloxApiKey.grantRead(createProjectFunction);
-    props.usersTable.grantReadData(createProjectFunction);
 
     const delegateGoogleClassroomAccessFunction =
       new DelegateGoogleClassroomAccessFunction(
@@ -355,7 +350,6 @@ export class Gallaudet extends Construct {
       {
         environment: {
           PROJECTS_TABLE_NAME: props.projectsTable.tableName,
-          USERS_TABLE_NAME: props.usersTable.tableName,
         },
         description: [
           "This function lists all projects created by a particular user.",
@@ -366,7 +360,6 @@ export class Gallaudet extends Construct {
       },
     );
     props.projectsTable.grantReadData(listProjectsFunction);
-    props.usersTable.grantReadData(listProjectsFunction);
 
     const putPartnerFunction = new PutPartnerFunction(
       this,
@@ -402,7 +395,6 @@ export class Gallaudet extends Construct {
       },
     );
     props.robloxExperienceApiKeysTable.grantReadData(vendSecretFunction);
-    props.usersTable.grantReadData(vendSecretFunction);
 
     this.api = new Api(this, id, {
       apiKeyOptions: {

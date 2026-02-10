@@ -49,9 +49,9 @@ export const delegateRobloxSecretStoreAccess: DelegateRobloxSecretStoreAccessCha
 
   const now = new Date().toISOString();
   const item = {
+    CognitoUserId: cognitoUserId,
     ExperienceId: experienceId,
     ApiKey: apiKey,
-    KeyCreatorCognitoUserId: cognitoUserId,
     CreatedAt: now,
     UpdatedAt: now,
   };

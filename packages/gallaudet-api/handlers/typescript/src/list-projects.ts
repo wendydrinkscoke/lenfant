@@ -5,15 +5,13 @@ import {
   INTERCEPTORS,
   Response,
   LoggingInterceptor,
-  RobloxLinkRequiredErrorResponseContent,
   Project,
 } from 'gallaudet-api-typescript-runtime';
-import { getCognitoUserIdFromEvent, getRobloxUserIdForCognitoUser } from './utils/auth-utils';
+import { getCognitoUserIdFromEvent } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError } from './utils/error-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
-const PROJECT_CREATOR_GSI_NAME = 'ProjectCreatorRobloxUserIdIndex';
 
 type ProjectRecord = {
   ExperienceId?: string;
@@ -47,32 +45,6 @@ export const listProjects: ListProjectsChainedHandlerFunction = async (request) 
   }
   logger.info(`Cognito User ID: ${cognitoUserId}`);
 
-  let robloxUserId: string;
-  try {
-    robloxUserId = await getRobloxUserIdForCognitoUser(cognitoUserId);
-    logger.info(`Roblox User ID: ${robloxUserId}`);
-  } catch (error) {
-    if (error instanceof Error && error.name === 'RobloxUserNotLinkedError') {
-      logger.warn(
-        `No Roblox User ID linked to Cognito user ID ${cognitoUserId}.`,
-      );
-      return Response.notAuthorized({
-        message: `No Roblox User ID linked to Cognito user ID: ${cognitoUserId}.`,
-      } as RobloxLinkRequiredErrorResponseContent);
-    }
-
-    let errorMessage = 'Unknown error';
-    if (isAWSError(error)) {
-      errorMessage = `AWS Error (${error.code}) - ${error.message}`;
-    } else if (error instanceof Error && error.message) {
-      errorMessage = error.message;
-    }
-    logger.error(`Failed to retrieve Roblox User ID: ${errorMessage}`);
-    return Response.internalFailure({
-      message: `Failed to retrieve Roblox User ID for Cognito user ID ${cognitoUserId}. Error: ${errorMessage}`,
-    });
-  }
-
   const projects: Project[] = [];
   let lastEvaluatedKey: DynamoDB.DocumentClient.Key | undefined;
 
@@ -80,13 +52,12 @@ export const listProjects: ListProjectsChainedHandlerFunction = async (request) 
     do {
       const queryInput: DynamoDB.DocumentClient.QueryInput = {
         TableName: projectsTableName,
-        IndexName: PROJECT_CREATOR_GSI_NAME,
-        KeyConditionExpression: '#creatorId = :creatorId',
+        KeyConditionExpression: '#cognitoUserId = :cognitoUserId',
         ExpressionAttributeNames: {
-          '#creatorId': 'ProjectCreatorRobloxUserId',
+          '#cognitoUserId': 'CognitoUserId',
         },
         ExpressionAttributeValues: {
-          ':creatorId': robloxUserId,
+          ':cognitoUserId': cognitoUserId,
         },
       };
 
@@ -112,7 +83,7 @@ export const listProjects: ListProjectsChainedHandlerFunction = async (request) 
   } catch (error) {
     if (isAWSError(error)) {
       logger.error(
-        `Failed to list projects for robloxUserId=${robloxUserId}: ${error.code} - ${error.message}`,
+        `Failed to list projects for cognitoUserId=${cognitoUserId}: ${error.code} - ${error.message}`,
       );
       return Response.internalFailure({
         message: 'Failed to list projects.',
@@ -120,7 +91,7 @@ export const listProjects: ListProjectsChainedHandlerFunction = async (request) 
     }
 
     logger.error(
-      `Unexpected error while listing projects for robloxUserId=${robloxUserId}: ${JSON.stringify(
+      `Unexpected error while listing projects for cognitoUserId=${cognitoUserId}: ${JSON.stringify(
         error,
       )}`,
     );

@@ -58,9 +58,9 @@ describe('DelegateRobloxSecretStoreAccess', () => {
       expect.objectContaining({
         TableName: 'RobloxExperienceApiKeys',
         Item: expect.objectContaining({
+          CognitoUserId: 'cognito-user-123',
           ExperienceId: '1234567890',
           ApiKey: 'roblox-api-key',
-          KeyCreatorCognitoUserId: 'cognito-user-123',
         }),
       }),
     );

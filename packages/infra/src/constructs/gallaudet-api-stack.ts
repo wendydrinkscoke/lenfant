@@ -27,16 +27,13 @@ export class GallaudetApiStack extends Stack {
     super(scope, id, props);
 
     const robloxExperienceApiKeysTable = new Table(this, "RobloxApiKeysTable", {
-      tableName: "RobloxExperienceApiKeys",
+      tableName: "ExperienceApiKeys",
       partitionKey: {
-        name: "ExperienceId",
+        name: "CognitoUserId",
         type: AttributeType.STRING,
       },
-    });
-    robloxExperienceApiKeysTable.addGlobalSecondaryIndex({
-      indexName: "KeyCreatorRobloxUserIdIndex",
-      partitionKey: {
-        name: "KeyCreatorRobloxUserId",
+      sortKey: {
+        name: "ExperienceId",
         type: AttributeType.STRING,
       },
     });
@@ -89,16 +86,13 @@ export class GallaudetApiStack extends Stack {
     });
 
     const projectsTable = new Table(this, "ProjectsDDBTable", {
-      tableName: "Projects",
+      tableName: "PartnerProjects",
       partitionKey: {
-        name: "ExperienceId",
+        name: "CognitoUserId",
         type: AttributeType.STRING,
       },
-    });
-    projectsTable.addGlobalSecondaryIndex({
-      indexName: "ProjectCreatorRobloxUserIdIndex",
-      partitionKey: {
-        name: "ProjectCreatorRobloxUserId",
+      sortKey: {
+        name: "ExperienceId",
         type: AttributeType.STRING,
       },
     });
@@ -122,12 +116,6 @@ export class GallaudetApiStack extends Stack {
       this,
       "GoogleOIDCCredentials",
       "google-oauth-credentials",
-    );
-
-    const robloxApiKey = Secret.fromSecretNameV2(
-      this,
-      "RobloxAPIKey",
-      "roblox-api-key",
     );
 
     const robloxOAuthClientSecret = Secret.fromSecretNameV2(
@@ -155,7 +143,6 @@ export class GallaudetApiStack extends Stack {
       robloxExperienceApiKeysTable,
       usersTable,
       googleOAuthClientSecret,
-      robloxApiKey,
       robloxOAuthClientSecret,
       emailIdentity: props.emailIdentity,
       userPool: props.userPool,

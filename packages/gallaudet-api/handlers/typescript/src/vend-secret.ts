@@ -93,8 +93,9 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
     });
   }
 
+  let cognitoUserId: string;
   try {
-    getCognitoUserIdFromEvent(request.event);
+    cognitoUserId = getCognitoUserIdFromEvent(request.event);
   } catch (err) {
     logger.warn((err as Error).message);
     return Response.notAuthorized({
@@ -107,6 +108,7 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
     const tokenResponse = await ddbClient.get({
       TableName: apiKeysTableName,
       Key: {
+        CognitoUserId: cognitoUserId,
         ExperienceId: experienceId,
       },
       ConsistentRead: true,

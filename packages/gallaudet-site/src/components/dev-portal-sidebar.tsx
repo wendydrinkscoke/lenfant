@@ -224,7 +224,7 @@ function ExperienceSwitcher({
             <DialogHeader>
               <DialogTitle>Add a Roblox experience</DialogTitle>
               <DialogDescription>
-                Enter the Roblox universe ID (the number in your experience URL). We will verify ownership when you confirm.
+                Enter the Roblox universe ID (the number in your experience URL). Access is verified later when you save your Roblox API key in Secrets.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4">
