@@ -1,7 +1,7 @@
 process.env.ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME = 'RobloxExperienceApiKeys';
 process.env.GALLAUDET_API_KEYS_TABLE_NAME = 'GallaudetApiKeys';
 process.env.PARTNER_API_KEY_USAGE_PLAN_NAME = 'partner-api-key-usage-plan-beta';
-process.env.SECRET_DOMAIN = 'beta.school.civictech.llc';
+process.env.SECRET_DOMAIN = '*.beta.school.civictech.llc';
 
 import {
   InternalFailureErrorResponseContent,
@@ -204,7 +204,7 @@ describe('VendSecret', () => {
       id: secretId,
       secret: 'encrypted-api-key',
       key_id: 'key-123',
-      domain: 'beta.school.civictech.llc',
+      domain: '*.beta.school.civictech.llc',
     });
     expect(put).toHaveBeenCalledWith({
       TableName: 'GallaudetApiKeys',

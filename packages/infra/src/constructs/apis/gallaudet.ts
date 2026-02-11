@@ -397,7 +397,7 @@ export class Gallaudet extends Construct {
             props.robloxExperienceApiKeysTable.tableName,
           GALLAUDET_API_KEYS_TABLE_NAME: props.gallaudetApiKeysTable.tableName,
           PARTNER_API_KEY_USAGE_PLAN_NAME: `partner-api-key-usage-plan-${props.stage}`,
-          SECRET_DOMAIN: props.websiteDomainName,
+          SECRET_DOMAIN: "*." + props.websiteDomainName,
         },
         description: [
           "This function vends an API key to access our APIs directly",
