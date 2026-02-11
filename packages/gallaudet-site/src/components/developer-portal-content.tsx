@@ -16,7 +16,7 @@ import {
   BreadcrumbSeparator,
 } from "./ui/breadcrumb"
 import { Separator } from "./ui/separator"
-import { useAuth } from "../hooks/use-auth"
+import type { AuthUser } from "../hooks/use-auth"
 import { MarketplaceListingPanel } from "./developer-portal/marketplace-listing"
 import { ConfigureTasksPanel } from "./developer-portal/configure-tasks"
 import { ConfigureSecretsPanel } from "./developer-portal/configure-secrets"
@@ -26,8 +26,11 @@ import { MetricsPanel } from "./developer-portal/metrics"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "./ui/empty"
 import { ResponseError } from "gallaudet-api-typescript-react-query-hooks"
 
-export function DeveloperPortalContent() {
-  const { user } = useAuth()
+interface DeveloperPortalContentProps {
+  user: AuthUser | null
+}
+
+export function DeveloperPortalContent({ user }: DeveloperPortalContentProps) {
   type Experience = { id: string; name: string; status?: string }
   const [experiences, setExperiences] = useState<Experience[]>([])
   const features = useMemo(
@@ -165,9 +168,9 @@ export function DeveloperPortalContent() {
         selectedFeature={selectedFeature}
         onSelectFeature={setSelectedFeature}
         user={{
-          name: user?.email ?? "Developer",
+          name: user?.name ?? user?.email ?? "Developer",
           email: user?.email ?? "developer@example.com",
-          avatar: "",
+          avatar: user?.picture ?? "",
         }}
       />
 

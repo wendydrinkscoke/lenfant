@@ -5,7 +5,7 @@ export default function DeveloperPortalPage() {
   return (
     <main className="bg-background min-h-screen">
       <CognitoAuthGate roleOverride="developer">
-        <DeveloperPortalContent />
+        {({ user }) => <DeveloperPortalContent user={user} />}
       </CognitoAuthGate>
     </main>
   )
