@@ -113,12 +113,12 @@ const LUA_KNIT_SNIPPET = [
 ].join("\n")
 
 const CURL_PUT_PARTNER = [
-  "curl -X PUT 'https://api.prod.school.civictech.llc/partners/me' \\",
+  "curl -X PUT 'https://api.prod.school.civictech.llc/experiences/me' \\",
   "  -H 'Content-Type: application/json' \\",
   "  -H 'x-api-key: <YOUR_GALLAUDET_API_KEY>' \\",
   "  -d '{",
-  "    \"partnerName\": \"Run the World - Learn Country Names!\",",
-  "    \"robloxGameId\": \"127120714583972\"",
+  "    \"experienceName\": \"Run the World - Learn Country Names!\",",
+  "    \"robloxGameId\": \"9228429469\"",
   "  }'",
 ].join("\n")
 
@@ -141,7 +141,7 @@ const LUA_GRADE_TASK_SNIPPET = [
   "function service:GradeTask(playerId, taskId, percentage)",
   "  local result, err = self:_request(",
   "    \"PUT\",",
-  "    \"/partners/me/players/\" .. playerId .. \"/tasks/\" .. taskId .. \"/grade\",",
+  "    \"/experiences/me/players/\" .. playerId .. \"/tasks/\" .. taskId .. \"/grade\",",
   "    { percentage = percentage }",
   "  )",
   "",
@@ -157,7 +157,7 @@ const LUA_GRADE_TASK_SNIPPET = [
 const LUA_MILESTONE_SNIPPET = [
   "local result, err = service:_request(",
   "  \"PUT\",",
-  "  \"/partners/me/players/\" .. player.UserId .. \"/tasks/\" .. taskId .. \"/milestones/visit-capitol/completion\"",
+  "  \"/experiences/me/players/\" .. player.UserId .. \"/tasks/\" .. taskId .. \"/milestones/visit-capitol/completion\"",
   ")",
   "",
   "if err then",
@@ -168,22 +168,22 @@ const LUA_MILESTONE_SNIPPET = [
   "print(\"Updated cumulative percentage:\", result.updatedCumulativePercentage)",
 ].join("\n")
 
-export const partnerApiResources: PartnerApiResource[] = [
+export const experienceApiResources: PartnerApiResource[] = [
   {
-    id: "put-partner",
+    id: "put-experience",
     category: "runtime",
-    title: "Register or update your partner profile",
+    title: "Register or update your experience profile",
     method: "PUT",
-    path: "/partners/me",
+    path: "/experiences/me",
     summary: "Upserts metadata about your Roblox experience for the API key that is calling.",
     whyUseful: "This gives teachers and internal systems a stable mapping between your API key and your experience metadata.",
     auth: {
       kind: "api-key",
       label: "Partner API key",
-      details: "Send your partner key in the x-api-key header from your Roblox server.",
+      details: "Send your experience key in the x-api-key header from your Roblox server.",
     },
     requestFields: [
-      "partnerName (string, required): Human-friendly game name.",
+      "experienceName (string, required): Human-friendly game name.",
       "robloxGameId (string, required): Numeric Roblox place/game identifier.",
     ],
     responseFields: [
@@ -191,7 +191,7 @@ export const partnerApiResources: PartnerApiResource[] = [
     ],
     commonErrors: [
       "403 NotAuthorized: missing or invalid API key.",
-      "400 BadRequest: malformed partnerName or robloxGameId.",
+      "400 BadRequest: malformed experienceName or robloxGameId.",
       "500 InternalFailure: backend persistence failure.",
     ],
     examples: [
@@ -218,7 +218,7 @@ export const partnerApiResources: PartnerApiResource[] = [
     auth: {
       kind: "api-key",
       label: "Partner API key",
-      details: "Send x-api-key from server-side code. The catalog is scoped to that partner key.",
+      details: "Send x-api-key from server-side code. The catalog is scoped to that experience key.",
     },
     requestFields: [
       "entryId (path, required): stable lowercase slug for task template.",
@@ -248,13 +248,13 @@ export const partnerApiResources: PartnerApiResource[] = [
     category: "runtime",
     title: "Fetch assignments for a player",
     method: "GET",
-    path: "/partners/me/players/{robloxUserId}/tasks",
+    path: "/experiences/me/players/{robloxUserId}/tasks",
     summary: "Returns task instances assigned to a specific player for your experience.",
     whyUseful: "Use this when a player joins or opens your task UI so your game stays synced with teacher assignments.",
     auth: {
       kind: "api-key",
       label: "Partner API key",
-      details: "Calls are isolated by the API key's partner identity so games cannot see each other's assignments.",
+      details: "Calls are isolated by the API key's experience identity so games cannot see each other's assignments.",
     },
     requestFields: [
       "robloxUserId (path, required): Roblox UserId for the current player.",
@@ -278,7 +278,7 @@ export const partnerApiResources: PartnerApiResource[] = [
         code: [
           "function service:ListTasksForPlayer(player)",
           "  local robloxUserId = tostring(player.UserId)",
-          "  local result, err = self:_request(\"GET\", \"/partners/me/players/\" .. robloxUserId .. \"/tasks\")",
+          "  local result, err = self:_request(\"GET\", \"/experiences/me/players/\" .. robloxUserId .. \"/tasks\")",
           "",
           "  if err then",
           "    self.Remotes.TaskAssignmentsUpdated:FireClient(player, { success = false, error = err })",
@@ -306,7 +306,7 @@ export const partnerApiResources: PartnerApiResource[] = [
     category: "runtime",
     title: "Set percentage grade for an assigned task",
     method: "PUT",
-    path: "/partners/me/players/{robloxUserId}/tasks/{taskId}/grade",
+    path: "/experiences/me/players/{robloxUserId}/tasks/{taskId}/grade",
     summary: "Writes a 0-100 percentage grade for a task instance.",
     whyUseful: "Best for score-based tasks where your game already computes a single percentage.",
     auth: {
@@ -340,7 +340,7 @@ export const partnerApiResources: PartnerApiResource[] = [
     category: "runtime",
     title: "Mark a milestone complete",
     method: "PUT",
-    path: "/partners/me/players/{robloxUserId}/tasks/{taskId}/milestones/{milestoneId}/completion",
+    path: "/experiences/me/players/{robloxUserId}/tasks/{taskId}/milestones/{milestoneId}/completion",
     summary: "Marks a single milestone as complete and returns updated cumulative progress.",
     whyUseful: "Great for objective-based gameplay where progress is event-driven and easier to emit as discrete completions.",
     auth: {
@@ -429,7 +429,7 @@ export const partnerApiResources: PartnerApiResource[] = [
     title: "Delegate Roblox Secret Store access",
     method: "POST",
     path: "/users/me/delegations/roblox-secret-store",
-    summary: "Stores a Roblox Open Cloud API key so CivicTech can vend and rotate partner API keys.",
+    summary: "Stores a Roblox Open Cloud API key so CivicTech can vend and rotate experience API keys.",
     whyUseful: "This is the bridge that lets the portal install your Gallaudet API key directly into Roblox Secret Store.",
     auth: {
       kind: "cognito",
@@ -453,7 +453,7 @@ export const partnerApiResources: PartnerApiResource[] = [
   {
     id: "vend-secret",
     category: "onboarding",
-    title: "Vend and install a partner API key secret",
+    title: "Vend and install a experience API key secret",
     method: "POST",
     path: "/projects/{experienceId}/secret",
     summary: "Creates an API key, binds it to usage plans, encrypts it, and stores it in Roblox Secret Store.",
@@ -478,18 +478,18 @@ export const partnerApiResources: PartnerApiResource[] = [
   },
 ]
 
-export const partnerGuides: PartnerDocsArticle[] = [
+export const experienceGuides: PartnerDocsArticle[] = [
   {
     slug: "getting-started-vanilla-lua",
     kind: "guide",
     title: "Getting started with vanilla Roblox Lua",
-    summary: "Wire up partner profile registration, task cataloging, and player task retrieval using RemoteEvents/RemoteFunctions.",
+    summary: "Wire up experience profile registration, task cataloging, and player task retrieval using RemoteEvents/RemoteFunctions.",
     audience: "ServerScriptService integrations without Knit",
     estimatedRead: "12 min",
     updatedOn: "2026-02-10",
     status: "ready",
     relatedApiIds: [
-      "put-partner",
+      "put-experience",
       "catalog-task",
       "list-tasks-for-player",
       "grade-task",
@@ -498,7 +498,7 @@ export const partnerGuides: PartnerDocsArticle[] = [
       {
         heading: "What this guide builds",
         body: [
-          "A lightweight service module that wraps RequestAsync and signs partner calls with x-api-key.",
+          "A lightweight service module that wraps RequestAsync and signs experience calls with x-api-key.",
           "A simple Task UI flow where players can fetch and view teacher-assigned tasks.",
           "Round-end grading that updates assignment progress in Google Classroom.",
         ],
@@ -507,7 +507,7 @@ export const partnerGuides: PartnerDocsArticle[] = [
         heading: "Implementation notes",
         body: [
           "Keep API keys in Roblox Secret Store and load them with HttpService:GetSecret instead of hardcoding.",
-          "Call PutPartner and CatalogTask at server startup so teacher-assignment metadata stays fresh.",
+          "Call PutExperience and CatalogTask at server startup so teacher-assignment metadata stays fresh.",
           "Fetch tasks when players join and whenever your game needs to refresh assignment UI.",
         ],
       },
@@ -515,7 +515,7 @@ export const partnerGuides: PartnerDocsArticle[] = [
         heading: "Where to extend",
         body: [
           "Replace direct grade writes with milestone completions for objective-heavy tasks.",
-          "Add telemetry around retries and HTTP status codes to make partner support easier.",
+          "Add telemetry around retries and HTTP status codes to make experience support easier.",
         ],
       },
     ],
@@ -538,7 +538,7 @@ export const partnerGuides: PartnerDocsArticle[] = [
       {
         heading: "What this guide builds",
         body: [
-          "A server-side Knit service that wraps the same partner runtime endpoints.",
+          "A server-side Knit service that wraps the same experience runtime endpoints.",
           "A client controller that reacts to TaskAssignmentsUpdated and updates banner UI state.",
           "A Fusion element with title, subtitle, and progress indicator from cumulativePercentage.",
         ],
@@ -564,7 +564,7 @@ export const partnerGuides: PartnerDocsArticle[] = [
     slug: "bootstrapping-secrets-and-api-keys",
     kind: "guide",
     title: "Bootstrapping secrets and API keys",
-    summary: "Use the developer portal onboarding APIs to create a project, delegate Roblox secret access, and vend the runtime partner key.",
+    summary: "Use the developer portal onboarding APIs to create a project, delegate Roblox secret access, and vend the runtime experience key.",
     audience: "Partner developers during setup and environment provisioning",
     estimatedRead: "8 min",
     updatedOn: "2026-02-10",
@@ -580,7 +580,7 @@ export const partnerGuides: PartnerDocsArticle[] = [
         heading: "Goal",
         body: [
           "Establish a repeatable setup flow where no runtime secrets are manually copied into scripts.",
-          "Ensure partner API keys are usage-plan managed and rotated through Roblox Secret Store.",
+          "Ensure experience API keys are usage-plan managed and rotated through Roblox Secret Store.",
         ],
       },
       {
@@ -595,7 +595,7 @@ export const partnerGuides: PartnerDocsArticle[] = [
   },
 ]
 
-export const partnerExplainers: PartnerDocsArticle[] = [
+export const experienceExplainers: PartnerDocsArticle[] = [
   {
     slug: "milestone-based-tasks",
     kind: "explainer",
@@ -668,7 +668,7 @@ export const partnerExplainers: PartnerDocsArticle[] = [
     ],
   },
   {
-    slug: "partner-authentication-model",
+    slug: "experience-authentication-model",
     kind: "explainer",
     title: "Partner authentication model",
     summary: "Understand when to use x-api-key runtime auth and when Cognito session auth applies.",
@@ -677,7 +677,7 @@ export const partnerExplainers: PartnerDocsArticle[] = [
     updatedOn: "2026-02-10",
     status: "draft",
     relatedApiIds: [
-      "put-partner",
+      "put-experience",
       "catalog-task",
       "list-projects",
       "vend-secret",
@@ -686,7 +686,7 @@ export const partnerExplainers: PartnerDocsArticle[] = [
       {
         heading: "Two trust planes",
         body: [
-          "Runtime game-server traffic uses partner API keys in x-api-key headers.",
+          "Runtime game-server traffic uses experience API keys in x-api-key headers.",
           "Developer portal traffic uses Cognito-authenticated user sessions.",
         ],
       },
@@ -709,7 +709,7 @@ export const partnerClientDownloads: PartnerClientDownload[] = [
     href: "/downloads/gallaudet-client/latest/README.txt",
     format: "txt",
     updatedOn: "2026-02-10",
-    audience: "All partner developers",
+    audience: "All experience developers",
   },
   {
     id: "vanilla-client",
@@ -732,10 +732,10 @@ export const partnerClientDownloads: PartnerClientDownload[] = [
 ]
 
 export const getGuideBySlug = (slug: string) =>
-  partnerGuides.find((guide) => guide.slug === slug)
+  experienceGuides.find((guide) => guide.slug === slug)
 
 export const getExplainerBySlug = (slug: string) =>
-  partnerExplainers.find((explainer) => explainer.slug === slug)
+  experienceExplainers.find((explainer) => explainer.slug === slug)
 
 export const getPartnerApiById = (id: string) =>
-  partnerApiResources.find((resource) => resource.id === id)
+  experienceApiResources.find((resource) => resource.id === id)

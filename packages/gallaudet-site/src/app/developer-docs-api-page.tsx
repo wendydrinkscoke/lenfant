@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 import { Lock, ServerCog, UserRoundCog } from "lucide-react"
-import { partnerApiResources } from "../content/partner-docs"
+import { experienceApiResources } from "../content/partner-docs"
 import { PartnerDocsCodeBlock } from "../components/partner-docs/partner-docs-code-block"
 import { PartnerDocsShell } from "../components/partner-docs/partner-docs-shell"
 import { cn } from "../lib/utils"
@@ -15,12 +15,12 @@ const methodClassMap = {
 
 export default function DeveloperDocsApiPage() {
   const runtimeApis = useMemo(
-    () => partnerApiResources.filter((item) => item.category === "runtime"),
+    () => experienceApiResources.filter((item) => item.category === "runtime"),
     []
   )
 
   const onboardingApis = useMemo(
-    () => partnerApiResources.filter((item) => item.category === "onboarding"),
+    () => experienceApiResources.filter((item) => item.category === "onboarding"),
     []
   )
 
@@ -44,7 +44,7 @@ export default function DeveloperDocsApiPage() {
               Runtime calls: x-api-key
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Use this for calls from Roblox game servers: partner profile, task catalog, task fetches, and grading updates.
+              Use this for calls from Roblox game servers: experience profile, task catalog, task fetches, and grading updates.
             </p>
           </div>
           <div className="rounded-lg border p-4">
@@ -53,7 +53,7 @@ export default function DeveloperDocsApiPage() {
               Onboarding calls: Cognito session
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Used by the partner portal for project creation and secret delegation/vending flows.
+              Used by the experience portal for project creation and secret delegation/vending flows.
             </p>
           </div>
         </CardContent>

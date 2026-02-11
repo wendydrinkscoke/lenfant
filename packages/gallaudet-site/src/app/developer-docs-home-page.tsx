@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom"
 import { ArrowRight, BookOpen, Download, FileCode2, GraduationCap, Lightbulb } from "lucide-react"
-import { partnerClientDownloads, partnerExplainers, partnerGuides } from "../content/partner-docs"
+import { partnerClientDownloads, experienceExplainers, experienceGuides } from "../content/partner-docs"
 import { PartnerDocsShell } from "../components/partner-docs/partner-docs-shell"
 import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
@@ -37,7 +37,7 @@ export default function DeveloperDocsHomePage() {
   return (
     <PartnerDocsShell
       title="Partner integration docs for Gallaudet"
-      description="This docs portal focuses only on partner-relevant APIs and implementation patterns for Roblox game teams integrating with CivicTech for Schools."
+      description="This docs portal focuses only on experience-relevant APIs and implementation patterns for Roblox game teams integrating with CivicTech for Schools."
     >
       <Card>
         <CardHeader>
@@ -46,7 +46,7 @@ export default function DeveloperDocsHomePage() {
             What this docs surface includes
           </CardTitle>
           <CardDescription>
-            Structured to support both API references and tutorial-style partner content.
+            Structured to support both API references and tutorial-style experience content.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
@@ -71,17 +71,17 @@ export default function DeveloperDocsHomePage() {
         <CardHeader>
           <CardTitle>Fastest path to a working integration</CardTitle>
           <CardDescription>
-            Suggested sequence if you are integrating a new partner game.
+            Suggested sequence if you are integrating a new experience game.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <div className="rounded-md border p-3">
-            <p className="font-medium text-foreground">1. Provision partner key and secret</p>
+            <p className="font-medium text-foreground">1. Provision experience key and secret</p>
             <p className="mt-1">Create a project, delegate secret-store access, and vend a runtime key into Roblox Secret Store.</p>
           </div>
           <div className="rounded-md border p-3">
             <p className="font-medium text-foreground">2. Register your game metadata</p>
-            <p className="mt-1">Call <code>PUT /partners/me</code> once at startup to bind API key to experience metadata.</p>
+            <p className="mt-1">Call <code>PUT /experiences/me</code> once at startup to bind API key to experience metadata.</p>
           </div>
           <div className="rounded-md border p-3">
             <p className="font-medium text-foreground">3. Catalog assignable tasks</p>
@@ -106,7 +106,7 @@ export default function DeveloperDocsHomePage() {
             <CardDescription>How-to tutorials for common integration paths.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {partnerGuides.map((guide) => (
+            {experienceGuides.map((guide) => (
               <Link key={guide.slug} to={`/create/docs/guides/${guide.slug}`} className="block rounded-md border p-3 hover:bg-muted/50">
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-medium">{guide.title}</p>
@@ -126,7 +126,7 @@ export default function DeveloperDocsHomePage() {
             <CardDescription>Conceptual references for architecture and gameplay tradeoffs.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {partnerExplainers.map((explainer) => (
+            {experienceExplainers.map((explainer) => (
               <Link key={explainer.slug} to={`/create/docs/explainers/${explainer.slug}`} className="block rounded-md border p-3 hover:bg-muted/50">
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-medium">{explainer.title}</p>

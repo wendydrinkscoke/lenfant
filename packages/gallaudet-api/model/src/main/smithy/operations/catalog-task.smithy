@@ -4,13 +4,13 @@ namespace llc.civictech.school
 use llc.civictech.school#CatalogEntryId
 use llc.civictech.school#Milestones
 
-/// Creates or updates a task catalog entry for the calling partner.
+/// Creates or updates a task catalog entry for the calling experience.
 @idempotent
 @http(method: "PUT", uri: "/task-catalog/{entryId}")
 @handler(language: "typescript")
 operation CatalogTask {
     input := {
-        /// Partner-scoped identifier chosen by the game server.
+        /// Experience-scoped identifier chosen by the game server.
         @required
         @httpLabel
         entryId: CatalogEntryId

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { Link, NavLink, useLocation } from "react-router-dom"
 import { ArrowRight, BookOpen, Download, FileCode2, Lightbulb } from "lucide-react"
-import { partnerExplainers, partnerGuides } from "../../content/partner-docs"
+import { experienceExplainers, experienceGuides } from "../../content/partner-docs"
 import { cn } from "../../lib/utils"
 import { SiteFooter } from "../site-footer"
 import { SiteHeader } from "../site-header"
@@ -118,7 +118,7 @@ export function PartnerDocsShell({
               Guides
             </p>
             <div className="space-y-1">
-              {partnerGuides.map((guide) => (
+              {experienceGuides.map((guide) => (
                 <NavLink
                   key={guide.slug}
                   to={`/create/docs/guides/${guide.slug}`}
@@ -142,7 +142,7 @@ export function PartnerDocsShell({
               Explainers
             </p>
             <div className="space-y-1">
-              {partnerExplainers.map((explainer) => (
+              {experienceExplainers.map((explainer) => (
                 <NavLink
                   key={explainer.slug}
                   to={`/create/docs/explainers/${explainer.slug}`}
@@ -168,7 +168,7 @@ export function PartnerDocsShell({
           <div className="rounded-lg border bg-muted/30 p-4">
             <p className="text-sm font-semibold">Need integration help?</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Email our partner engineering team and include your experience ID plus any failing API payloads.
+              Email our experience engineering team and include your experience ID plus any failing API payloads.
             </p>
             <Button className="mt-3" variant="outline" asChild>
               <a href="mailto:cupwendyscup@gmail.com">Contact support</a>

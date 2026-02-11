@@ -2,7 +2,7 @@ process.env.TASK_INSTANCE_TABLE_NAME = 'TaskInstances';
 process.env.TASK_CATALOG_TABLE_NAME = 'TaskCatalog';
 process.env.OAUTH_TOKENS_TABLE_NAME = 'OAuthTokens';
 process.env.GOOGLE_OAUTH_CLIENT_SECRET_ARN = 'secretArn';
-process.env.PARTNERS_TABLE_NAME = 'Partners';
+process.env.EXPERIENCES_TABLE_NAME = 'Experiences';
 
 import {
   GetTaskChainedRequestInput,
@@ -71,7 +71,7 @@ beforeEach(() => {
           InstanceId: 'task-123',
           CourseId: 'course-456',
           ItemId: 'courseWork-789',
-          PartnerId: 'studio-42',
+          ExperienceId: 'studio-42',
           EntryId: 'demo-task',
           CatalogEntryName: 'Demo Task',
           AttachmentId: 'attach-111',
@@ -79,8 +79,8 @@ beforeEach(() => {
       },
       TaskCatalog: {
         Item: {
-          PartnerId: 'studio-42',
-          PartnerName: 'Studio Forty Two',
+          ExperienceId: 'studio-42',
+          ExperienceName: 'Studio Forty Two',
           EntryId: 'demo-task',
           Name: 'Explore the Capitol',
           Subheading: 'Learn about the U.S. Capitol building',
@@ -99,10 +99,10 @@ beforeEach(() => {
           ],
         },
       },
-      Partners: {
+      Experiences: {
         Item: {
-          PartnerId: 'studio-42',
-          PartnerName: 'Studio Forty Two',
+          ExperienceId: 'studio-42',
+          ExperienceName: 'Studio Forty Two',
           RobloxGameId: '1213026131',
         },
       },
@@ -140,7 +140,7 @@ describe('GetTask', () => {
         title: 'Explore the Capitol',
         subheading: 'Learn about the U.S. Capitol building',
         instructions: 'Meet the guide and collect badges.',
-        partnerName: 'Studio Forty Two',
+        experienceName: 'Studio Forty Two',
         robloxGameId: '1213026131',
         milestones: [
           {

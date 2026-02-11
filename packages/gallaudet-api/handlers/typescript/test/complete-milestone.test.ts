@@ -12,14 +12,14 @@ import {
 } from 'gallaudet-api-typescript-runtime';
 import { GaxiosError } from 'gaxios';
 import { completeMilestone } from '../src/complete-milestone';
-import { getGoogleOAuthClient, getPartnerIdFromEvent } from '../src/utils/auth-utils';
+import { getGoogleOAuthClient, getExperienceIdFromEvent } from '../src/utils/auth-utils';
 
 jest.mock('../src/utils/auth-utils', () => {
   const actual = jest.requireActual('../src/utils/auth-utils');
   return {
     ...actual,
     getGoogleOAuthClient: jest.fn(),
-    getPartnerIdFromEvent: jest.fn(),
+    getExperienceIdFromEvent: jest.fn(),
   };
 });
 
@@ -102,7 +102,7 @@ const baseRequestArgs = {
   event: {
     requestContext: {
       identity: {
-        apiKeyId: 'partner-123',
+        apiKeyId: 'experience-123',
       },
     },
   } as any,
@@ -124,8 +124,8 @@ describe('CompleteMilestone', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedGetGoogleOAuthClient.mockReset();
-    (getPartnerIdFromEvent as jest.Mock).mockReset();
-    (getPartnerIdFromEvent as jest.Mock).mockResolvedValue('partner-123');
+    (getExperienceIdFromEvent as jest.Mock).mockReset();
+    (getExperienceIdFromEvent as jest.Mock).mockResolvedValue('experience-123');
     dynamoMocks.query.mockReset();
     dynamoMocks.get.mockReset();
     dynamoMocks.update.mockReset();
@@ -176,7 +176,7 @@ describe('CompleteMilestone', () => {
         promise: jest.fn().mockResolvedValue({
           Item: {
             InstanceId: 'task-1',
-            PartnerId: 'partner-123',
+            ExperienceId: 'experience-123',
             CourseId: 'course-1',
             ItemId: 'coursework-1',
             AttachmentId: 'attachment-1',
@@ -189,7 +189,7 @@ describe('CompleteMilestone', () => {
       .mockReturnValueOnce({
         promise: jest.fn().mockResolvedValue({
           Item: {
-            PartnerId: 'partner-123',
+            ExperienceId: 'experience-123',
             EntryId: 'tour-whitehouse',
             Milestones: [
               {
@@ -272,7 +272,7 @@ describe('CompleteMilestone', () => {
         promise: jest.fn().mockResolvedValue({
           Item: {
             InstanceId: 'task-1',
-            PartnerId: 'partner-123',
+            ExperienceId: 'experience-123',
             CourseId: 'course-1',
             ItemId: 'coursework-1',
             AttachmentId: 'attachment-1',
@@ -287,7 +287,7 @@ describe('CompleteMilestone', () => {
       .mockReturnValueOnce({
         promise: jest.fn().mockResolvedValue({
           Item: {
-            PartnerId: 'partner-123',
+            ExperienceId: 'experience-123',
             EntryId: 'tour-whitehouse',
             Milestones: [
               {
@@ -355,7 +355,7 @@ describe('CompleteMilestone', () => {
         promise: jest.fn().mockResolvedValue({
           Item: {
             InstanceId: 'task-1',
-            PartnerId: 'partner-123',
+            ExperienceId: 'experience-123',
             CourseId: 'course-1',
             ItemId: 'coursework-1',
             AttachmentId: 'attachment-1',
@@ -367,7 +367,7 @@ describe('CompleteMilestone', () => {
       .mockReturnValueOnce({
         promise: jest.fn().mockResolvedValue({
           Item: {
-            PartnerId: 'partner-123',
+            ExperienceId: 'experience-123',
             EntryId: 'tour-whitehouse',
             Milestones: [
               {
@@ -425,7 +425,7 @@ describe('CompleteMilestone', () => {
         promise: jest.fn().mockResolvedValue({
           Item: {
             InstanceId: 'task-1',
-            PartnerId: 'partner-123',
+            ExperienceId: 'experience-123',
             CourseId: 'course-1',
             ItemId: 'coursework-1',
             AttachmentId: 'attachment-1',
@@ -437,7 +437,7 @@ describe('CompleteMilestone', () => {
       .mockReturnValueOnce({
         promise: jest.fn().mockResolvedValue({
           Item: {
-            PartnerId: 'partner-123',
+            ExperienceId: 'experience-123',
             EntryId: 'tour-whitehouse',
             Milestones: [
               {
@@ -538,7 +538,7 @@ describe('CompleteMilestone', () => {
         promise: jest.fn().mockResolvedValue({
           Item: {
             InstanceId: 'task-1',
-            PartnerId: 'partner-123',
+            ExperienceId: 'experience-123',
             CourseId: 'course-1',
             ItemId: 'coursework-1',
             AttachmentId: 'attachment-1',
@@ -550,7 +550,7 @@ describe('CompleteMilestone', () => {
       .mockReturnValueOnce({
         promise: jest.fn().mockResolvedValue({
           Item: {
-            PartnerId: 'partner-123',
+            ExperienceId: 'experience-123',
             EntryId: 'tour-whitehouse',
             Milestones: [
               {

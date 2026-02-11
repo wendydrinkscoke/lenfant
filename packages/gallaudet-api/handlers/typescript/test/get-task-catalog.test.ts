@@ -1,5 +1,5 @@
 process.env.TASK_CATALOG_TABLE_NAME = 'TaskCatalog';
-process.env.PARTNERS_TABLE_NAME = 'Partners';
+process.env.EXPERIENCES_TABLE_NAME = 'Experiences';
 
 import {
   GetTaskCatalogChainedRequestInput,
@@ -56,24 +56,24 @@ beforeEach(() => {
   });
   dynamoMocks.batchGetPromise.mockResolvedValue({
     Responses: {
-      Partners: [],
+      Experiences: [],
     },
   });
 });
 
 describe('GetTaskCatalog', () => {
-  it('returns catalog grouped by partner', async () => {
+  it('returns catalog grouped by experience', async () => {
     dynamoMocks.scanPromise.mockResolvedValueOnce({
       Items: [
         {
-          PartnerId: 'abcdefg',
+          ExperienceId: 'abcdefg',
           EntryId: 'draft-bill',
           Name: 'Draft a Bill',
           Subheading: 'Research and write legislation',
           Instructions: 'Work together to draft your bill.',
         },
         {
-          PartnerId: 'abcdefg',
+          ExperienceId: 'abcdefg',
           EntryId: 'tour-whitehouse',
           Name: 'Tour the White House',
           Subheading: 'Guided tour of the White House',
@@ -92,7 +92,7 @@ describe('GetTaskCatalog', () => {
           ],
         },
         {
-          PartnerId: 'qredasg',
+          ExperienceId: 'qredasg',
           EntryId: 'press-briefing',
           Name: 'Attend Press Briefing',
           Subheading: 'Answer questions from the press',
@@ -102,10 +102,10 @@ describe('GetTaskCatalog', () => {
     });
     dynamoMocks.batchGetPromise.mockResolvedValueOnce({
       Responses: {
-        Partners: [
+        Experiences: [
           {
-            PartnerId: 'abcdefg',
-            PartnerName: 'Partner Alpha',
+            ExperienceId: 'abcdefg',
+            ExperienceName: 'Experience Alpha',
           },
         ],
       },
@@ -124,13 +124,13 @@ describe('GetTaskCatalog', () => {
     });
     expect(dynamoMocks.batchGet).toHaveBeenCalledWith({
       RequestItems: {
-        Partners: {
+        Experiences: {
           Keys: [
             {
-              PartnerId: 'abcdefg',
+              ExperienceId: 'abcdefg',
             },
             {
-              PartnerId: 'qredasg',
+              ExperienceId: 'qredasg',
             },
           ],
         },
@@ -138,10 +138,10 @@ describe('GetTaskCatalog', () => {
     });
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
-      partners: [
+      experiences: [
         {
-          partnerId: 'abcdefg',
-          partnerName: 'Partner Alpha',
+          experienceId: 'abcdefg',
+          experienceName: 'Experience Alpha',
           catalogEntries: [
             {
               entryId: 'draft-bill',
@@ -170,8 +170,8 @@ describe('GetTaskCatalog', () => {
           ],
         },
         {
-          partnerId: 'qredasg',
-          partnerName: 'qredasg',
+          experienceId: 'qredasg',
+          experienceName: 'qredasg',
           catalogEntries: [
             {
               entryId: 'press-briefing',

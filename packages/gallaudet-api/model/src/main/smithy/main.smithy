@@ -23,7 +23,7 @@ service Gallaudet {
       ListProjects
       ListTasksForPlayer
       LinkRobloxAccount
-      PutPartner
+      PutExperience
       VendSecret
     ]
     errors: [

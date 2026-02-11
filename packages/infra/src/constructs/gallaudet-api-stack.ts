@@ -61,7 +61,7 @@ export class GallaudetApiStack extends Stack {
     const taskCatalogTable = new Table(this, "TaskCatalogDDBTable", {
       tableName: "TaskCatalog",
       partitionKey: {
-        name: "PartnerId",
+        name: "ExperienceId",
         type: AttributeType.STRING,
       },
       sortKey: {
@@ -85,16 +85,16 @@ export class GallaudetApiStack extends Stack {
       },
     });
 
-    const partnersTable = new Table(this, "PartnersDDBTable", {
-      tableName: "Partners",
+    const experiencesTable = new Table(this, "ExperiencesDDBTable", {
+      tableName: "Experiences",
       partitionKey: {
-        name: "PartnerId",
+        name: "ExperienceId",
         type: AttributeType.STRING,
       },
     });
 
     const projectsTable = new Table(this, "ProjectsDDBTable", {
-      tableName: "PartnerProjects",
+      tableName: "Projects",
       partitionKey: {
         name: "CognitoUserId",
         type: AttributeType.STRING,
@@ -146,7 +146,7 @@ export class GallaudetApiStack extends Stack {
       oauthTokensTable,
       taskCatalogTable,
       taskInstanceTable: taskInstancesTable,
-      partnersTable,
+      experiencesTable,
       projectsTable,
       robloxExperienceApiKeysTable,
       gallaudetApiKeysTable,

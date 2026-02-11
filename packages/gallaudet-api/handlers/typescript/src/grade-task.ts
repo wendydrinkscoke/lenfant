@@ -7,7 +7,7 @@ import {
   Response,
   LoggingInterceptor,
 } from 'gallaudet-api-typescript-runtime';
-import { getPartnerIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
+import { getExperienceIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError, isGaxiosError } from './utils/error-utils';
 import { extractGoogleUserIdFromUsername } from './utils/google-utils';
@@ -25,7 +25,7 @@ type UserMappingRecord = {
 
 type TaskInstanceRecord = {
   InstanceId?: string;
-  PartnerId?: string;
+  ExperienceId?: string;
   CourseId?: string;
   ItemId?: string;
   AttachmentId?: string;
@@ -52,16 +52,16 @@ export const gradeTask: GradeTaskChainedHandlerFunction = async (request) => {
   const logger = LoggingInterceptor.getLogger(request);
   logger.info('Start GradeTask Operation');
 
-  let partnerId: string;
+  let experienceId: string;
   try {
-    partnerId = await getPartnerIdFromEvent(request.event);
+    experienceId = await getExperienceIdFromEvent(request.event);
   } catch (error) {
     if (isAWSError(error)) {
       logger.error(
-        `Failed to resolve partner from API key: ${error.code} - ${error.message}`,
+        `Failed to resolve experience from API key: ${error.code} - ${error.message}`,
       );
       return Response.internalFailure({
-        message: 'Failed to resolve partner from API key',
+        message: 'Failed to resolve experience from API key',
         details: `DynamoDB error: ${error.code}`,
       });
     }
@@ -70,7 +70,7 @@ export const gradeTask: GradeTaskChainedHandlerFunction = async (request) => {
       message: 'Valid API key required',
     });
   }
-  logger.info(`Resolved partnerId=${partnerId} from API key`);
+  logger.info(`Resolved experienceId=${experienceId} from API key`);
 
   const { input } = request;
   const robloxUserId = input.requestParameters?.robloxUserId?.trim();
@@ -212,13 +212,13 @@ export const gradeTask: GradeTaskChainedHandlerFunction = async (request) => {
     });
   }
 
-  // Verification 1: Confirm the task belongs to the invoking partner.
-  if (taskInstance.PartnerId?.trim() !== partnerId) {
+  // Verification 1: Confirm the task belongs to the invoking experience.
+  if (taskInstance.ExperienceId?.trim() !== experienceId) {
     logger.warn(
-      `Partner mismatch while grading task ${taskId}: expected ${taskInstance.PartnerId}, received ${partnerId}`,
+      `Experience mismatch while grading task ${taskId}: expected ${taskInstance.ExperienceId}, received ${experienceId}`,
     );
     return Response.notAuthorized({
-      message: 'Partner not authorized to grade this task',
+      message: 'Experience not authorized to grade this task',
     });
   }
 

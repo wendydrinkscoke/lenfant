@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom"
 import { Clock3, Route } from "lucide-react"
-import { partnerGuides } from "../content/partner-docs"
+import { experienceGuides } from "../content/partner-docs"
 import { PartnerDocsShell } from "../components/partner-docs/partner-docs-shell"
 import { Badge } from "../components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
@@ -16,11 +16,11 @@ export default function DeveloperDocsGuidesPage() {
         <CardHeader>
           <CardTitle>Guide collection</CardTitle>
           <CardDescription>
-            Tutorial-style docs for common partner integration patterns.
+            Tutorial-style docs for common experience integration patterns.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {partnerGuides.map((guide) => (
+          {experienceGuides.map((guide) => (
             <Link
               key={guide.slug}
               to={`/create/docs/guides/${guide.slug}`}

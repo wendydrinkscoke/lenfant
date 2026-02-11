@@ -8,7 +8,7 @@ use llc.civictech.school#RobloxUserId
 use llc.civictech.school#TaskId
 
 @idempotent
-@http(method: "PUT", uri: "/partners/me/players/{robloxUserId}/tasks/{taskId}/milestones/{milestoneId}/completion")
+@http(method: "PUT", uri: "/experiences/me/players/{robloxUserId}/tasks/{taskId}/milestones/{milestoneId}/completion")
 @handler(language: "typescript")
 operation CompleteMilestone {
     input := {

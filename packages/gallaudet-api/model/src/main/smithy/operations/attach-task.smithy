@@ -2,7 +2,7 @@ $version: "2"
 namespace llc.civictech.school
 
 use llc.civictech.school#CatalogEntryId
-use llc.civictech.school#PartnerId
+use llc.civictech.school#ExperienceId
 
 /// Creates or updates the Google Classroom attachment associated with the
 /// current iframe using one of the predefined CivicTech templates.
@@ -30,9 +30,9 @@ operation AttachTask {
         @required
         addOnToken: AddOnToken
 
-        /// The partner that owns the catalog entry selected in the iframe UI.
+        /// The experience that owns the catalog entry selected in the iframe UI.
         @required
-        partnerId: PartnerId
+        experienceId: ExperienceId
 
         /// The catalog entry selected in the iframe UI.
         @required

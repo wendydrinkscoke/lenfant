@@ -1,6 +1,6 @@
 process.env.ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME = 'RobloxExperienceApiKeys';
 process.env.GALLAUDET_API_KEYS_TABLE_NAME = 'GallaudetApiKeys';
-process.env.PARTNER_API_KEY_USAGE_PLAN_NAME = 'partner-api-key-usage-plan-beta';
+process.env.EXPERIENCE_API_KEY_USAGE_PLAN_NAME = 'experience-api-key-usage-plan-beta';
 process.env.SECRET_DOMAIN = '*.beta.school.civictech.llc';
 
 import {
@@ -140,7 +140,7 @@ describe('VendSecret', () => {
     });
     getUsagePlans.mockReturnValue({
       promise: jest.fn().mockResolvedValue({
-        items: [{ id: 'usage-plan-123', name: 'partner-api-key-usage-plan-beta' }],
+        items: [{ id: 'usage-plan-123', name: 'experience-api-key-usage-plan-beta' }],
       }),
     });
     createUsagePlanKey.mockReturnValue({
@@ -299,7 +299,7 @@ describe('VendSecret', () => {
 
     expect(response.statusCode).toBe(500);
     expect((response.body as InternalFailureErrorResponseContent).message).toContain(
-      'Failed to persist partner API key mapping',
+      'Failed to persist experience API key mapping',
     );
     expect(deleteUsagePlanKey).toHaveBeenCalledWith({
       usagePlanId: 'usage-plan-123',

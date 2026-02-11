@@ -5,7 +5,7 @@ use llc.civictech.school#CatalogTaskInstructions
 use llc.civictech.school#CatalogTaskName
 use llc.civictech.school#CatalogTaskSubheading
 use llc.civictech.school#Milestones
-use llc.civictech.school#PartnerName
+use llc.civictech.school#ExperienceName
 
 /// Details needed to render a task instance inside a Classroom iframe.
 structure TaskInstanceView {
@@ -24,9 +24,9 @@ structure TaskInstanceView {
     /// Optional milestones that outline partial completion goals.
     milestones: Milestones
 
-    /// Partner display name to show alongside the task.
+    /// Experience display name to show alongside the task.
     @required
-    partnerName: PartnerName
+    experienceName: ExperienceName
 
     /// Roblox game ID which informs the play button link
     @required

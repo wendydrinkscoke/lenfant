@@ -19,20 +19,20 @@ type CatalogEntry = {
   subheading: string
   instructions: string
   milestones: Milestone[] | undefined
-  partnerId: string
-  partnerName: string
+  experienceId: string
+  experienceName: string
 }
 
-type CatalogPartner = {
-  partnerId: string
-  partnerName: string
+type CatalogExperience = {
+  experienceId: string
+  experienceName: string
   catalogEntries: CatalogEntry[]
 }
 
 export default function AttachmentForm() {
   const [isCreating, setIsCreating] = useState(false)
   const [assignmentType, setAssignmentType] = useState("")
-  const [catalogPartners, setCatalogPartners] = useState<CatalogPartner[]>([])
+  const [catalogExperiences, setCatalogExperiences] = useState<CatalogExperience[]>([])
   const [isCatalogLoading, setIsCatalogLoading] = useState(false)
   const [catalogError, setCatalogError] = useState<string | null>(null)
   const [searchParams] = useSearchParams()
@@ -53,35 +53,35 @@ export default function AttachmentForm() {
         const client = await getGallaudetApi()
         const response = await client.getTaskCatalog()
 
-        const partners: CatalogPartner[] =
-          response.partners
-            ?.map((partner) => ({
-              partnerId: partner.partnerId,
-              partnerName: partner.partnerName ?? partner.partnerId,
+        const experiences: CatalogExperience[] =
+          response.experiences
+            ?.map((experience) => ({
+              experienceId: experience.experienceId,
+              experienceName: experience.experienceName ?? experience.experienceId,
               catalogEntries:
-                partner.catalogEntries
+                experience.catalogEntries
                   ?.map((entry) => ({
                     entryId: entry.entryId,
                     name: entry.name,
                     subheading: entry.subheading,
                     instructions: entry.instructions,
                     milestones: entry.milestones,
-                    partnerId: partner.partnerId,
-                    partnerName: partner.partnerName ?? partner.partnerId,
+                    experienceId: experience.experienceId,
+                    experienceName: experience.experienceName ?? experience.experienceId,
                   }))
                   .sort((a, b) => a.name.localeCompare(b.name)) ?? [],
             }))
-            .filter((partner) => Boolean(partner.partnerId && partner.catalogEntries.length)) ?? []
+            .filter((experience) => Boolean(experience.experienceId && experience.catalogEntries.length)) ?? []
 
-        partners.sort((a, b) => a.partnerName.localeCompare(b.partnerName))
+        experiences.sort((a, b) => a.experienceName.localeCompare(b.experienceName))
 
         if (cancelled) {
           return
         }
 
-        setCatalogPartners(partners)
+        setCatalogExperiences(experiences)
 
-        const allEntryIds = partners.flatMap((partner) => partner.catalogEntries.map((entry) => entry.entryId))
+        const allEntryIds = experiences.flatMap((experience) => experience.catalogEntries.map((entry) => entry.entryId))
         setAssignmentType((prev) => (allEntryIds.includes(prev) ? prev : ""))
       } catch (error: any) {
         if (!cancelled) {
@@ -104,10 +104,10 @@ export default function AttachmentForm() {
 
   const selectedEntry = useMemo(
     () =>
-      catalogPartners
-        .flatMap((partner) => partner.catalogEntries)
+      catalogExperiences
+        .flatMap((experience) => experience.catalogEntries)
         .find((entry) => entry.entryId === assignmentType),
-    [assignmentType, catalogPartners],
+    [assignmentType, catalogExperiences],
   )
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -138,7 +138,7 @@ export default function AttachmentForm() {
         attachTaskRequestContent: {
           itemType,
           addOnToken,
-          partnerId: selectedEntry.partnerId,
+          experienceId: selectedEntry.experienceId,
           entryId: selectedEntry.entryId,
         },
       })
@@ -175,7 +175,7 @@ export default function AttachmentForm() {
           </div>
           <CardTitle className="text-3xl">{"Choose from our catalog"}</CardTitle>
           <CardDescription className="text-base text-slate-700">
-            {"Engaging, educational tasks developed by our partners. Pick the one you want to attach to this Classroom item."}
+            {"Engaging, educational tasks developed by our experiences. Pick the one you want to attach to this Classroom item."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -198,9 +198,9 @@ export default function AttachmentForm() {
           <div className="rounded-xl bg-card/60 p-4 shadow-sm">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-semibold text-slate-900">{"Browse the partner catalog"}</p>
+                <p className="text-sm font-semibold text-slate-900">{"Browse the experience catalog"}</p>
                 <p className="text-sm text-muted-foreground">
-                  {"Tap a card to preview and select an assignment from that partner."}
+                  {"Tap a card to preview and select an assignment from that experience."}
                 </p>
                 <p className="text-sm text-emerald-700">
                   {"This attachment will be synced with Google Classroom and visible to students in the Roblox simulation."}
@@ -232,37 +232,37 @@ export default function AttachmentForm() {
                 </>
               )}
 
-              {!isCatalogLoading && !catalogError && catalogPartners.length === 0 && (
+              {!isCatalogLoading && !catalogError && catalogExperiences.length === 0 && (
                 <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
                   {"No catalog entries are available yet. Register tasks to start assigning them here."}
                 </div>
               )}
 
-              {!isCatalogLoading && catalogPartners.length > 0 && (
-                catalogPartners.map((partner) => {
-                  const featuredSubheading = partner.catalogEntries[0]?.subheading
+              {!isCatalogLoading && catalogExperiences.length > 0 && (
+                catalogExperiences.map((experience) => {
+                  const featuredSubheading = experience.catalogEntries[0]?.subheading
                   return (
-                    <div key={partner.partnerId} className="space-y-3">
+                    <div key={experience.experienceId} className="space-y-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-1">
-                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">{"Partner"}</p>
-                          <h3 className="text-xl font-semibold text-slate-900">{partner.partnerName}</h3>
+                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">{"Experience"}</p>
+                          <h3 className="text-xl font-semibold text-slate-900">{experience.experienceName}</h3>
                           {featuredSubheading ? (
                             <p className="text-sm font-medium text-slate-800">{featuredSubheading}</p>
                           ) : (
                             <p className="text-sm text-muted-foreground">
-                              {"Classroom-ready activities from this game partner."}
+                              {"Classroom-ready activities from this game experience."}
                             </p>
                           )}
                         </div>
                         <Badge variant="secondary">
-                          {partner.catalogEntries.length} {"task"}{partner.catalogEntries.length === 1 ? "" : "s"}
+                          {experience.catalogEntries.length} {"task"}{experience.catalogEntries.length === 1 ? "" : "s"}
                         </Badge>
                       </div>
 
                     <div className="relative">
                       <div className="flex gap-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                          {partner.catalogEntries.map((entry) => {
+                          {experience.catalogEntries.map((entry) => {
                             const isSelected = assignmentType === entry.entryId
                             return (
                               <button
@@ -290,7 +290,7 @@ export default function AttachmentForm() {
                                 </p>
                                 <div className="mt-4 flex items-center gap-2">
                                   <Badge variant="secondary" className="border-transparent bg-slate-100 text-slate-800">
-                                    {entry.partnerName}
+                                    {entry.experienceName}
                                   </Badge>
                                   {entry.milestones && entry.milestones.length > 0 && (
                                     <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
@@ -318,7 +318,7 @@ export default function AttachmentForm() {
               <div className="space-y-0.5">
                 <p className="font-semibold">{selectedEntry.name}</p>
                 <p className="text-xs text-emerald-800">
-                  {selectedEntry.partnerName} {"•"} {selectedEntry.subheading}
+                  {selectedEntry.experienceName} {"•"} {selectedEntry.subheading}
                 </p>
               </div>
               <Button type="button" variant="ghost" size="sm" onClick={() => setAssignmentType("")}>
@@ -334,7 +334,7 @@ export default function AttachmentForm() {
               !assignmentType ||
               isCatalogLoading ||
               !!catalogError ||
-              catalogPartners.length === 0
+              catalogExperiences.length === 0
             }
             className="w-full bg-emerald-600 hover:bg-emerald-700"
           >

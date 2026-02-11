@@ -12,18 +12,18 @@ import { isAWSError } from './utils/error-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
 const TASK_CATALOG_TABLE_NAME = getRequiredEnv('TASK_CATALOG_TABLE_NAME');
-const PARTNERS_TABLE_NAME = getRequiredEnv('PARTNERS_TABLE_NAME');
+const EXPERIENCES_TABLE_NAME = getRequiredEnv('EXPERIENCES_TABLE_NAME');
 
-type PartnersItem = {
-  PartnerId?: string;
+type ExperienceItem = {
+  ExperienceId?: string;
   CreatedAt?: string;
-  PartnerName?: string;
+  ExperienceName?: string;
   RobloxGameId?: string;
-  UpdatedAt: string;
+  UpdatedAt?: string;
 }
 
 type CatalogItem = {
-  PartnerId?: string;
+  ExperienceId?: string;
   EntryId?: string;
   CreatedAt: string;
   Name?: string;
@@ -69,47 +69,47 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
     });
   }
 
-  const partnersMap = new Map<string, {
-    partnerId: string;
-    partnerName: string;
+  const experiencesMap = new Map<string, {
+    experienceId: string;
+    experienceName: string;
     catalogEntries: CatalogEntry[];
   }>();
 
-  const partnerIds = Array.from(new Set(
-    items.map((item) => item.PartnerId).filter((partnerId): partnerId is string => !!partnerId),
+  const experienceIds = Array.from(new Set(
+    items.map((item) => item.ExperienceId).filter((experienceId): experienceId is string => !!experienceId),
   ));
 
-  const partnersById = new Map<string, PartnersItem>();
-  if (partnerIds.length > 0) {
+  const experiencesById = new Map<string, ExperienceItem>();
+  if (experienceIds.length > 0) {
     try {
-      const partnersResult = await ddbClient.batchGet({
+      const experiencesResult = await ddbClient.batchGet({
         RequestItems: {
-          [PARTNERS_TABLE_NAME]: {
-            Keys: partnerIds.map((partnerId) => ({ PartnerId: partnerId })),
+          [EXPERIENCES_TABLE_NAME]: {
+            Keys: experienceIds.map((experienceId) => ({ ExperienceId: experienceId })),
           },
         },
       }).promise();
-      const partners = (partnersResult.Responses?.[PARTNERS_TABLE_NAME] as PartnersItem[]) ?? [];
-      partners.forEach((partner) => {
-        if (partner.PartnerId) {
-          partnersById.set(partner.PartnerId, partner);
+      const experiences = (experiencesResult.Responses?.[EXPERIENCES_TABLE_NAME] as ExperienceItem[]) ?? [];
+      experiences.forEach((experience) => {
+        if (experience.ExperienceId) {
+          experiencesById.set(experience.ExperienceId, experience);
         }
       });
-      const unprocessed = partnersResult.UnprocessedKeys?.[PARTNERS_TABLE_NAME]?.Keys;
+      const unprocessed = experiencesResult.UnprocessedKeys?.[EXPERIENCES_TABLE_NAME]?.Keys;
       if (unprocessed?.length) {
-        logger.warn(`Unprocessed partner keys: ${JSON.stringify(unprocessed)}`);
+        logger.warn(`Unprocessed experience keys: ${JSON.stringify(unprocessed)}`);
       }
-      logger.info(`Fetched ${partnersById.size} partners`);
+      logger.info(`Fetched ${experiencesById.size} experiences`);
     } catch (error) {
       if (isAWSError(error)) {
-        logger.error(`Failed to read partners: ${error.code} - ${error.message}`);
+        logger.error(`Failed to read experiences: ${error.code} - ${error.message}`);
         return Response.internalFailure({
           message: 'Failed to load task catalog',
           details: `DynamoDB error: ${error.code}`,
         });
       }
 
-      logger.error(`Unexpected error loading partners: ${JSON.stringify(error)}`);
+      logger.error(`Unexpected error loading experiences: ${JSON.stringify(error)}`);
       return Response.internalFailure({
         message: 'Failed to load task catalog',
       });
@@ -117,14 +117,14 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
   }
 
   items.forEach((item) => {
-    const partnerId = item.PartnerId;
+    const experienceId = item.ExperienceId;
     const entryId = item.EntryId;
     const name = item.Name;
     const subheading = item.Subheading;
     const instructions = item.Instructions;
     const milestones = item.Milestones;
     if (
-      !partnerId ||
+      !experienceId ||
       !entryId ||
       !name ||
       !subheading ||
@@ -134,11 +134,11 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
       return;
     }
 
-    if (!partnersMap.has(partnerId)) {
-      const partnerName = partnersById.get(partnerId)?.PartnerName ?? partnerId;
-      partnersMap.set(partnerId, {
-        partnerId,
-        partnerName,
+    if (!experiencesMap.has(experienceId)) {
+      const experienceName = experiencesById.get(experienceId)?.ExperienceName ?? experienceId;
+      experiencesMap.set(experienceId, {
+        experienceId,
+        experienceName,
         catalogEntries: [],
       });
     }
@@ -149,19 +149,21 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
       subheading,
       instructions,
     };
-    entry.milestones = milestones;
-    partnersMap.get(partnerId)?.catalogEntries.push(entry);
+    if (milestones) {
+      entry.milestones = milestones;
+    }
+    experiencesMap.get(experienceId)?.catalogEntries.push(entry);
   });
 
-  const partners = Array.from(partnersMap.values()).map((partner) => ({
-    ...partner,
-    catalogEntries: partner.catalogEntries.sort((a, b) => a.name.localeCompare(b.name)),
-  })).sort((a, b) => a.partnerName.localeCompare(b.partnerName));
+  const experiences = Array.from(experiencesMap.values()).map((experience) => ({
+    ...experience,
+    catalogEntries: experience.catalogEntries.sort((a, b) => a.name.localeCompare(b.name)),
+  })).sort((a, b) => a.experienceName.localeCompare(b.experienceName));
 
-  logger.info(`Returning catalog for ${partners.length} partners`);
+  logger.info(`Returning catalog for ${experiences.length} experiences`);
 
   return Response.success({
-    partners,
+    experiences,
   });
 };
 

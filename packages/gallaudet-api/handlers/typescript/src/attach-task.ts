@@ -42,9 +42,9 @@ export const attachTask: AttachTaskChainedHandlerFunction = async (request) => {
     }
 
     const { courseId, itemId } = input.requestParameters;
-    const { itemType, addOnToken, partnerId, entryId } = body;
+    const { itemType, addOnToken, experienceId, entryId } = body;
 
-    if (!courseId || !itemId || !itemType || !addOnToken || !partnerId || !entryId) {
+    if (!courseId || !itemId || !itemType || !addOnToken || !experienceId || !entryId) {
       return Response.badRequest({
         message: 'One or more required fields are missing',
       });
@@ -63,14 +63,14 @@ export const attachTask: AttachTaskChainedHandlerFunction = async (request) => {
         .get({
           TableName: TASK_CATALOG_TABLE_NAME,
           Key: {
-            PartnerId: partnerId,
+            ExperienceId: experienceId,
             EntryId: entryId,
           },
         })
         .promise();
 
       if (!Item) {
-        logger.warn(`Catalog entry not found for ${partnerId}/${entryId}`);
+        logger.warn(`Catalog entry not found for ${experienceId}/${entryId}`);
         return Response.badRequest({
           message: 'Selected task is no longer available',
         });
@@ -83,7 +83,7 @@ export const attachTask: AttachTaskChainedHandlerFunction = async (request) => {
     } catch (ddbError) {
       if (isAWSError(ddbError)) {
         logger.error(
-          `Failed to load catalog entry (${partnerId}/${entryId}): ${ddbError.code} - ${ddbError.message}`,
+          `Failed to load catalog entry (${experienceId}/${entryId}): ${ddbError.code} - ${ddbError.message}`,
         );
         return Response.internalFailure({
           message: 'Failed to load task catalog entry',
@@ -92,7 +92,7 @@ export const attachTask: AttachTaskChainedHandlerFunction = async (request) => {
       }
 
       logger.error(
-        `Unexpected error reading catalog entry (${partnerId}/${entryId}): ${JSON.stringify(ddbError)}`,
+        `Unexpected error reading catalog entry (${experienceId}/${entryId}): ${JSON.stringify(ddbError)}`,
       );
       return Response.internalFailure({
         message: 'Failed to load task catalog entry',
@@ -118,7 +118,7 @@ export const attachTask: AttachTaskChainedHandlerFunction = async (request) => {
             UpdateExpression: [
               'SET #courseId = :courseId',
               '#itemId = :itemId',
-              '#partnerId = :partnerId',
+              '#experienceId = :experienceId',
               '#entryId = :entryId',
               '#catalogEntryName = :catalogEntryName',
               '#attachmentId = :attachmentId',
@@ -131,7 +131,7 @@ export const attachTask: AttachTaskChainedHandlerFunction = async (request) => {
             ExpressionAttributeNames: {
               '#courseId': 'CourseId',
               '#itemId': 'ItemId',
-              '#partnerId': 'PartnerId',
+              '#experienceId': 'ExperienceId',
               '#entryId': 'EntryId',
               '#catalogEntryName': 'CatalogEntryName',
               '#attachmentId': 'AttachmentId',
@@ -144,7 +144,7 @@ export const attachTask: AttachTaskChainedHandlerFunction = async (request) => {
             ExpressionAttributeValues: {
               ':courseId': courseId,
               ':itemId': itemId,
-              ':partnerId': partnerId,
+              ':experienceId': experienceId,
               ':entryId': entryId,
               ':catalogEntryName': catalogEntryName,
               ':attachmentId': attachmentId,

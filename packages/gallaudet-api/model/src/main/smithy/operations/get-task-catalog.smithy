@@ -6,11 +6,11 @@ use llc.civictech.school#CatalogTaskInstructions
 use llc.civictech.school#CatalogTaskName
 use llc.civictech.school#CatalogTaskSubheading
 use llc.civictech.school#Milestones
-use llc.civictech.school#PartnerId
+use llc.civictech.school#ExperienceId
 
-/// A task entry within a partner's catalog.
+/// A task entry within an experience's catalog.
 structure TaskCatalogEntry {
-    /// Partner-scoped identifier for the task.
+    /// Experience-scoped identifier for the task.
     @required
     entryId: CatalogEntryId
 
@@ -30,17 +30,17 @@ structure TaskCatalogEntry {
     milestones: Milestones
 }
 
-/// Catalog entries grouped by partner.
-structure PartnerTaskCatalog {
-    /// Unique identifier assigned to the partner.
+/// Catalog entries grouped by experience.
+structure ExperienceTaskCatalog {
+    /// Unique identifier assigned to the experience.
     @required
-    partnerId: PartnerId
+    experienceId: ExperienceId
 
-    /// Human-readable display name for the partner.
+    /// Human-readable display name for the experience.
     @required
-    partnerName: PartnerName
+    experienceName: ExperienceName
 
-    /// Tasks made available by this partner.
+    /// Tasks made available by this experience.
     @required
     catalogEntries: TaskCatalogEntries
 }
@@ -49,8 +49,8 @@ list TaskCatalogEntries {
     member: TaskCatalogEntry
 }
 
-list PartnerTaskCatalogList {
-    member: PartnerTaskCatalog
+list ExperienceTaskCatalogList {
+    member: ExperienceTaskCatalog
 }
 
 /// Retrieves the catalog of tasks exposed to classroom teachers.
@@ -58,9 +58,9 @@ list PartnerTaskCatalogList {
 @handler(language: "typescript")
 operation GetTaskCatalog {
     output := {
-        /// Catalog groupings for every partner game studio.
+        /// Catalog groupings for every experience game studio.
         @required
-        partners: PartnerTaskCatalogList
+        experiences: ExperienceTaskCatalogList
     }
     errors: [
         NotAuthorizedError

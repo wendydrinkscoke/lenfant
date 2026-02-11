@@ -1,18 +1,18 @@
-process.env.PARTNERS_TABLE_NAME = 'Partners';
+process.env.EXPERIENCES_TABLE_NAME = 'Experiences';
 
 import {
   InternalFailureErrorResponseContent,
   NotAuthorizedErrorResponseContent,
-  PutPartnerChainedRequestInput,
+  PutExperienceChainedRequestInput,
 } from 'gallaudet-api-typescript-runtime';
-import { putPartner } from '../src/put-partner';
-import { getPartnerIdFromEvent } from '../src/utils/auth-utils';
+import { putExperience } from '../src/put-experience';
+import { getExperienceIdFromEvent } from '../src/utils/auth-utils';
 
 jest.mock('../src/utils/auth-utils', () => {
   const actual = jest.requireActual('../src/utils/auth-utils');
   return {
     ...actual,
-    getPartnerIdFromEvent: jest.fn(),
+    getExperienceIdFromEvent: jest.fn(),
   };
 });
 
@@ -42,10 +42,10 @@ const { __mock: dynamoMocks } = jest.requireMock('aws-sdk') as {
   };
 };
 
-const mockedGetPartnerIdFromEvent = getPartnerIdFromEvent as jest.Mock;
+const mockedGetExperienceIdFromEvent = getExperienceIdFromEvent as jest.Mock;
 
 const buildRequestArgs = (
-  overrides: Partial<PutPartnerChainedRequestInput> = {},
+  overrides: Partial<PutExperienceChainedRequestInput> = {},
 ) =>
   ({
     chain: undefined as never,
@@ -65,7 +65,7 @@ const buildRequestArgs = (
       },
     },
     ...overrides,
-  }) as Omit<PutPartnerChainedRequestInput, 'input'>;
+  }) as Omit<PutExperienceChainedRequestInput, 'input'>;
 
 beforeEach(() => {
   if (!dynamoMocks) {
@@ -73,22 +73,22 @@ beforeEach(() => {
   }
   jest.clearAllMocks();
   dynamoMocks.updatePromise.mockResolvedValue({});
-  mockedGetPartnerIdFromEvent.mockResolvedValue('9228429469');
+  mockedGetExperienceIdFromEvent.mockResolvedValue('9228429469');
 });
 
-describe('PutPartner', () => {
+describe('PutExperience', () => {
   it('returns 403 when API key is missing', async () => {
-    mockedGetPartnerIdFromEvent.mockRejectedValueOnce(
+    mockedGetExperienceIdFromEvent.mockRejectedValueOnce(
       new Error('API key identifier not parseable from event.'),
     );
-    const response = await putPartner({
+    const response = await putExperience({
       ...buildRequestArgs({
         event: { requestContext: { identity: {} } } as any,
       }),
       input: {
         requestParameters: {},
         body: {
-          partnerName: 'NUSA',
+          experienceName: 'NUSA',
           robloxGameId: '12345',
         },
       },
@@ -101,13 +101,13 @@ describe('PutPartner', () => {
     expect(dynamoMocks.update).not.toHaveBeenCalled();
   });
 
-  it('persists the partner profile and returns success', async () => {
-    const response = await putPartner({
+  it('persists the experience profile and returns success', async () => {
+    const response = await putExperience({
       ...buildRequestArgs(),
       input: {
         requestParameters: {},
         body: {
-          partnerName: '  National USA Game ',
+          experienceName: '  National USA Game ',
           robloxGameId: '  1213026131 ',
         },
       },
@@ -118,18 +118,18 @@ describe('PutPartner', () => {
     if (!updateArgs) {
       throw new Error('Expected DynamoDB update arguments to be provided');
     }
-    expect(updateArgs.TableName).toBe('Partners');
+    expect(updateArgs.TableName).toBe('Experiences');
     expect(updateArgs.Key).toEqual({
-      PartnerId: '9228429469',
+      ExperienceId: '9228429469',
     });
     expect(updateArgs.ExpressionAttributeValues).toMatchObject({
-      ':partnerName': 'National USA Game',
+      ':experienceName': 'National USA Game',
       ':robloxGameId': '1213026131',
     });
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
-      message: 'Partner profile saved',
+      message: 'Experience profile saved',
     });
   });
 
@@ -139,12 +139,12 @@ describe('PutPartner', () => {
     });
     dynamoMocks.updatePromise.mockRejectedValueOnce(dynamoError);
 
-    const response = await putPartner({
+    const response = await putExperience({
       ...buildRequestArgs(),
       input: {
         requestParameters: {},
         body: {
-          partnerName: 'NUSA',
+          experienceName: 'NUSA',
           robloxGameId: '123456',
         },
       },
@@ -153,6 +153,6 @@ describe('PutPartner', () => {
     expect(response.statusCode).toBe(500);
     expect(
       (response.body as InternalFailureErrorResponseContent).message,
-    ).toEqual('Failed to save partner profile');
+    ).toEqual('Failed to save experience profile');
   });
 });

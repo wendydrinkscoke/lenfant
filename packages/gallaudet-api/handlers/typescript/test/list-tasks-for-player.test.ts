@@ -9,14 +9,14 @@ import {
   NotAuthorizedErrorResponseContent,
 } from 'gallaudet-api-typescript-runtime';
 import { listTasksForPlayer } from '../src/list-tasks-for-player';
-import { getGoogleOAuthClient, getPartnerIdFromEvent } from '../src/utils/auth-utils';
+import { getGoogleOAuthClient, getExperienceIdFromEvent } from '../src/utils/auth-utils';
 
 jest.mock('../src/utils/auth-utils', () => {
   const actual = jest.requireActual('../src/utils/auth-utils');
   return {
     ...actual,
     getGoogleOAuthClient: jest.fn(),
-    getPartnerIdFromEvent: jest.fn(),
+    getExperienceIdFromEvent: jest.fn(),
   };
 });
 
@@ -103,7 +103,7 @@ const baseRequestArgs = {
   event: {
     requestContext: {
       identity: {
-        apiKeyId: 'partner-key-1',
+        apiKeyId: 'experience-key-1',
       },
     },
   } as any,
@@ -128,8 +128,8 @@ beforeEach(() => {
   courseWorkListMock.mockReset();
   addOnAttachmentsListMock.mockReset();
   (getGoogleOAuthClient as jest.Mock).mockReset();
-  (getPartnerIdFromEvent as jest.Mock).mockReset();
-  (getPartnerIdFromEvent as jest.Mock).mockResolvedValue('partner-key-1');
+  (getExperienceIdFromEvent as jest.Mock).mockReset();
+  (getExperienceIdFromEvent as jest.Mock).mockResolvedValue('experience-key-1');
 });
 
 const buildRequestArgs = (
@@ -142,7 +142,7 @@ const buildRequestArgs = (
       ({
         requestContext: {
           identity: {
-            apiKeyId: 'partner-key-1',
+            apiKeyId: 'experience-key-1',
           },
         },
       } as any),
@@ -151,7 +151,7 @@ const buildRequestArgs = (
 
 describe('ListTasksForPlayer', () => {
   it('returns 403 when the API key is missing', async () => {
-    (getPartnerIdFromEvent as jest.Mock).mockRejectedValueOnce(
+    (getExperienceIdFromEvent as jest.Mock).mockRejectedValueOnce(
       new Error('API key identifier not parseable from event.'),
     );
     const response = await listTasksForPlayer({
@@ -207,7 +207,7 @@ describe('ListTasksForPlayer', () => {
     });
   });
 
-  it('returns tasks when submissions reference partner attachments', async () => {
+  it('returns tasks when submissions reference experience attachments', async () => {
     dynamoMocks.query.mockReturnValueOnce({
       promise: jest.fn().mockResolvedValue({
         Items: [
@@ -247,7 +247,7 @@ describe('ListTasksForPlayer', () => {
           {
             InstanceId: 'task-123',
             EntryId: 'catalog-entry-1',
-            PartnerId: 'partner-key-1',
+            ExperienceId: 'experience-key-1',
             AttachmentId: 'attachment-1',
             MilestoneCompletions: {
               'cognito-user-1': ['visit-oval-office'],
@@ -261,7 +261,7 @@ describe('ListTasksForPlayer', () => {
     dynamoMocks.get.mockReturnValueOnce({
       promise: jest.fn().mockResolvedValue({
         Item: {
-          PartnerId: 'partner-key-1',
+          ExperienceId: 'experience-key-1',
           EntryId: 'catalog-entry-1',
           Name: 'Tour the White House',
           Subheading: 'Explore iconic rooms and history',
@@ -326,7 +326,7 @@ describe('ListTasksForPlayer', () => {
     expect(dynamoMocks.get).toHaveBeenCalledWith({
       TableName: 'TaskCatalog',
       Key: {
-        PartnerId: 'partner-key-1',
+        ExperienceId: 'experience-key-1',
         EntryId: 'catalog-entry-1',
       },
     });
@@ -373,7 +373,7 @@ describe('ListTasksForPlayer', () => {
           {
             InstanceId: 'task-123',
             EntryId: 'catalog-entry-1',
-            PartnerId: 'partner-key-1',
+            ExperienceId: 'experience-key-1',
             AttachmentId: 'attachment-1',
             Instructions: 'To do this task, you need to do a thing.',
           },
@@ -384,7 +384,7 @@ describe('ListTasksForPlayer', () => {
     dynamoMocks.get.mockReturnValueOnce({
       promise: jest.fn().mockResolvedValue({
         Item: {
-          PartnerId: 'partner-key-1',
+          ExperienceId: 'experience-key-1',
           EntryId: 'catalog-entry-1',
           Name: 'Tour the White House',
           Subheading: 'Explore iconic rooms and history',

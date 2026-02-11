@@ -1,14 +1,7 @@
 $version: "2"
 namespace llc.civictech.school
 
-/// Identifier of the partner that registered the catalog entry.
-/// 
-/// This ID corresponds to the Roblox universe/experience identifier for the
-/// partner integration.
-@pattern("^[0-9]+$")
-string PartnerId
-
-/// Numeric Roblox identifier for the partner's primary experience.
+/// Numeric Roblox identifier for the experience's primary experience.
 @pattern("^[0-9]+$")
 string RobloxGameId
 
@@ -16,7 +9,7 @@ string RobloxGameId
 @pattern("^[0-9]+$")
 string ExperienceId
 
-/// CivicTech-generated identifier for an API key stored in our partner's
+/// CivicTech-generated identifier for an API key stored in our experience's
 /// experience's secret store. Up to two API Gateway API keys could correspond
 /// to a secret to support rotation. I'm not sure yet if having a separate
 /// secret ID is preferable to just using the experience ID itself. So we
@@ -27,6 +20,6 @@ string ExperienceId
 @pattern("^[a-z]{12}$")
 string SecretId
 
-/// Human-readable display name for the partner.
+/// Human-readable display name for the experience.
 @length(min: 1, max: 120)
-string PartnerName
+string ExperienceName

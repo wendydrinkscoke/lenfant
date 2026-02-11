@@ -353,14 +353,14 @@ const TaskViewAuthorized = ({
     );
   }, [status, task, errorMessage]);
 
-  const partnerDisplay = useMemo(() => {
+  const experienceDisplay = useMemo(() => {
     if (status === "success" && task) {
-      return task.partnerName;
+      return task.experienceName;
     }
     if (status === "loading") {
-      return "Loading partner…";
+      return "Loading experience…";
     }
-    return "Unknown partner";
+    return "Unknown experience";
   }, [status, task]);
 
   const robloxLink = useMemo(() => {
@@ -504,7 +504,7 @@ const TaskViewAuthorized = ({
             </div>
             <div className="flex flex-col items-start gap-2 text-sm text-slate-500 md:items-end">
               <span>
-                <strong>Partner:</strong> {partnerDisplay}
+                <strong>Partner:</strong> {experienceDisplay}
               </span>
               {taskId && (
                 <span className="font-mono text-xs text-slate-400">

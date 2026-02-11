@@ -8,7 +8,7 @@ use llc.civictech.school#CatalogTaskSubheading
 use llc.civictech.school#CatalogEntryId
 use llc.civictech.school#Milestone
 
-/// A task assigned to a specific Roblox player for this partner.
+/// A task assigned to a specific Roblox player for this experience.
 structure PlayerTaskAssignment {
     @required
     name: CatalogTaskName
@@ -41,8 +41,8 @@ list PlayerTaskAssignments {
     member: PlayerTaskAssignment
 }
 
-/// Lists the pending tasks for a specific Roblox player within the authenticated partner experience.
-@http(method: "GET", uri: "/partners/me/players/{robloxUserId}/tasks")
+/// Lists the pending tasks for a specific Roblox player within the authenticated experience experience.
+@http(method: "GET", uri: "/experiences/me/players/{robloxUserId}/tasks")
 @handler(language: "typescript")
 operation ListTasksForPlayer {
     input := {
@@ -52,7 +52,7 @@ operation ListTasksForPlayer {
         robloxUserId: RobloxUserId
     }
     output := {
-        /// Task assignments scoped to the authenticated partner.
+        /// Task assignments scoped to the authenticated experience.
         @required
         tasks: PlayerTaskAssignments
     }

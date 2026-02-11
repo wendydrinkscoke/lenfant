@@ -7,8 +7,8 @@ local HttpService = game:GetService("HttpService")
 local GallaudetService = {}
 GallaudetService.__index = GallaudetService
 
-export type PartnerProfile = {
-  partnerName: string,
+export type ExperienceProfile = {
+  experienceName: string,
   robloxGameId: string,
 }
 
@@ -94,8 +94,8 @@ function GallaudetService:_request(method: string, path: string, body: any?)
   return decoded, nil
 end
 
-function GallaudetService:PutPartner(profile: PartnerProfile)
-  return self:_request("PUT", "/partners/me", profile)
+function GallaudetService:PutExperience(profile: ExperienceProfile)
+  return self:_request("PUT", "/experiences/me", profile)
 end
 
 function GallaudetService:CatalogTask(entryId: string, request: {
@@ -112,13 +112,13 @@ function GallaudetService:CatalogTask(entryId: string, request: {
 end
 
 function GallaudetService:ListTasksForPlayer(robloxUserId: string)
-  return self:_request("GET", "/partners/me/players/" .. robloxUserId .. "/tasks")
+  return self:_request("GET", "/experiences/me/players/" .. robloxUserId .. "/tasks")
 end
 
 function GallaudetService:GradeTask(robloxUserId: string, taskId: string, percentage: number)
   return self:_request(
     "PUT",
-    "/partners/me/players/" .. robloxUserId .. "/tasks/" .. taskId .. "/grade",
+    "/experiences/me/players/" .. robloxUserId .. "/tasks/" .. taskId .. "/grade",
     { percentage = percentage }
   )
 end
@@ -126,7 +126,7 @@ end
 function GallaudetService:CompleteMilestone(robloxUserId: string, taskId: string, milestoneId: string)
   return self:_request(
     "PUT",
-    "/partners/me/players/" .. robloxUserId .. "/tasks/" .. taskId .. "/milestones/" .. milestoneId .. "/completion"
+    "/experiences/me/players/" .. robloxUserId .. "/tasks/" .. taskId .. "/milestones/" .. milestoneId .. "/completion"
   )
 end
 

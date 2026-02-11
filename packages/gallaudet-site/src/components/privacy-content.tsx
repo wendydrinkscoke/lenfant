@@ -195,11 +195,11 @@ export default function PrivacyContent() {
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold text-emerald-700 mb-2">{"What We Share with our Roblox \"partners\" (game servers)"}</h4>
+                <h4 className="font-semibold text-emerald-700 mb-2">{"What We Share with our Roblox \"experiences\" (game servers)"}</h4>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>{"View the list of tasks assigned to a particular Roblox user associated with that specific partner's game"}</li>
-                  <li>{"Read the current tentative grade the student has earned for each task associated with that specific partner's game"}</li>
-                  <li>{"Update the current tentative grade the student has earned for each task associated with that specific partner's game"}</li>
+                  <li>{"View the list of tasks assigned to a particular Roblox user associated with that specific experience's game"}</li>
+                  <li>{"Read the current tentative grade the student has earned for each task associated with that specific experience's game"}</li>
+                  <li>{"Update the current tentative grade the student has earned for each task associated with that specific experience's game"}</li>
                 </ul>
               </div>
 
@@ -222,7 +222,7 @@ export default function PrivacyContent() {
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
                 <AlertDescription className="text-amber-800 dark:text-amber-200">
                   {
-                    "We never share with our partners the Google identity linked to a particular Roblox user and partners are unable to view assignemtns or tentative grades other than those which they manage."
+                    "We never share with our experiences the Google identity linked to a particular Roblox user and experiences are unable to view assignemtns or tentative grades other than those which they manage."
                   }
                 </AlertDescription>
               </Alert>
@@ -242,7 +242,7 @@ export default function PrivacyContent() {
                 <h4 className="font-semibold text-emerald-700 mb-2">{"Limited Sharing"}</h4>
                 <p className="text-sm mb-2">{"We only share data in these specific circumstances:"}</p>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>{"With our Roblox partners (limited to assignment identifiers and tentative grades associated with that specific partner) so they can display grades in-game and update grades based on in-game activity"}</li>
+                  <li>{"With our Roblox experiences (limited to assignment identifiers and tentative grades associated with that specific experience) so they can display grades in-game and update grades based on in-game activity"}</li>
                   <li>
                     {
                       "With our cloud provider (Amazon Web Services) who helps us operate our platform (under strict data protection service-level agreements)"

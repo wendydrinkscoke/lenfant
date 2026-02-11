@@ -9,13 +9,13 @@ export default function DeveloperDocsDownloadsPage() {
     <PartnerDocsShell
       badge="Downloads"
       title="Client downloads"
-      description="Client files and package resources for partner integrations."
+      description="Client files and package resources for experience integrations."
     >
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Package className="h-5 w-5 text-emerald-600" />
-            Latest partner client artifacts
+            Latest experience client artifacts
           </CardTitle>
           <CardDescription>
             Download the latest starter clients for vanilla Lua and Knit-based Roblox architectures.

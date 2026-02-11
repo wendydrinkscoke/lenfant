@@ -6,7 +6,7 @@ import {
   Response,
   LoggingInterceptor,
 } from 'gallaudet-api-typescript-runtime';
-import { getPartnerIdFromEvent } from './utils/auth-utils';
+import { getExperienceIdFromEvent } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError } from './utils/error-utils';
 
@@ -20,17 +20,17 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
   const logger = LoggingInterceptor.getLogger(request);
   logger.info('Start CatalogTask Operation');
 
-  let partnerId: string;
+  let experienceId: string;
   try {
-    partnerId = await getPartnerIdFromEvent(request.event);
-    logger.info(`Resolved partner ID from API key: ${partnerId}`);
+    experienceId = await getExperienceIdFromEvent(request.event);
+    logger.info(`Resolved experience ID from API key: ${experienceId}`);
   } catch (error) {
     if (isAWSError(error)) {
       logger.error(
-        `Failed to resolve partner from API key: ${error.code} - ${error.message}`,
+        `Failed to resolve experience from API key: ${error.code} - ${error.message}`,
       );
       return Response.internalFailure({
-        message: 'Failed to resolve partner from API key',
+        message: 'Failed to resolve experience from API key',
         details: `DynamoDB error: ${error.code}`,
       });
     }
@@ -120,7 +120,7 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
   const sanitizedInstructions = instructions.trim();
 
   logger.info(
-    `Upserting catalog entry (partner=${partnerId}, entryId=${entryId})`,
+    `Upserting catalog entry (experience=${experienceId}, entryId=${entryId})`,
   );
 
   const updateSegments = [
@@ -159,7 +159,7 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
     await ddbClient.update({
       TableName: TASK_CATALOG_TABLE_NAME,
       Key: {
-        PartnerId: partnerId,
+        ExperienceId: experienceId,
         EntryId: entryId,
       },
       UpdateExpression: updateExpression,
@@ -170,7 +170,7 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
   } catch (error) {
     if (isAWSError(error)) {
       logger.error(
-        `Failed to upsert catalog entry (partner=${partnerId}, entryId=${entryId}): ${error.code} - ${error.message}`,
+        `Failed to upsert catalog entry (experience=${experienceId}, entryId=${entryId}): ${error.code} - ${error.message}`,
       );
       return Response.internalFailure({
         message: 'Failed to save catalog entry',
@@ -179,7 +179,7 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
     }
 
     logger.error(
-      `Unexpected error while upserting catalog entry (partner=${partnerId}, entryId=${entryId}): ${JSON.stringify(error)}`,
+      `Unexpected error while upserting catalog entry (experience=${experienceId}, entryId=${entryId}): ${JSON.stringify(error)}`,
     );
     return Response.internalFailure({
       message: 'Failed to save catalog entry',
@@ -187,7 +187,7 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
   }
 
   logger.info(
-    `Successfully cataloged task entry (partner=${partnerId}, entryId=${entryId})`,
+    `Successfully cataloged task entry (experience=${experienceId}, entryId=${entryId})`,
   );
 
   return Response.success({

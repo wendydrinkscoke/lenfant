@@ -1,7 +1,7 @@
 $version: "2"
 namespace llc.civictech.school
 
-/// Identifier of the catalog entry within the partner's namespace.
+/// Identifier of the catalog entry within the experience's namespace.
 @length(min: 10, max: 50)
 @pattern("^[a-z0-9-]+$")
 string CatalogEntryId

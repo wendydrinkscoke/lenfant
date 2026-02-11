@@ -78,7 +78,7 @@ export default function DeveloperOnboardingContent() {
             <div className="flex flex-wrap gap-3">
               <Button onClick={handleStartOnboarding}>{"Start self-service onboarding"}</Button>
               <Button asChild variant="outline">
-                <a href="/create/docs">{"Read partner docs"}</a>
+                <a href="/create/docs">{"Read documentation for partners"}</a>
               </Button>
               <Button asChild variant="outline">
                 <a href="mailto:cupwendyscup@gmail.com">{"Talk to our team"}</a>

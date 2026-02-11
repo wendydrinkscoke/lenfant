@@ -21,14 +21,14 @@ type TaskInstanceItem = {
   InstanceId?: string;
   CourseId?: string;
   ItemId?: string;
-  PartnerId?: string;
+  ExperienceId?: string;
   EntryId?: string;
   CatalogEntryName?: string;
   AttachmentId?: string;
 };
 
 type CatalogEntryItem = {
-  PartnerId?: string;
+  ExperienceId?: string;
   EntryId?: string;
   Name?: string;
   Subheading?: string;
@@ -36,9 +36,9 @@ type CatalogEntryItem = {
   Milestones?: Milestone[];
 };
 
-type PartnerItem = {
-  PartnerId: string;
-  PartnerName: string;
+type ExperienceItem = {
+  ExperienceId: string;
+  ExperienceName: string;
   RobloxGameId: string;
 }
 
@@ -112,16 +112,16 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
 
     const courseId = taskInstance.CourseId?.trim();
     const courseWorkId = taskInstance.ItemId?.trim();
-    const partnerId = taskInstance.PartnerId?.trim();
+    const experienceId = taskInstance.ExperienceId?.trim();
     const entryId = taskInstance.EntryId?.trim();
     const fallbackTitle = taskInstance.CatalogEntryName?.trim();
     const attachmentId = taskInstance.AttachmentId?.trim();
 
-    if (!courseId || !courseWorkId || !partnerId || !entryId) {
+    if (!courseId || !courseWorkId || !experienceId || !entryId) {
       logger.error(
         `Task instance ${taskId} missing required metadata:` +
         ` courseId=${courseId}, courseWorkId=${courseWorkId},` +
-        ` partnerId=${partnerId}, entryId=${entryId}`,
+        ` experienceId=${experienceId}, entryId=${entryId}`,
       );
       return Response.internalFailure({
         message: 'Task metadata incomplete',
@@ -254,7 +254,7 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
     }
 
     logger.info(
-      `Authorization succeeded for user ${cognitoUserId} as ${resolvedRole}; loading catalog content for partner ${partnerId}, entry ${entryId}`,
+      `Authorization succeeded for user ${cognitoUserId} as ${resolvedRole}; loading catalog content for experience ${experienceId}, entry ${entryId}`,
     );
 
     let catalogEntry: CatalogEntryItem | undefined;
@@ -263,7 +263,7 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
         .get({
           TableName: TASK_CATALOG_TABLE_NAME,
           Key: {
-            PartnerId: partnerId,
+            ExperienceId: experienceId,
             EntryId: entryId,
           },
         })
@@ -271,19 +271,19 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
       catalogEntry = catalogResult.Item as CatalogEntryItem | undefined;
       if (!catalogEntry) {
         logger.error(
-          `Catalog entry missing for partnerId=${partnerId}, entryId=${entryId}, taskId=${taskId}`,
+          `Catalog entry missing for experienceId=${experienceId}, entryId=${entryId}, taskId=${taskId}`,
         );
         return Response.internalFailure({
           message: 'Task content no longer available',
         });
       }
       logger.info(
-        `Loaded catalog entry for partnerId=${partnerId}, entryId=${entryId}`,
+        `Loaded catalog entry for experienceId=${experienceId}, entryId=${entryId}`,
       );
     } catch (catalogError) {
       if (isAWSError(catalogError)) {
         logger.error(
-          `DynamoDB failure loading catalog entry ${partnerId}/${entryId}: ${catalogError.code} - ${catalogError.message}`,
+          `DynamoDB failure loading catalog entry ${experienceId}/${entryId}: ${catalogError.code} - ${catalogError.message}`,
         );
         return Response.internalFailure({
           message: 'Failed to load task content',
@@ -292,7 +292,7 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
       }
 
       logger.error(
-        `Unexpected error reading catalog entry ${partnerId}/${entryId}: ${JSON.stringify(catalogError)}`,
+        `Unexpected error reading catalog entry ${experienceId}/${entryId}: ${JSON.stringify(catalogError)}`,
       );
       return Response.internalFailure({
         message: 'Failed to load task content',
@@ -306,7 +306,7 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
 
     if (!title || !subheading || !instructions) {
       logger.error(
-        `Catalog entry missing required fields for partnerId=${partnerId}, entryId=${entryId}. title=${!!title}, subheading=${!!subheading}, instructions=${!!instructions}`,
+        `Catalog entry missing required fields for experienceId=${experienceId}, entryId=${entryId}. title=${!!title}, subheading=${!!subheading}, instructions=${!!instructions}`,
       );
       return Response.internalFailure({
         message: 'Task content incomplete',
@@ -317,33 +317,33 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
       `Returning task content for taskId=${taskId}, role=${resolvedRole}, title="${title}"`,
     );
 
-    const PARTNERS_TABLE_NAME = getRequiredEnv('PARTNERS_TABLE_NAME');
-    let partner: PartnerItem | undefined;
+    const EXPERIENCES_TABLE_NAME = getRequiredEnv('EXPERIENCES_TABLE_NAME');
+    let experience: ExperienceItem | undefined;
     try {
-      const partnerResult = await ddbClient
+      const experienceResult = await ddbClient
         .get({
-          TableName: PARTNERS_TABLE_NAME,
+          TableName: EXPERIENCES_TABLE_NAME,
           Key: {
-            PartnerId: partnerId,
+            ExperienceId: experienceId,
           },
         })
         .promise();
-      partner = partnerResult.Item as PartnerItem | undefined;
-      if (!partner) {
+      experience = experienceResult.Item as ExperienceItem | undefined;
+      if (!experience) {
         logger.error(
-          `Partner entry missing for partnerId=${partnerId}, taskId=${taskId}`,
+          `Experience entry missing for experienceId=${experienceId}, taskId=${taskId}`,
         );
         return Response.internalFailure({
           message: 'Task content no longer available',
         });
       }
       logger.info(
-        `Loaded partner entry for partnerId=${partnerId}, Name=${partner.PartnerName}`,
+        `Loaded experience entry for experienceId=${experienceId}, Name=${experience.ExperienceName}`,
       );
     } catch (ddbError) {
       if (isAWSError(ddbError)) {
         logger.error(
-          `DynamoDB failure loading partner entry ${partnerId}: ${ddbError.code} - ${ddbError.message}`,
+          `DynamoDB failure loading experience entry ${experienceId}: ${ddbError.code} - ${ddbError.message}`,
         );
         return Response.internalFailure({
           message: 'Failed to load task content',
@@ -351,21 +351,21 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
         });
       }
       logger.error(
-        `Unexpected error reading partner entry ${partnerId}: ${JSON.stringify(ddbError)}`,
+        `Unexpected error reading experience entry ${experienceId}: ${JSON.stringify(ddbError)}`,
       );
       return Response.internalFailure({
         message: 'Failed to load task content',
       });
     }
-    const partnerName = partner?.PartnerName ?? partnerId;
-    const robloxGameId = partner?.RobloxGameId;
+    const experienceName = experience?.ExperienceName ?? experienceId;
+    const robloxGameId = experience?.RobloxGameId;
 
     return Response.success({
       task: {
         title,
         subheading,
         instructions,
-        partnerName,
+        experienceName,
         robloxGameId,
         ...(milestones !== undefined ? { milestones } : {}),
       },

@@ -1,17 +1,17 @@
 $version: "2"
 namespace llc.civictech.school
 
-/// Registers or updates the authenticated partner's profile metadata.
-@http(method: "PUT", uri: "/partners/me")
+/// Registers or updates the authenticated experience's profile metadata.
+@http(method: "PUT", uri: "/experiences/me")
 @handler(language: "typescript")
 @idempotent
-operation PutPartner {
+operation PutExperience {
     input := {
-        /// Human-friendly name for the partner experience.
+        /// Human-friendly name for the experience.
         @required
-        partnerName: PartnerName
+        experienceName: ExperienceName
 
-        /// Roblox identifier for the partner's published game.
+        /// Roblox identifier for the experience's published game.
         @required
         robloxGameId: RobloxGameId
     }

@@ -86,7 +86,7 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
   try {
     apiKeysTableName = getRequiredEnv('ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME');
     gallaudetApiKeysTableName = getRequiredEnv('GALLAUDET_API_KEYS_TABLE_NAME');
-    usagePlanName = getRequiredEnv('PARTNER_API_KEY_USAGE_PLAN_NAME');
+    usagePlanName = getRequiredEnv('EXPERIENCE_API_KEY_USAGE_PLAN_NAME');
     secretDomain = getRequiredEnv('SECRET_DOMAIN');
   } catch (err) {
     logger.error((err as Error).message);
@@ -188,8 +188,8 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
   let apiKeyValue: string | undefined;
   try {
     const createKeyResponse = await apiGateway.createApiKey({
-      name: `partner-${experienceId}-${Date.now()}`,
-      description: `Partner API key for experience ${experienceId}`,
+      name: `experience-${experienceId}-${Date.now()}`,
+      description: `Experience API key for experience ${experienceId}`,
       enabled: true,
       generateDistinctId: true,
     }).promise();
@@ -203,14 +203,14 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
       logger.error(`Unexpected error creating API key: ${JSON.stringify(apiError)}`);
     }
     return Response.internalFailure({
-      message: 'Failed to create API key for partner experience.',
+      message: 'Failed to create API key for experience.',
     });
   }
 
   if (!apiKeyId || !apiKeyValue) {
     logger.error('API Gateway did not return an id/value for the new API key.');
     return Response.internalFailure({
-      message: 'Failed to create API key for partner experience.',
+      message: 'Failed to create API key for experience.',
     });
   }
 
@@ -221,7 +221,7 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
     logger.error((err as Error).message);
     await cleanupApiKey(apiKeyId, '', logger);
     return Response.internalFailure({
-      message: 'Failed to resolve usage plan for partner API keys.',
+      message: 'Failed to resolve usage plan for experience API keys.',
     });
   }
 
@@ -335,7 +335,7 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
     }
     await cleanupApiKey(apiKeyId, usagePlanId, logger);
     return Response.internalFailure({
-      message: 'Failed to persist partner API key mapping.',
+      message: 'Failed to persist experience API key mapping.',
     });
   }
 

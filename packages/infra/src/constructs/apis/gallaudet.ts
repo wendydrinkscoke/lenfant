@@ -37,7 +37,7 @@ import {
   GradeTaskFunction,
   ListTasksForPlayerFunction,
   LinkRobloxAccountFunction,
-  PutPartnerFunction,
+  PutExperienceFunction,
   GetLinkedRobloxAccountFunction,
   GetGoogleClassroomAccessStatusFunction,
   CreateProjectFunction,
@@ -59,7 +59,7 @@ export interface GallaudetProps {
   readonly oauthTokensTable: ITable;
   readonly taskCatalogTable: ITable;
   readonly taskInstanceTable: ITable;
-  readonly partnersTable: ITable;
+  readonly experiencesTable: ITable;
   readonly projectsTable: ITable;
   readonly robloxExperienceApiKeysTable: ITable;
   readonly gallaudetApiKeysTable: ITable;
@@ -119,7 +119,7 @@ export class Gallaudet extends Construct {
           GALLAUDET_API_KEYS_TABLE_NAME: props.gallaudetApiKeysTable.tableName,
         },
         description: [
-          "This function lets partner game servers create or update task",
+          "This function lets experience game servers create or update task",
           "catalog entries that teachers can later assign in Classroom.",
         ].join(" "),
       },
@@ -247,7 +247,7 @@ export class Gallaudet extends Construct {
         TASK_INSTANCE_TABLE_NAME: props.taskInstanceTable.tableName,
         TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
         OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
-        PARTNERS_TABLE_NAME: props.partnersTable.tableName,
+        EXPERIENCES_TABLE_NAME: props.experiencesTable.tableName,
         GOOGLE_OAUTH_CLIENT_SECRET_ARN: props.googleOAuthClientSecret.secretArn,
       },
       description: [
@@ -258,7 +258,7 @@ export class Gallaudet extends Construct {
     props.taskInstanceTable.grantReadData(getTaskFunction);
     props.taskCatalogTable.grantReadData(getTaskFunction);
     props.oauthTokensTable.grantReadData(getTaskFunction);
-    props.partnersTable.grantReadData(getTaskFunction);
+    props.experiencesTable.grantReadData(getTaskFunction);
     props.googleOAuthClientSecret.grantRead(getTaskFunction);
 
     const gradeTaskFunction = new GradeTaskFunction(this, "GradeTaskFunction", {
@@ -294,7 +294,7 @@ export class Gallaudet extends Construct {
           GALLAUDET_API_KEYS_TABLE_NAME: props.gallaudetApiKeysTable.tableName,
         },
         description: [
-          "Allows partner game servers to list assignments associated with",
+          "Allows experience game servers to list assignments associated with",
           "a particular Roblox player so in-game experiences can surface",
           "active CivicTech tasks.",
         ].join(" "),
@@ -313,17 +313,17 @@ export class Gallaudet extends Construct {
       {
         environment: {
           TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
-          PARTNERS_TABLE_NAME: props.partnersTable.tableName,
+          EXPERIENCES_TABLE_NAME: props.experiencesTable.tableName,
         },
         description: [
-          "This function returns the catalog of partner-provided tasks",
+          "This function returns the catalog of experience-provided tasks",
           "so classroom UIs can expose the latest assignments teachers",
           "may attach to Google Classroom work.",
         ].join(" "),
       },
     );
     props.taskCatalogTable.grantReadData(getTaskCatalogFunction);
-    props.partnersTable.grantReadData(getTaskCatalogFunction);
+    props.experiencesTable.grantReadData(getTaskCatalogFunction);
 
     const linkRobloxAccountFunction = new LinkRobloxAccountFunction(
       this,
@@ -370,23 +370,23 @@ export class Gallaudet extends Construct {
     );
     props.projectsTable.grantReadData(listProjectsFunction);
 
-    const putPartnerFunction = new PutPartnerFunction(
+    const putExperienceFunction = new PutExperienceFunction(
       this,
-      "PutPartnerFunction",
+      "PutExperienceFunction",
       {
         environment: {
-          PARTNERS_TABLE_NAME: props.partnersTable.tableName,
+          EXPERIENCES_TABLE_NAME: props.experiencesTable.tableName,
           GALLAUDET_API_KEYS_TABLE_NAME: props.gallaudetApiKeysTable.tableName,
         },
         description: [
-          "This function records partner-supplied profile metadata so",
+          "This function records experience-supplied profile metadata so",
           "the CivicTech platform can display accurate game details to",
           "students and educators.",
         ].join(" "),
       },
     );
-    props.partnersTable.grantWriteData(putPartnerFunction);
-    props.gallaudetApiKeysTable.grantReadData(putPartnerFunction);
+    props.experiencesTable.grantWriteData(putExperienceFunction);
+    props.gallaudetApiKeysTable.grantReadData(putExperienceFunction);
 
     const vendSecretFunction = new VendSecretFunction(
       this,
@@ -396,12 +396,12 @@ export class Gallaudet extends Construct {
           ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME:
             props.robloxExperienceApiKeysTable.tableName,
           GALLAUDET_API_KEYS_TABLE_NAME: props.gallaudetApiKeysTable.tableName,
-          PARTNER_API_KEY_USAGE_PLAN_NAME: `partner-api-key-usage-plan-${props.stage}`,
+          EXPERIENCE_API_KEY_USAGE_PLAN_NAME: `experience-api-key-usage-plan-${props.stage}`,
           SECRET_DOMAIN: "*." + props.websiteDomainName,
         },
         description: [
           "This function vends an API key to access our APIs directly",
-          "to partner experiences' game servers using API key based access",
+          "to the experience's game servers using API key based access",
           "to the experience's secret store on Roblox.",
         ].join(" "),
       },
@@ -490,8 +490,8 @@ export class Gallaudet extends Construct {
         linkRobloxAccount: {
           integration: Integrations.lambda(linkRobloxAccountFunction),
         },
-        putPartner: {
-          integration: Integrations.lambda(putPartnerFunction),
+        putExperience: {
+          integration: Integrations.lambda(putExperienceFunction),
           authorizer: Authorizers.none(),
           options: {
             apiKeyRequired: true,
@@ -530,17 +530,17 @@ export class Gallaudet extends Construct {
       ],
     });
 
-    const partnerApiKeyUsagePlan = this.api.api.addUsagePlan(
-      "PartnerApiKeyUsagePlan",
+    const experienceApiKeyUsagePlan = this.api.api.addUsagePlan(
+      "ExperienceApiKeyUsagePlan",
       {
-        name: `partner-api-key-usage-plan-${props.stage}`,
+        name: `experience-api-key-usage-plan-${props.stage}`,
         throttle: {
           burstLimit: 25,
           rateLimit: 10,
         },
       },
     );
-    partnerApiKeyUsagePlan.addApiStage({
+    experienceApiKeyUsagePlan.addApiStage({
       stage: this.api.api.deploymentStage,
     });
     vendSecretFunction.addToRolePolicy(

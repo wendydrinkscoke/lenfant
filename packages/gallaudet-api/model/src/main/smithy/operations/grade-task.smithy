@@ -3,7 +3,7 @@ namespace llc.civictech.school
 
 use llc.civictech.school#Percentage
 
-@http(method: "PUT", uri: "/partners/me/players/{robloxUserId}/tasks/{taskId}/grade")
+@http(method: "PUT", uri: "/experiences/me/players/{robloxUserId}/tasks/{taskId}/grade")
 @handler(language: "typescript")
 operation GradeTask {
     input := {

@@ -14,7 +14,7 @@ connecting Roblox learning experiences with Google Classroom.
 [Washington, D.C.](https://www.roblox.com/games/1213026131/Washington-D-C) will
 be the first game integrated with Gallaudet, we must design the service such 
 that additional games are equally well supported and to ensure data is isolated
-among these partners.
+among these experiences.
 1. **Teachers and students are our customers:** We should work backwards from
 the goals of students and educators to create fantastic experiences.
 1. **Educational game developers are our partners:** Our expectations for 

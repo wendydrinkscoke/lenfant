@@ -11,14 +11,14 @@ import {
 } from 'gallaudet-api-typescript-runtime';
 import { GaxiosError } from 'gaxios';
 import { gradeTask } from '../src/grade-task';
-import { getGoogleOAuthClient, getPartnerIdFromEvent } from '../src/utils/auth-utils';
+import { getGoogleOAuthClient, getExperienceIdFromEvent } from '../src/utils/auth-utils';
 
 jest.mock('../src/utils/auth-utils', () => {
   const actual = jest.requireActual('../src/utils/auth-utils');
   return {
     ...actual,
     getGoogleOAuthClient: jest.fn(),
-    getPartnerIdFromEvent: jest.fn(),
+    getExperienceIdFromEvent: jest.fn(),
   };
 });
 
@@ -101,7 +101,7 @@ const baseRequestArgs = {
   event: {
     requestContext: {
       identity: {
-        apiKeyId: 'partner-123',
+        apiKeyId: 'experience-123',
       },
     },
   } as any,
@@ -124,8 +124,8 @@ beforeEach(() => {
   studentSubmissionsListMock.mockReset();
   patchSubmissionMock.mockReset();
   mockedGetGoogleOAuthClient.mockReset();
-  (getPartnerIdFromEvent as jest.Mock).mockReset();
-  (getPartnerIdFromEvent as jest.Mock).mockResolvedValue('partner-123');
+  (getExperienceIdFromEvent as jest.Mock).mockReset();
+  (getExperienceIdFromEvent as jest.Mock).mockResolvedValue('experience-123');
   getAddOnContextMock.mockResolvedValue({
     data: {
       studentContext: {
@@ -145,7 +145,7 @@ const buildRequestArgs = (
 
 describe('gradeTask handler', () => {
   it('returns 403 when API key is missing', async () => {
-    (getPartnerIdFromEvent as jest.Mock).mockRejectedValueOnce(
+    (getExperienceIdFromEvent as jest.Mock).mockRejectedValueOnce(
       new Error('API key identifier not parseable from event.'),
     );
     const response = await gradeTask({
@@ -221,7 +221,7 @@ describe('gradeTask handler', () => {
     expect(dynamoMocks.get).not.toHaveBeenCalled();
   });
 
-  it('returns 403 when partner does not own the task', async () => {
+  it('returns 403 when experience does not own the task', async () => {
     dynamoMocks.query.mockReturnValue({
       promise: jest.fn().mockResolvedValue({
         Items: [
@@ -237,7 +237,7 @@ describe('gradeTask handler', () => {
       promise: jest.fn().mockResolvedValue({
         Item: {
           InstanceId: 'task-1',
-          PartnerId: 'partner-other',
+          ExperienceId: 'experience-other',
           CourseId: 'course-1',
           ItemId: 'coursework-1',
           AttachmentId: 'attachment-1',
@@ -262,7 +262,7 @@ describe('gradeTask handler', () => {
     expect(response.statusCode).toBe(403);
     expect(
       (response.body as NotAuthorizedErrorResponseContent).message,
-    ).toEqual('Partner not authorized to grade this task');
+    ).toEqual('Experience not authorized to grade this task');
     expect(mockedGetGoogleOAuthClient).not.toHaveBeenCalled();
   });
 
@@ -282,7 +282,7 @@ describe('gradeTask handler', () => {
       promise: jest.fn().mockResolvedValue({
         Item: {
           InstanceId: 'task-1',
-          PartnerId: 'partner-123',
+          ExperienceId: 'experience-123',
           CourseId: 'course-1',
           ItemId: 'coursework-1',
           AttachmentId: 'attachment-1',
@@ -363,7 +363,7 @@ describe('gradeTask handler', () => {
       promise: jest.fn().mockResolvedValue({
         Item: {
           InstanceId: 'task-1',
-          PartnerId: 'partner-123',
+          ExperienceId: 'experience-123',
           CourseId: 'course-1',
           ItemId: 'coursework-1',
           AttachmentId: 'attachment-1',
@@ -413,7 +413,7 @@ describe('gradeTask handler', () => {
       promise: jest.fn().mockResolvedValue({
         Item: {
           InstanceId: 'task-1',
-          PartnerId: 'partner-123',
+          ExperienceId: 'experience-123',
           CourseId: 'course-1',
           ItemId: 'coursework-1',
           AttachmentId: 'attachment-1',
@@ -477,7 +477,7 @@ describe('gradeTask handler', () => {
       promise: jest.fn().mockResolvedValue({
         Item: {
           InstanceId: 'task-1',
-          PartnerId: 'partner-123',
+          ExperienceId: 'experience-123',
           CourseId: 'course-1',
           ItemId: 'coursework-1',
           AttachmentId: 'attachment-1',
@@ -547,7 +547,7 @@ describe('gradeTask handler', () => {
       promise: jest.fn().mockResolvedValue({
         Item: {
           InstanceId: 'task-1',
-          PartnerId: 'partner-123',
+          ExperienceId: 'experience-123',
           CourseId: 'course-1',
           ItemId: 'coursework-1',
           AttachmentId: 'attachment-1',
@@ -598,7 +598,7 @@ describe('gradeTask handler', () => {
       promise: jest.fn().mockResolvedValue({
         Item: {
           InstanceId: 'task-1',
-          PartnerId: 'partner-123',
+          ExperienceId: 'experience-123',
           CourseId: 'course-1',
           ItemId: 'coursework-1',
           AttachmentId: 'attachment-1',
@@ -701,7 +701,7 @@ describe('gradeTask handler', () => {
       promise: jest.fn().mockResolvedValue({
         Item: {
           InstanceId: 'task-1',
-          PartnerId: 'partner-123',
+          ExperienceId: 'experience-123',
           CourseId: 'course-1',
           ItemId: 'coursework-1',
           AttachmentId: 'attachment-1',

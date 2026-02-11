@@ -15,15 +15,15 @@ local GallaudetService = Knit.CreateService({
   },
 })
 
-type PartnerProfile = {
-  partnerName: string,
+type ExperienceProfile = {
+  experienceName: string,
   robloxGameId: string,
 }
 
 type Config = {
   BaseUrl: string,
   ApiKey: string,
-  PartnerProfile: PartnerProfile,
+  ExperienceProfile: ExperienceProfile,
   EnableDebugLogging: boolean?,
 }
 
@@ -79,9 +79,9 @@ function GallaudetService:_request(method: string, path: string, body: any?)
   return parsed, nil
 end
 
-function GallaudetService:PutPartner(profile: PartnerProfile?)
-  local payload = profile or self.PartnerProfile
-  return self:_request("PUT", "/partners/me", payload)
+function GallaudetService:PutExperience(profile: ExperienceProfile?)
+  local payload = profile or self.ExperienceProfile
+  return self:_request("PUT", "/experiences/me", payload)
 end
 
 function GallaudetService:CatalogTask(entryId: string, request: {
@@ -105,7 +105,7 @@ function GallaudetService:ListTasksForPlayer(playerOrUserId: Player | string | n
     userId = tostring(playerOrUserId)
   end
 
-  return self:_request("GET", "/partners/me/players/" .. userId .. "/tasks")
+  return self:_request("GET", "/experiences/me/players/" .. userId .. "/tasks")
 end
 
 function GallaudetService:GradeTask(playerOrUserId: Player | string | number, taskId: string, percentage: number)
@@ -115,7 +115,7 @@ function GallaudetService:GradeTask(playerOrUserId: Player | string | number, ta
 
   return self:_request(
     "PUT",
-    "/partners/me/players/" .. userId .. "/tasks/" .. taskId .. "/grade",
+    "/experiences/me/players/" .. userId .. "/tasks/" .. taskId .. "/grade",
     { percentage = percentage }
   )
 end
@@ -127,7 +127,7 @@ function GallaudetService:CompleteMilestone(playerOrUserId: Player | string | nu
 
   return self:_request(
     "PUT",
-    "/partners/me/players/" .. userId .. "/tasks/" .. taskId .. "/milestones/" .. milestoneId .. "/completion"
+    "/experiences/me/players/" .. userId .. "/tasks/" .. taskId .. "/milestones/" .. milestoneId .. "/completion"
   )
 end
 
@@ -155,12 +155,12 @@ function GallaudetService:KnitInit()
 
   self.BaseUrl = config.BaseUrl
   self.ApiKey = config.ApiKey
-  self.PartnerProfile = config.PartnerProfile
+  self.ExperienceProfile = config.ExperienceProfile
   self.EnableDebugLogging = config.EnableDebugLogging == true
 end
 
 function GallaudetService:KnitStart()
-  self:PutPartner()
+  self:PutExperience()
 
   local function pushFor(player: Player)
     self:PushTasksToPlayer(player)

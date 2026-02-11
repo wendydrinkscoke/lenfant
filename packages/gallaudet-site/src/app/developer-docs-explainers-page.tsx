@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom"
 import { Clock3, Users } from "lucide-react"
-import { partnerExplainers } from "../content/partner-docs"
+import { experienceExplainers } from "../content/partner-docs"
 import { PartnerDocsShell } from "../components/partner-docs/partner-docs-shell"
 import { Badge } from "../components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
@@ -10,7 +10,7 @@ export default function DeveloperDocsExplainersPage() {
     <PartnerDocsShell
       badge="Explainers"
       title="Concept explainers"
-      description="Longer-form guidance on architecture choices and product-design tradeoffs for partner teams."
+      description="Longer-form guidance on architecture choices and product-design tradeoffs for experience teams."
     >
       <Card>
         <CardHeader>
@@ -20,7 +20,7 @@ export default function DeveloperDocsExplainersPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {partnerExplainers.map((explainer) => (
+          {experienceExplainers.map((explainer) => (
             <Link
               key={explainer.slug}
               to={`/create/docs/explainers/${explainer.slug}`}

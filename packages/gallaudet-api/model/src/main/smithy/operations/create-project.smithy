@@ -1,7 +1,7 @@
 $version: "2"
 namespace llc.civictech.school
 
-/// Registers or updates the authenticated partner's profile metadata.
+/// Registers or updates the authenticated experience's profile metadata.
 @http(method: "POST", uri: "/projects/{experienceId}")
 @handler(language: "typescript")
 operation CreateProject {

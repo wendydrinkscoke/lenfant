@@ -1,36 +1,36 @@
 import { DynamoDB } from 'aws-sdk';
 import {
-  putPartnerHandler,
-  PutPartnerChainedHandlerFunction,
+  putExperienceHandler,
+  PutExperienceChainedHandlerFunction,
   INTERCEPTORS,
   Response,
   LoggingInterceptor,
 } from 'gallaudet-api-typescript-runtime';
-import { getPartnerIdFromEvent } from './utils/auth-utils';
+import { getExperienceIdFromEvent } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError } from './utils/error-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
-const PARTNERS_TABLE_NAME = getRequiredEnv('PARTNERS_TABLE_NAME');
+const EXPERIENCES_TABLE_NAME = getRequiredEnv('EXPERIENCES_TABLE_NAME');
 
 /**
- * Type-safe handler for the PutPartner operation
+ * Type-safe handler for the PutExperience operation
  */
-export const putPartner: PutPartnerChainedHandlerFunction = async (request) => {
+export const putExperience: PutExperienceChainedHandlerFunction = async (request) => {
   const logger = LoggingInterceptor.getLogger(request);
-  logger.info('Start PutPartner Operation');
+  logger.info('Start PutExperience Operation');
 
-  let partnerId: string;
+  let experienceId: string;
   try {
-    partnerId = await getPartnerIdFromEvent(request.event);
-    logger.info(`Resolved partner ID from API key: ${partnerId}`);
+    experienceId = await getExperienceIdFromEvent(request.event);
+    logger.info(`Resolved experience ID from API key: ${experienceId}`);
   } catch (error) {
     if (isAWSError(error)) {
       logger.error(
-        `Failed to resolve partner from API key: ${error.code} - ${error.message}`,
+        `Failed to resolve experience from API key: ${error.code} - ${error.message}`,
       );
       return Response.internalFailure({
-        message: 'Failed to resolve partner from API key',
+        message: 'Failed to resolve experience from API key',
         details: `DynamoDB error: ${error.code}`,
       });
     }
@@ -42,38 +42,38 @@ export const putPartner: PutPartnerChainedHandlerFunction = async (request) => {
 
   const { input } = request;
   const body = input.body;
-  const partnerNameRaw = body.partnerName;
+  const experienceNameRaw = body.experienceName;
   const robloxGameIdRaw = body.robloxGameId;
-  const partnerName = partnerNameRaw.trim();
+  const experienceName = experienceNameRaw.trim();
   const robloxGameId = robloxGameIdRaw.trim();
 
   const nowIso = new Date().toISOString();
 
   logger.info(
-    `Upserting partner profile (partner=${partnerId}, robloxGameId=${robloxGameId})`,
+    `Upserting experience profile (experience=${experienceId}, robloxGameId=${robloxGameId})`,
   );
 
   try {
     await ddbClient
       .update({
-        TableName: PARTNERS_TABLE_NAME,
+        TableName: EXPERIENCES_TABLE_NAME,
         Key: {
-          PartnerId: partnerId,
+          ExperienceId: experienceId,
         },
         UpdateExpression: [
-          'SET #partnerName = :partnerName',
+          'SET #experienceName = :experienceName',
           '#robloxGameId = :robloxGameId',
           '#updatedAt = :updatedAt',
           '#createdAt = if_not_exists(#createdAt, :createdAt)',
         ].join(', '),
         ExpressionAttributeNames: {
-          '#partnerName': 'PartnerName',
+          '#experienceName': 'ExperienceName',
           '#robloxGameId': 'RobloxGameId',
           '#updatedAt': 'UpdatedAt',
           '#createdAt': 'CreatedAt',
         },
         ExpressionAttributeValues: {
-          ':partnerName': partnerName,
+          ':experienceName': experienceName,
           ':robloxGameId': robloxGameId,
           ':updatedAt': nowIso,
           ':createdAt': nowIso,
@@ -84,33 +84,33 @@ export const putPartner: PutPartnerChainedHandlerFunction = async (request) => {
   } catch (error) {
     if (isAWSError(error)) {
       logger.error(
-        `Failed to upsert partner profile (partner=${partnerId}): ${error.code} - ${error.message}`,
+        `Failed to upsert experience profile (experience=${experienceId}): ${error.code} - ${error.message}`,
       );
       return Response.internalFailure({
-        message: 'Failed to save partner profile',
+        message: 'Failed to save experience profile',
         details: `DynamoDB error: ${error.code}`,
       });
     }
 
     logger.error(
-      `Unexpected error while saving partner profile (partner=${partnerId}): ${JSON.stringify(error)}`,
+      `Unexpected error while saving experience profile (experience=${experienceId}): ${JSON.stringify(error)}`,
     );
     return Response.internalFailure({
-      message: 'Failed to save partner profile',
+      message: 'Failed to save experience profile',
     });
   }
 
   logger.info(
-    `Successfully saved partner profile (partner=${partnerId}, robloxGameId=${robloxGameId})`,
+    `Successfully saved experience profile (experience=${experienceId}, robloxGameId=${robloxGameId})`,
   );
 
   return Response.success({
-    message: 'Partner profile saved',
+    message: 'Experience profile saved',
   });
 };
 
 /**
- * Entry point for the AWS Lambda handler for the PutPartner operation.
- * The putPartnerHandler method wraps the type-safe handler and manages marshalling inputs and outputs
+ * Entry point for the AWS Lambda handler for the PutExperience operation.
+ * The putExperienceHandler method wraps the type-safe handler and manages marshalling inputs and outputs
  */
-export const handler = putPartnerHandler(...INTERCEPTORS, putPartner);
+export const handler = putExperienceHandler(...INTERCEPTORS, putExperience);

@@ -28,7 +28,7 @@ const MOCK_TASKS: Record<string, TaskInstanceView> = {
     instructions:
       "You are the mission specialist for a supply drop to the Mare Tranquillitatis outpost. Adjust cargo weight, choose a launch window, and manage thruster fuel to keep the crew safe. Submit your flight plan and one risk you mitigated.",
     milestones: MOCK_MILESTONES,
-    partnerName: "NUSA Aerospace",
+    experienceName: "NUSA Aerospace",
     robloxGameId: "12039485732",
   },
   "task-eco-014": {
@@ -41,16 +41,16 @@ const MOCK_TASKS: Record<string, TaskInstanceView> = {
       { id: "deploy", name: "Bots deployed", percentageContribution: 40 },
       { id: "report", name: "Impact report", percentageContribution: 40 },
     ],
-    partnerName: "Blue Coral Labs",
+    experienceName: "Blue Coral Labs",
     robloxGameId: "9812374501",
   },
 };
 
 const MOCK_CATALOG: GetTaskCatalogResponseContent = {
-  partners: [
+  experiences: [
     {
-      partnerId: "nusa-aero",
-      partnerName: "NUSA Aerospace",
+      experienceId: "nusa-aero",
+      experienceName: "NUSA Aerospace",
       catalogEntries: [
         {
           entryId: "task-astro-001",
@@ -75,8 +75,8 @@ const MOCK_CATALOG: GetTaskCatalogResponseContent = {
       ],
     },
     {
-      partnerId: "blue-coral",
-      partnerName: "Blue Coral Labs",
+      experienceId: "blue-coral",
+      experienceName: "Blue Coral Labs",
       catalogEntries: [
         {
           entryId: "task-eco-014",
@@ -101,7 +101,7 @@ const MOCK_FALLBACK_TASK: TaskInstanceView = {
   instructions:
     "This mock assignment is served locally so you can build UI without backend calls. Add a ?taskId= parameter to the URL to see per-task titles.",
   milestones: MOCK_MILESTONES,
-  partnerName: "Gallaudet Dev Sandbox",
+  experienceName: "Gallaudet Dev Sandbox",
   robloxGameId: "default-mock-game-id",
 };
 
@@ -129,11 +129,11 @@ export class MockGallaudetApi extends DefaultApi {
   ): Promise<AttachTaskResponseContent> {
     await delay(MOCK_LATENCY_MS);
 
-    const partnerId = request.attachTaskRequestContent.partnerId;
+    const experienceId = request.attachTaskRequestContent.experienceId;
     const entryId = request.attachTaskRequestContent.entryId;
 
-    const entry = MOCK_CATALOG.partners
-      .find((partner) => partner.partnerId === partnerId)
+    const entry = MOCK_CATALOG.experiences
+      .find((experience) => experience.experienceId === experienceId)
       ?.catalogEntries.find((catalogEntry) => catalogEntry.entryId === entryId);
 
     return {
