@@ -13,13 +13,6 @@ string PartnerId
 string RobloxGameId
 
 /// A unique identifier for the Roblox experience/universe.
-/// 
-/// Based on what I have seen, these identifiers seem to always be 10 to 
-/// 15-digit numeric identifiers. This is completely determined by Roblox,
-/// though, and they may change this in the future. To be safe, while 
-/// still providing helpful input validation for end users, I am allowing 
-/// inputs between 8 and 20 characters.
-@length(min: 8, max: 20)
 @pattern("^[0-9]+$")
 string ExperienceId
 

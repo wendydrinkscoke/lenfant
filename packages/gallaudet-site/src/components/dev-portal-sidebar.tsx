@@ -14,6 +14,7 @@ import { ResponseError } from "gallaudet-api-typescript-react-query-hooks"
 type Experience = { id: string; name: string; status?: string }
 type Feature = { id: string; label: string; icon?: React.ComponentType<{ className?: string }> }
 type UserInfo = { name: string; email: string; avatar?: string }
+type RobloxPlaceUniverseLookupResponse = { universeId?: number | string | null }
 
 const featureIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   listing: Sparkles,
@@ -110,6 +111,30 @@ function ExperienceSwitcher({
 
   const canConfirm = Boolean(experienceId.trim()) && !isSubmitting
 
+  const resolveUniverseIdForPlaceId = async (placeId: string): Promise<string | null | undefined> => {
+    try {
+      const response = await fetch(`https://apis.roblox.com/universes/v1/places/${placeId}/universe`)
+      if (!response.ok) {
+        return undefined
+      }
+
+      const payload = (await response.json()) as RobloxPlaceUniverseLookupResponse
+      if (typeof payload.universeId === "number" && Number.isFinite(payload.universeId)) {
+        return String(payload.universeId)
+      }
+      if (typeof payload.universeId === "string" && payload.universeId.trim().length > 0) {
+        return payload.universeId.trim()
+      }
+      if (payload.universeId === null) {
+        return null
+      }
+      return undefined
+    } catch {
+      // Client-side validation is best effort. Backend still validates.
+      return undefined
+    }
+  }
+
   useEffect(() => {
     if (!dialogOpen) {
       setExperienceId("")
@@ -132,6 +157,17 @@ function ExperienceSwitcher({
     }
 
     setStatus("loading")
+    setStatusMessage("Validating ID...")
+
+    const mappedUniverseId = await resolveUniverseIdForPlaceId(trimmedId)
+    if (mappedUniverseId) {
+      setStatus("error")
+      setStatusMessage(
+        `That looks like a place ID. Use universe ID ${mappedUniverseId} instead.`
+      )
+      return
+    }
+
     setStatusMessage("Creating project...")
 
     try {
@@ -224,7 +260,7 @@ function ExperienceSwitcher({
             <DialogHeader>
               <DialogTitle>Add a Roblox experience</DialogTitle>
               <DialogDescription>
-                Enter the Roblox universe ID (the number in your experience URL). Access is verified later when you save your Roblox API key in Secrets.
+                Enter the Roblox universe ID (not the place ID). If you paste a place ID, we&apos;ll suggest the matching universe ID.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4">
@@ -232,7 +268,7 @@ function ExperienceSwitcher({
                 <Label htmlFor="experience-id">Universe ID</Label>
                 <Input
                   id="experience-id"
-                  placeholder="1278348231"
+                  placeholder="9228429469"
                   inputMode="numeric"
                   value={experienceId}
                   onChange={(event) => {

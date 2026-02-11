@@ -1,6 +1,7 @@
 process.env.PROJECTS_TABLE_NAME = 'Projects';
 
 import {
+  BadRequestErrorResponseContent,
   CreateProjectChainedRequestInput,
   InternalFailureErrorResponseContent,
   NotAuthorizedErrorResponseContent,
@@ -36,6 +37,15 @@ const {
 };
 
 const mockedGetCognitoUserIdFromEvent = getCognitoUserIdFromEvent as jest.Mock;
+const fetchMock = jest.fn();
+
+const buildFetchResponse = (status = 200, body: unknown = { universeId: null }) => ({
+  ok: status >= 200 && status < 300,
+  status,
+  text: jest.fn().mockResolvedValue(
+    typeof body === 'string' ? body : JSON.stringify(body),
+  ),
+});
 
 const requestArguments = {
   chain: undefined as never,
@@ -63,6 +73,9 @@ const buildRequest = (experienceId = '1234567890') => ({
 describe('CreateProject', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (globalThis as typeof globalThis & { fetch: jest.Mock }).fetch = fetchMock;
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue(buildFetchResponse(200, { universeId: null }));
     mockedGetCognitoUserIdFromEvent.mockReturnValue('cognito-user-123');
     dynamoMocks.put.mockReturnValue({
       promise: jest.fn().mockResolvedValue({}),
@@ -80,6 +93,7 @@ describe('CreateProject', () => {
     expect((response.body as NotAuthorizedErrorResponseContent).message).toEqual(
       'Authentication required',
     );
+    expect(fetchMock).not.toHaveBeenCalled();
     expect(dynamoMocks.put).not.toHaveBeenCalled();
   });
 
@@ -102,6 +116,49 @@ describe('CreateProject', () => {
         }),
       }),
     );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://apis.roblox.com/universes/v1/places/9876543210/universe',
+    );
+  });
+
+  it('returns bad request when a place id is provided and suggests the universe id', async () => {
+    fetchMock.mockResolvedValue(
+      buildFetchResponse(200, { universeId: 9228429469 }),
+    );
+
+    const response = await createProject(buildRequest('127120714583972'));
+
+    expect(response.statusCode).toBe(400);
+    expect((response.body as BadRequestErrorResponseContent).message).toContain(
+      'appears to be a Roblox place ID',
+    );
+    expect((response.body as BadRequestErrorResponseContent).message).toContain(
+      '9228429469',
+    );
+    expect(dynamoMocks.put).not.toHaveBeenCalled();
+  });
+
+  it('returns bad request for non-numeric identifiers', async () => {
+    const response = await createProject(buildRequest('abc123'));
+
+    expect(response.statusCode).toBe(400);
+    expect((response.body as BadRequestErrorResponseContent).message).toEqual(
+      'Experience ID must contain only numbers.',
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(dynamoMocks.put).not.toHaveBeenCalled();
+  });
+
+  it('returns internal failure when Roblox validation fails', async () => {
+    fetchMock.mockResolvedValue(buildFetchResponse(500, { message: 'error' }));
+
+    const response = await createProject(buildRequest('9876543210'));
+
+    expect(response.statusCode).toBe(500);
+    expect((response.body as InternalFailureErrorResponseContent).message).toEqual(
+      'Failed to validate experience ID with Roblox.',
+    );
+    expect(dynamoMocks.put).not.toHaveBeenCalled();
   });
 
   it('returns a conflict when the user already created a project for the experience', async () => {

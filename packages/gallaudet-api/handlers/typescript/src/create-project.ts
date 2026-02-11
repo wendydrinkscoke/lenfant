@@ -13,6 +13,46 @@ import { isAWSError } from './utils/error-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
 
+type RobloxPlaceUniverseLookupResponse = {
+  universeId?: number | string | null;
+};
+
+const resolveUniverseIdForPlaceId = async (
+  placeId: string,
+  logger: ReturnType<typeof LoggingInterceptor.getLogger>,
+): Promise<string | null> => {
+  const endpoint = `https://apis.roblox.com/universes/v1/places/${placeId}/universe`;
+  const response = await fetch(endpoint);
+  const bodyText = await response.text();
+
+  if (!response.ok) {
+    logger.error(
+      `Roblox place lookup failed for id ${placeId}: ${response.status} ${bodyText}`,
+    );
+    throw new Error('Failed to validate experience ID with Roblox.');
+  }
+
+  let parsed: RobloxPlaceUniverseLookupResponse;
+  try {
+    parsed = JSON.parse(bodyText) as RobloxPlaceUniverseLookupResponse;
+  } catch (error) {
+    logger.error(
+      `Roblox place lookup returned non-JSON payload for id ${placeId}: ${bodyText}`,
+    );
+    throw new Error('Failed to validate experience ID with Roblox.');
+  }
+
+  if (typeof parsed.universeId === 'number' && Number.isFinite(parsed.universeId)) {
+    return String(parsed.universeId);
+  }
+  if (typeof parsed.universeId === 'string') {
+    const trimmed = parsed.universeId.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  return null;
+};
+
 /**
  * Type-safe handler for the CreateProject operation
  */
@@ -33,7 +73,14 @@ export const createProject: CreateProjectChainedHandlerFunction = async (request
 
   // 2. Extract the universe ID from the request
   const { experienceId } = request.input.requestParameters;
-  logger.info(`Requested Experience ID: ${experienceId}`);
+  const trimmedExperienceId = experienceId.trim();
+  logger.info(`Requested Experience ID: ${trimmedExperienceId}`);
+
+  if (!/^\d+$/.test(trimmedExperienceId)) {
+    return Response.badRequest({
+      message: 'Experience ID must contain only numbers.',
+    });
+  }
 
   // 3. Get calling Cognito user id
   let cognitoUserId: string;
@@ -47,10 +94,24 @@ export const createProject: CreateProjectChainedHandlerFunction = async (request
     });
   }
 
+  try {
+    const resolvedUniverseId = await resolveUniverseIdForPlaceId(trimmedExperienceId, logger);
+    if (resolvedUniverseId) {
+      return Response.badRequest({
+        message: `The provided ID ${trimmedExperienceId} appears to be a Roblox place ID. Use universe ID ${resolvedUniverseId} instead.`,
+      });
+    }
+  } catch (error) {
+    logger.error((error as Error).message);
+    return Response.internalFailure({
+      message: 'Failed to validate experience ID with Roblox.',
+    });
+  }
+
   // 4. Create a project row scoped to the calling Cognito user.
   const projectItem = {
     CognitoUserId: cognitoUserId,
-    ExperienceId: experienceId,
+    ExperienceId: trimmedExperienceId,
     CreatedAt: new Date().toISOString(),
   };
   logger.info(`Creating Project item: ${JSON.stringify(projectItem)}`);
@@ -64,10 +125,10 @@ export const createProject: CreateProjectChainedHandlerFunction = async (request
   } catch (error) {
     if (isAWSError(error) && error.code === 'ConditionalCheckFailedException') {
       logger.warn(
-        `Project with ExperienceId ${experienceId} already exists for CognitoUserId ${cognitoUserId}.`,
+        `Project with ExperienceId ${trimmedExperienceId} already exists for CognitoUserId ${cognitoUserId}.`,
       );
       const body: ProjectAlreadyExistsErrorResponseContent = {
-        message: `A project for experienceId ${experienceId} already exists for this user.`,
+        message: `A project for experienceId ${trimmedExperienceId} already exists for this user.`,
       };
       return { statusCode: 409, body };
     } else if (isAWSError(error)) {
