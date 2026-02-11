@@ -11,13 +11,14 @@ import {
 } from 'gallaudet-api-typescript-runtime';
 import { GaxiosError } from 'gaxios';
 import { gradeTask } from '../src/grade-task';
-import { getGoogleOAuthClient } from '../src/utils/auth-utils';
+import { getGoogleOAuthClient, getPartnerIdFromEvent } from '../src/utils/auth-utils';
 
 jest.mock('../src/utils/auth-utils', () => {
   const actual = jest.requireActual('../src/utils/auth-utils');
   return {
     ...actual,
     getGoogleOAuthClient: jest.fn(),
+    getPartnerIdFromEvent: jest.fn(),
   };
 });
 
@@ -123,6 +124,8 @@ beforeEach(() => {
   studentSubmissionsListMock.mockReset();
   patchSubmissionMock.mockReset();
   mockedGetGoogleOAuthClient.mockReset();
+  (getPartnerIdFromEvent as jest.Mock).mockReset();
+  (getPartnerIdFromEvent as jest.Mock).mockResolvedValue('partner-123');
   getAddOnContextMock.mockResolvedValue({
     data: {
       studentContext: {
@@ -142,6 +145,9 @@ const buildRequestArgs = (
 
 describe('gradeTask handler', () => {
   it('returns 403 when API key is missing', async () => {
+    (getPartnerIdFromEvent as jest.Mock).mockRejectedValueOnce(
+      new Error('API key identifier not parseable from event.'),
+    );
     const response = await gradeTask({
       ...buildRequestArgs({
         event: {

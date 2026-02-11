@@ -38,6 +38,14 @@ export class GallaudetApiStack extends Stack {
       },
     });
 
+    const gallaudetApiKeysTable = new Table(this, "GallaudetApiKeysTable", {
+      tableName: "GallaudetApiKeys",
+      partitionKey: {
+        name: "ApiGatewayKeyId",
+        type: AttributeType.STRING,
+      },
+    });
+
     const oauthTokensTable = new Table(this, "OAuthTokensDDBTable", {
       tableName: "OAuthTokens",
       partitionKey: {
@@ -141,6 +149,7 @@ export class GallaudetApiStack extends Stack {
       partnersTable,
       projectsTable,
       robloxExperienceApiKeysTable,
+      gallaudetApiKeysTable,
       usersTable,
       googleOAuthClientSecret,
       robloxOAuthClientSecret,

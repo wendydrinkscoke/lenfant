@@ -1,4 +1,5 @@
 process.env.ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME = 'RobloxExperienceApiKeys';
+process.env.GALLAUDET_API_KEYS_TABLE_NAME = 'GallaudetApiKeys';
 process.env.PARTNER_API_KEY_USAGE_PLAN_NAME = 'partner-api-key-usage-plan-beta';
 process.env.SECRET_DOMAIN = 'beta.school.civictech.llc';
 
@@ -14,6 +15,7 @@ import { vendSecret } from '../src/vend-secret';
 
 jest.mock('aws-sdk', () => {
   const get = jest.fn();
+  const put = jest.fn();
   const createApiKey = jest.fn();
   const createUsagePlanKey = jest.fn();
   const getUsagePlans = jest.fn();
@@ -21,7 +23,7 @@ jest.mock('aws-sdk', () => {
   const deleteApiKey = jest.fn();
   return {
     DynamoDB: {
-      DocumentClient: jest.fn(() => ({ get })),
+      DocumentClient: jest.fn(() => ({ get, put })),
     },
     APIGateway: jest.fn(() => ({
       createApiKey,
@@ -32,6 +34,7 @@ jest.mock('aws-sdk', () => {
     })),
     __mocks: {
       get,
+      put,
       createApiKey,
       createUsagePlanKey,
       getUsagePlans,
@@ -54,6 +57,7 @@ jest.mock('tweetnacl-ts/convert', () => ({
 const {
   __mocks: {
     get,
+    put,
     createApiKey,
     createUsagePlanKey,
     getUsagePlans,
@@ -63,6 +67,7 @@ const {
 } = jest.requireMock('aws-sdk') as {
   __mocks: {
     get: jest.Mock;
+    put: jest.Mock;
     createApiKey: jest.Mock;
     createUsagePlanKey: jest.Mock;
     getUsagePlans: jest.Mock;
@@ -123,6 +128,9 @@ describe('VendSecret', () => {
       promise: jest.fn().mockResolvedValue({
         Item: { ApiKey: 'roblox-api-key' },
       }),
+    });
+    put.mockReturnValue({
+      promise: jest.fn().mockResolvedValue({}),
     });
     createApiKey.mockReturnValue({
       promise: jest.fn().mockResolvedValue({
@@ -198,6 +206,14 @@ describe('VendSecret', () => {
       key_id: 'key-123',
       domain: 'beta.school.civictech.llc',
     });
+    expect(put).toHaveBeenCalledWith({
+      TableName: 'GallaudetApiKeys',
+      Item: expect.objectContaining({
+        ApiGatewayKeyId: 'api-key-id',
+        ExperienceId: '1234567890',
+        RobloxSecretId: secretId,
+      }),
+    });
   });
 
   it('returns missing delegation when no API key is stored', async () => {
@@ -268,6 +284,27 @@ describe('VendSecret', () => {
 
     expect(response.statusCode).toBe(500);
     expect((response.body as InternalFailureErrorResponseContent).message).toContain('Failed to store secret');
+    expect(deleteApiKey).toHaveBeenCalledWith({ apiKey: 'api-key-id' });
+  });
+
+  it('returns internal failure when API key mapping persistence fails and cleans up', async () => {
+    fetchMock
+      .mockResolvedValueOnce(buildFetchResponse({ secret: 'public-key', key_id: 'key-123' }))
+      .mockResolvedValueOnce(buildFetchResponse({ id: 'secret-id' }, true, 200));
+    put.mockReturnValue({
+      promise: jest.fn().mockRejectedValue(new Error('ddb put failed')),
+    });
+
+    const response = await vendSecret(buildRequest());
+
+    expect(response.statusCode).toBe(500);
+    expect((response.body as InternalFailureErrorResponseContent).message).toContain(
+      'Failed to persist partner API key mapping',
+    );
+    expect(deleteUsagePlanKey).toHaveBeenCalledWith({
+      usagePlanId: 'usage-plan-123',
+      keyId: 'api-key-id',
+    });
     expect(deleteApiKey).toHaveBeenCalledWith({ apiKey: 'api-key-id' });
   });
 });

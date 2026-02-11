@@ -9,13 +9,14 @@ import {
   NotAuthorizedErrorResponseContent,
 } from 'gallaudet-api-typescript-runtime';
 import { listTasksForPlayer } from '../src/list-tasks-for-player';
-import { getGoogleOAuthClient } from '../src/utils/auth-utils';
+import { getGoogleOAuthClient, getPartnerIdFromEvent } from '../src/utils/auth-utils';
 
 jest.mock('../src/utils/auth-utils', () => {
   const actual = jest.requireActual('../src/utils/auth-utils');
   return {
     ...actual,
     getGoogleOAuthClient: jest.fn(),
+    getPartnerIdFromEvent: jest.fn(),
   };
 });
 
@@ -127,6 +128,8 @@ beforeEach(() => {
   courseWorkListMock.mockReset();
   addOnAttachmentsListMock.mockReset();
   (getGoogleOAuthClient as jest.Mock).mockReset();
+  (getPartnerIdFromEvent as jest.Mock).mockReset();
+  (getPartnerIdFromEvent as jest.Mock).mockResolvedValue('partner-key-1');
 });
 
 const buildRequestArgs = (
@@ -148,6 +151,9 @@ const buildRequestArgs = (
 
 describe('ListTasksForPlayer', () => {
   it('returns 403 when the API key is missing', async () => {
+    (getPartnerIdFromEvent as jest.Mock).mockRejectedValueOnce(
+      new Error('API key identifier not parseable from event.'),
+    );
     const response = await listTasksForPlayer({
       ...buildRequestArgs({
         event: { requestContext: { identity: {} } } as any,

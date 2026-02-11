@@ -62,6 +62,7 @@ export interface GallaudetProps {
   readonly partnersTable: ITable;
   readonly projectsTable: ITable;
   readonly robloxExperienceApiKeysTable: ITable;
+  readonly gallaudetApiKeysTable: ITable;
   readonly usersTable: ITable;
   readonly googleOAuthClientSecret: ISecret;
   readonly robloxOAuthClientSecret: ISecret;
@@ -115,6 +116,7 @@ export class Gallaudet extends Construct {
       {
         environment: {
           TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
+          GALLAUDET_API_KEYS_TABLE_NAME: props.gallaudetApiKeysTable.tableName,
         },
         description: [
           "This function lets partner game servers create or update task",
@@ -123,6 +125,7 @@ export class Gallaudet extends Construct {
       },
     );
     props.taskCatalogTable.grantWriteData(catalogTaskFunction);
+    props.gallaudetApiKeysTable.grantReadData(catalogTaskFunction);
 
     const completeMilestoneFunction = new CompleteMilestoneFunction(
       this,
@@ -135,6 +138,7 @@ export class Gallaudet extends Construct {
           TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
           TASK_INSTANCE_TABLE_NAME: props.taskInstanceTable.tableName,
           USERS_TABLE_NAME: props.usersTable.tableName,
+          GALLAUDET_API_KEYS_TABLE_NAME: props.gallaudetApiKeysTable.tableName,
         },
       },
     );
@@ -142,6 +146,7 @@ export class Gallaudet extends Construct {
     props.taskCatalogTable.grantReadData(completeMilestoneFunction);
     props.taskInstanceTable.grantReadWriteData(completeMilestoneFunction);
     props.usersTable.grantReadData(completeMilestoneFunction);
+    props.gallaudetApiKeysTable.grantReadData(completeMilestoneFunction);
     props.googleOAuthClientSecret.grantRead(completeMilestoneFunction);
 
     const createProjectFunction = new CreateProjectFunction(
@@ -262,6 +267,7 @@ export class Gallaudet extends Construct {
         OAUTH_TOKENS_TABLE_NAME: props.oauthTokensTable.tableName,
         GOOGLE_OAUTH_CLIENT_SECRET_ARN: props.googleOAuthClientSecret.secretArn,
         USERS_TABLE_NAME: props.usersTable.tableName,
+        GALLAUDET_API_KEYS_TABLE_NAME: props.gallaudetApiKeysTable.tableName,
       },
       description: [
         "Grades a task instance in Google Classroom on behalf of the",
@@ -272,6 +278,7 @@ export class Gallaudet extends Construct {
     props.oauthTokensTable.grantReadData(gradeTaskFunction);
     props.googleOAuthClientSecret.grantRead(gradeTaskFunction);
     props.usersTable.grantReadData(gradeTaskFunction);
+    props.gallaudetApiKeysTable.grantReadData(gradeTaskFunction);
 
     const listTasksForPlayerFunction = new ListTasksForPlayerFunction(
       this,
@@ -284,6 +291,7 @@ export class Gallaudet extends Construct {
           TASK_INSTANCE_TABLE_NAME: props.taskInstanceTable.tableName,
           TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
           USERS_TABLE_NAME: props.usersTable.tableName,
+          GALLAUDET_API_KEYS_TABLE_NAME: props.gallaudetApiKeysTable.tableName,
         },
         description: [
           "Allows partner game servers to list assignments associated with",
@@ -297,6 +305,7 @@ export class Gallaudet extends Construct {
     props.oauthTokensTable.grantReadData(listTasksForPlayerFunction);
     props.googleOAuthClientSecret.grantRead(listTasksForPlayerFunction);
     props.usersTable.grantReadData(listTasksForPlayerFunction);
+    props.gallaudetApiKeysTable.grantReadData(listTasksForPlayerFunction);
 
     const getTaskCatalogFunction = new GetTaskCatalogFunction(
       this,
@@ -367,6 +376,7 @@ export class Gallaudet extends Construct {
       {
         environment: {
           PARTNERS_TABLE_NAME: props.partnersTable.tableName,
+          GALLAUDET_API_KEYS_TABLE_NAME: props.gallaudetApiKeysTable.tableName,
         },
         description: [
           "This function records partner-supplied profile metadata so",
@@ -376,6 +386,7 @@ export class Gallaudet extends Construct {
       },
     );
     props.partnersTable.grantWriteData(putPartnerFunction);
+    props.gallaudetApiKeysTable.grantReadData(putPartnerFunction);
 
     const vendSecretFunction = new VendSecretFunction(
       this,
@@ -384,6 +395,7 @@ export class Gallaudet extends Construct {
         environment: {
           ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME:
             props.robloxExperienceApiKeysTable.tableName,
+          GALLAUDET_API_KEYS_TABLE_NAME: props.gallaudetApiKeysTable.tableName,
           PARTNER_API_KEY_USAGE_PLAN_NAME: `partner-api-key-usage-plan-${props.stage}`,
           SECRET_DOMAIN: props.websiteDomainName,
         },
@@ -395,6 +407,7 @@ export class Gallaudet extends Construct {
       },
     );
     props.robloxExperienceApiKeysTable.grantReadData(vendSecretFunction);
+    props.gallaudetApiKeysTable.grantWriteData(vendSecretFunction);
 
     this.api = new Api(this, id, {
       apiKeyOptions: {

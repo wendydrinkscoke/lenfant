@@ -7,7 +7,7 @@ import {
   Response,
   LoggingInterceptor,
 } from 'gallaudet-api-typescript-runtime';
-import { getApiKeyIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
+import { getPartnerIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError, isGaxiosError } from './utils/error-utils';
 import { extractGoogleUserIdFromUsername } from './utils/google-utils';
@@ -54,8 +54,17 @@ export const gradeTask: GradeTaskChainedHandlerFunction = async (request) => {
 
   let partnerId: string;
   try {
-    partnerId = getApiKeyIdFromEvent(request.event);
+    partnerId = await getPartnerIdFromEvent(request.event);
   } catch (error) {
+    if (isAWSError(error)) {
+      logger.error(
+        `Failed to resolve partner from API key: ${error.code} - ${error.message}`,
+      );
+      return Response.internalFailure({
+        message: 'Failed to resolve partner from API key',
+        details: `DynamoDB error: ${error.code}`,
+      });
+    }
     logger.warn((error as Error).message);
     return Response.notAuthorized({
       message: 'Valid API key required',

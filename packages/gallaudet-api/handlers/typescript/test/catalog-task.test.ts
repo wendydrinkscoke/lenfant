@@ -6,6 +6,15 @@ import {
   NotAuthorizedErrorResponseContent,
 } from 'gallaudet-api-typescript-runtime';
 import { catalogTask } from '../src/catalog-task';
+import { getPartnerIdFromEvent } from '../src/utils/auth-utils';
+
+jest.mock('../src/utils/auth-utils', () => {
+  const actual = jest.requireActual('../src/utils/auth-utils');
+  return {
+    ...actual,
+    getPartnerIdFromEvent: jest.fn(),
+  };
+});
 
 var dynamoMocks: {
   updatePromise: jest.Mock;
@@ -55,16 +64,22 @@ const buildRequestArgs = (
     ...overrides,
   }) as Omit<CatalogTaskChainedRequestInput, 'input'>;
 
+const mockedGetPartnerIdFromEvent = getPartnerIdFromEvent as jest.Mock;
+
 beforeEach(() => {
   if (!dynamoMocks) {
     throw new Error('DynamoDB mocks were not initialised');
   }
   jest.clearAllMocks();
   dynamoMocks.updatePromise.mockResolvedValue({});
+  mockedGetPartnerIdFromEvent.mockResolvedValue('9228429469');
 });
 
 describe('CatalogTask', () => {
   it('returns 403 when API key is missing', async () => {
+    mockedGetPartnerIdFromEvent.mockRejectedValueOnce(
+      new Error('API key identifier not parseable from event.'),
+    );
     const response = await catalogTask({
       ...buildRequestArgs({
         event: { requestContext: { identity: {} } } as any,
@@ -115,7 +130,7 @@ describe('CatalogTask', () => {
     const updateArgsRecord = updateArgs as any;
     expect(updateArgsRecord.TableName).toBe('TaskCatalog');
     expect(updateArgsRecord.Key).toEqual({
-      PartnerId: 'api-key-123',
+      PartnerId: '9228429469',
       EntryId: 'draft-a-bill',
     });
     expect(response.statusCode).toBe(200);

@@ -6,7 +6,7 @@ import {
   Response,
   LoggingInterceptor,
 } from 'gallaudet-api-typescript-runtime';
-import { getApiKeyIdFromEvent } from './utils/auth-utils';
+import { getPartnerIdFromEvent } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError } from './utils/error-utils';
 
@@ -22,9 +22,18 @@ export const putPartner: PutPartnerChainedHandlerFunction = async (request) => {
 
   let partnerId: string;
   try {
-    partnerId = getApiKeyIdFromEvent(request.event);
+    partnerId = await getPartnerIdFromEvent(request.event);
     logger.info(`Resolved partner ID from API key: ${partnerId}`);
   } catch (error) {
+    if (isAWSError(error)) {
+      logger.error(
+        `Failed to resolve partner from API key: ${error.code} - ${error.message}`,
+      );
+      return Response.internalFailure({
+        message: 'Failed to resolve partner from API key',
+        details: `DynamoDB error: ${error.code}`,
+      });
+    }
     logger.warn((error as Error).message);
     return Response.notAuthorized({
       message: 'Valid API key required',

@@ -80,10 +80,12 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
   const { experienceId } = input.requestParameters;
 
   let apiKeysTableName: string;
+  let gallaudetApiKeysTableName: string;
   let usagePlanName: string;
   let secretDomain: string;
   try {
     apiKeysTableName = getRequiredEnv('ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME');
+    gallaudetApiKeysTableName = getRequiredEnv('GALLAUDET_API_KEYS_TABLE_NAME');
     usagePlanName = getRequiredEnv('PARTNER_API_KEY_USAGE_PLAN_NAME');
     secretDomain = getRequiredEnv('SECRET_DOMAIN');
   } catch (err) {
@@ -307,6 +309,33 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
     await cleanupApiKey(apiKeyId, usagePlanId, logger);
     return Response.internalFailure({
       message: 'Failed to store secret in Roblox.',
+    });
+  }
+
+  try {
+    const nowIso = new Date().toISOString();
+    await ddbClient.put({
+      TableName: gallaudetApiKeysTableName,
+      Item: {
+        ApiGatewayKeyId: apiKeyId,
+        ExperienceId: experienceId,
+        RobloxSecretId: secretId,
+        CreatedAt: nowIso,
+        UpdatedAt: nowIso,
+      },
+    }).promise();
+    logger.info(
+      `Persisted API key mapping for apiKeyId=${apiKeyId}, experienceId=${experienceId}, secretId=${secretId}`,
+    );
+  } catch (ddbError) {
+    if (isAWSError(ddbError)) {
+      logger.error(`Failed to persist API key mapping: ${ddbError.code} - ${ddbError.message}`);
+    } else {
+      logger.error(`Unexpected error persisting API key mapping: ${JSON.stringify(ddbError)}`);
+    }
+    await cleanupApiKey(apiKeyId, usagePlanId, logger);
+    return Response.internalFailure({
+      message: 'Failed to persist partner API key mapping.',
     });
   }
 

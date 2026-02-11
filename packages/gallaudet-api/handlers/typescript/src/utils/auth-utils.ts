@@ -25,6 +25,13 @@ class ApiKeyIdNotParseableFromEventError extends Error {
   }
 }
 
+class ApiKeyIdNotMappedToPartnerError extends Error {
+  constructor(apiKeyId: string) {
+    super(`API key identifier ${apiKeyId} is not mapped to a partner.`);
+    this.name = 'ApiKeyIdNotMappedToPartnerError';
+  }
+}
+
 class RobloxUserNotLinkedError extends Error {
   constructor(cognitoUserId: string) {
     super(`Roblox User ID not found for Cognito User ID: ${cognitoUserId}`);
@@ -116,4 +123,23 @@ export const getApiKeyIdFromEvent = (event: APIGatewayProxyEvent): string => {
     throw new ApiKeyIdNotParseableFromEventError();
   }
   return apiKeyId;
+};
+
+export const getPartnerIdFromEvent = async (event: APIGatewayProxyEvent): Promise<string> => {
+  const gallaudetApiKeysTableName = getRequiredEnv('GALLAUDET_API_KEYS_TABLE_NAME');
+  const apiKeyId = getApiKeyIdFromEvent(event);
+  const result = await ddbClient.get({
+    TableName: gallaudetApiKeysTableName,
+    Key: {
+      ApiGatewayKeyId: apiKeyId,
+    },
+    ConsistentRead: true,
+  }).promise();
+
+  const item = result.Item as { ExperienceId?: string } | undefined;
+  const partnerId = item?.ExperienceId?.trim();
+  if (!partnerId) {
+    throw new ApiKeyIdNotMappedToPartnerError(apiKeyId);
+  }
+  return partnerId;
 };

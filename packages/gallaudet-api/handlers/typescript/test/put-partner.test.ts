@@ -6,6 +6,15 @@ import {
   PutPartnerChainedRequestInput,
 } from 'gallaudet-api-typescript-runtime';
 import { putPartner } from '../src/put-partner';
+import { getPartnerIdFromEvent } from '../src/utils/auth-utils';
+
+jest.mock('../src/utils/auth-utils', () => {
+  const actual = jest.requireActual('../src/utils/auth-utils');
+  return {
+    ...actual,
+    getPartnerIdFromEvent: jest.fn(),
+  };
+});
 
 jest.mock('aws-sdk', () => {
   const updatePromise = jest.fn();
@@ -32,6 +41,8 @@ const { __mock: dynamoMocks } = jest.requireMock('aws-sdk') as {
     updatePromise: jest.Mock;
   };
 };
+
+const mockedGetPartnerIdFromEvent = getPartnerIdFromEvent as jest.Mock;
 
 const buildRequestArgs = (
   overrides: Partial<PutPartnerChainedRequestInput> = {},
@@ -62,10 +73,14 @@ beforeEach(() => {
   }
   jest.clearAllMocks();
   dynamoMocks.updatePromise.mockResolvedValue({});
+  mockedGetPartnerIdFromEvent.mockResolvedValue('9228429469');
 });
 
 describe('PutPartner', () => {
   it('returns 403 when API key is missing', async () => {
+    mockedGetPartnerIdFromEvent.mockRejectedValueOnce(
+      new Error('API key identifier not parseable from event.'),
+    );
     const response = await putPartner({
       ...buildRequestArgs({
         event: { requestContext: { identity: {} } } as any,
@@ -105,7 +120,7 @@ describe('PutPartner', () => {
     }
     expect(updateArgs.TableName).toBe('Partners');
     expect(updateArgs.Key).toEqual({
-      PartnerId: 'api-key-123',
+      PartnerId: '9228429469',
     });
     expect(updateArgs.ExpressionAttributeValues).toMatchObject({
       ':partnerName': 'National USA Game',
