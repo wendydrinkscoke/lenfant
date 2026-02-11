@@ -103,11 +103,22 @@ export function ConfigureSecretsPanel({ experienceId }: ConfigureSecretsPanelPro
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <p className="text-sm text-muted-foreground">
-            Paste the API key you created in Roblox Creator Dashboard for this universe.
+            Paste the API key you created in{" "}
+            <a
+              href="https://create.roblox.com/dashboard/credentials"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              Roblox Creator Dashboard
+            </a>{" "}
+            for this universe. The key must include <code>secret-store:write</code> and{" "}
+            <code>secret-store:read</code> permissions. Note the latter does not let us read secret values;
+            it lets us list secret metadata and is used to rotate secrets periodically.
           </p>
           <Input
             type="password"
-            placeholder="rbx-api-key..."
+            placeholder="+8ab+3sadk+BAeFXZ..."
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             disabled={isSavingKey}
