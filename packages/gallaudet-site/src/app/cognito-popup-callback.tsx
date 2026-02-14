@@ -28,6 +28,7 @@ export default function CognitoPopupCallback() {
           role?: "teacher" | "student" | "developer";
           login_hint?: string | undefined;
           includeRobloxAssociation?: boolean;
+          postAuthRedirectPath?: string;
           stage?: "google" | "roblox";
         } = {};
         if (rawState) {
@@ -41,8 +42,12 @@ export default function CognitoPopupCallback() {
         const loginHint = parsedState.login_hint;
         const stage = parsedState.stage === "roblox" ? "roblox" : "google";
         const includeRobloxAssociation = Boolean(parsedState.includeRobloxAssociation);
+        const postAuthRedirectPath = parsedState.postAuthRedirectPath;
         if (!role) {
           throw new Error("Missing role in state parameter");
+        }
+        if (!postAuthRedirectPath) {
+          throw new Error("Missing postAuthRedirectPath in state parameter");
         }
 
         if (role !== "teacher" && role !== "student" && role !== "developer") {
@@ -53,6 +58,43 @@ export default function CognitoPopupCallback() {
 
         const cognitoTokens =
           await exchangeCognitoRedirectCodeForCognitoTokens(code);
+
+        const completeAuthFlow = (options?: { sendRobloxComplete?: boolean }) => {
+          if (window.opener && window.opener !== window) {
+            if (options?.sendRobloxComplete) {
+              window.opener.postMessage(
+                { type: "roblox-sign-in-complete" },
+                origin,
+              );
+            }
+            const idToken =
+              localStorage.getItem("id_token") ??
+              localStorage.getItem("cognito_id_token") ??
+              cognitoTokens.idToken;
+            const accessToken =
+              localStorage.getItem("access_token") ??
+              cognitoTokens.accessToken;
+            const refreshToken =
+              localStorage.getItem("refresh_token") ??
+              cognitoTokens.refreshToken;
+            window.opener.postMessage(
+              {
+                type: "cognito-auth-complete",
+                ok: true,
+                role,
+                idToken,
+                accessToken,
+                refreshToken,
+                postAuthRedirectPath,
+              },
+              origin,
+            );
+            window.close();
+            return;
+          }
+
+          window.location.replace(postAuthRedirectPath);
+        };
 
         if (stage === "google") {
           if (window.opener && window.opener !== window) {
@@ -69,6 +111,11 @@ export default function CognitoPopupCallback() {
             localStorage.setItem("refresh_token", cognitoTokens.refreshToken);
           }
 
+          if (role === "developer") {
+            completeAuthFlow();
+            return;
+          }
+
           const apiClient = await getGallaudetApi();
           let hasDelegatedAccess = false;
           try {
@@ -83,14 +130,26 @@ export default function CognitoPopupCallback() {
           const googleChallenge = await generateCodeChallenge(googleVerifier);
           localStorage.setItem("google_pkce_verifier", googleVerifier);
 
-          const googleScope =
-            role === "teacher"
-              ? "https://www.googleapis.com/auth/classroom.addons.teacher"
-              : [
-                  "https://www.googleapis.com/auth/classroom.addons.student",
-                  "https://www.googleapis.com/auth/classroom.student-submissions.me.readonly",
-                  "https://www.googleapis.com/auth/classroom.courses.readonly"
-                ].join(" ");
+          let googleScope: string;
+          switch (role) {
+            case "teacher":
+              googleScope =
+                "https://www.googleapis.com/auth/classroom.addons.teacher";
+              break;
+            case "student":
+              googleScope = [
+                "https://www.googleapis.com/auth/classroom.addons.student",
+                "https://www.googleapis.com/auth/classroom.student-submissions.me.readonly",
+                "https://www.googleapis.com/auth/classroom.courses.readonly",
+              ].join(" ");
+              break;
+            default: {
+              const _exhaustiveRole: never = role;
+              throw new Error(
+                `Unsupported role for classroom scopes: ${String(_exhaustiveRole)}`,
+              );
+            }
+          }
 
           const googleParams = new URLSearchParams({
             client_id: getGoogleAuthClientID(),
@@ -116,6 +175,7 @@ export default function CognitoPopupCallback() {
           if (loginHint) {
             googleState.set("login_hint", loginHint);
           }
+          googleState.set("postAuthRedirectPath", postAuthRedirectPath);
           googleParams.set("state", googleState.toString());
 
           window.location.replace(
@@ -132,33 +192,7 @@ export default function CognitoPopupCallback() {
         });
 
         // Roblox linking flow complete — notify opener and finish.
-        if (window.opener && window.opener !== window) {
-          window.opener.postMessage(
-            { type: "roblox-sign-in-complete" },
-            origin,
-          );
-          const idToken =
-            localStorage.getItem("id_token") ??
-            localStorage.getItem("cognito_id_token");
-          const accessToken = localStorage.getItem("access_token");
-          const refreshToken = localStorage.getItem("refresh_token");
-          window.opener.postMessage(
-            {
-              type: "cognito-auth-complete",
-              ok: true,
-              role,
-              idToken,
-              accessToken,
-              refreshToken,
-            },
-            origin,
-          );
-          window.close();
-        } else {
-          window.location.replace(
-            role === "teacher" ? "/teacher-task-view" : "/student-task-view",
-          );
-        }
+        completeAuthFlow({ sendRobloxComplete: true });
       } catch (e: any) {
         console.error(e);
         setError(e?.message || "OAuth error");

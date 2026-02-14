@@ -28,6 +28,11 @@ export default function GooglePopupCallback() {
             ? roleParam
             : undefined;
         const loginHint = stateParams?.get("login_hint") ?? undefined;
+        const postAuthRedirectPath = stateParams?.get("postAuthRedirectPath") ?? undefined;
+        if (!role) throw new Error("Missing role in Google OAuth state");
+        if (!postAuthRedirectPath) {
+          throw new Error("Missing postAuthRedirectPath in Google OAuth state");
+        }
 
         const client = await getGallaudetApi();
         await client.delegateGoogleClassroomAccess({
@@ -58,9 +63,10 @@ export default function GooglePopupCallback() {
           localStorage.setItem("cognito_pkce_code_verifier", robloxVerifier);
 
           const stateObj = {
-            role: role ?? "student",
+            role,
             login_hint: loginHint,
             includeRobloxAssociation: true,
+            postAuthRedirectPath,
             stage: "roblox" as const,
           };
           const robloxState = toB64Url(JSON.stringify(stateObj));
@@ -92,13 +98,14 @@ export default function GooglePopupCallback() {
               idToken,
               accessToken,
               refreshToken,
+              postAuthRedirectPath,
             },
             window.location.origin,
           );
           window.close();
         } else {
           // Fallback if opened directly
-          window.location.replace("/create-attachment");
+          window.location.replace(postAuthRedirectPath);
         }
       } catch (e: any) {
         console.error(e);

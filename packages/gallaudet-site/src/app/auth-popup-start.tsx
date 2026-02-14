@@ -19,8 +19,10 @@ export default function AuthPopupStart() {
       const roleParam  = url.searchParams.get("role");
       const includeRobloxAssociation =
         url.searchParams.get("includeRobloxAssociation") === "1";
+      const postAuthRedirectPath =
+        url.searchParams.get("postAuthRedirectPath") ?? undefined;
 
-      if (!roleParam) {
+      if (!roleParam || !postAuthRedirectPath) {
         throw new Error("Missing required parameters");
       }
 
@@ -41,6 +43,7 @@ export default function AuthPopupStart() {
         role: roleParam,
         login_hint: loginHint,
         includeRobloxAssociation,
+        postAuthRedirectPath,
         stage: "google" as const,
       };
       const state = toB64Url(JSON.stringify(stateObj));

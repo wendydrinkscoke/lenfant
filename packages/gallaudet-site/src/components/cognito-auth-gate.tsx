@@ -99,9 +99,12 @@ export function CognitoAuthGate({ loginHint, roleOverride, children }: CognitoAu
 
   const handleCognitoSignIn = () => {
     try {
+      const postAuthRedirectPath =
+        `${window.location.pathname}${window.location.search}${window.location.hash}`;
       startCognitoOAuthFlowViaPopup({
         loginHint,
         roleOverride,
+        postAuthRedirectPath,
       });
     } catch (error: any) {
       if (error?.message !== "POPUP_BLOCKED") {

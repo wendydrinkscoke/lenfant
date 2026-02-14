@@ -279,10 +279,13 @@ const TaskViewAuthorized = ({
     setHasAttemptedRobloxLink(true);
     setRobloxLinkMessage(null);
     resetRobloxSteps();
+    const postAuthRedirectPath =
+      `${window.location.pathname}${window.location.search}${window.location.hash}`;
     const popup = startCognitoOAuthFlowViaPopup({
       includeRobloxAssociation: true,
       roleOverride: "student",
       loginHint,
+      postAuthRedirectPath,
     });
     if (popup) {
       setIsPopupOpen(true);

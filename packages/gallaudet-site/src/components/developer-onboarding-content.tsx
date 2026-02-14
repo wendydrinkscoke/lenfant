@@ -18,7 +18,7 @@ const sellingPoints = [
   },
   {
     title: "Self-service, secure setup",
-    desc: "Own the experience? Link Google + Roblox once. We create and rotate secrets automatically—no custom auth code needed.",
+    desc: "Own the experience? Sign in with Google once. We create and rotate secrets automatically—no custom auth code needed.",
     icon: ShieldCheck,
   },
   {
@@ -44,7 +44,12 @@ export default function DeveloperOnboardingContent() {
       if (event.origin !== window.location.origin) return
       if (!event.data || typeof event.data !== "object") return
       if (event.data.type === "cognito-auth-complete" && event.data.ok) {
-        window.location.assign("/create")
+        const redirectPath = event.data.postAuthRedirectPath
+        if (!redirectPath) {
+          console.error("Missing postAuthRedirectPath in cognito-auth-complete message")
+          return
+        }
+        window.location.assign(redirectPath)
       }
     }
     window.addEventListener("message", handler)
@@ -54,7 +59,8 @@ export default function DeveloperOnboardingContent() {
   const handleStartOnboarding = () => {
     const popup = startCognitoOAuthFlowViaPopup({
       roleOverride: "developer",
-      includeRobloxAssociation: true,
+      includeRobloxAssociation: false,
+      postAuthRedirectPath: "/create",
     })
     if (!popup) {
       toast.error("Please allow popups to continue onboarding.")
@@ -107,7 +113,7 @@ export default function DeveloperOnboardingContent() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">{"How the self-service flow works"}</CardTitle>
             <CardDescription>
-              {"Sign in with Google + Roblox (via Cognito). Paste your Roblox API key in the console, and we handle the rest."}
+              {"Sign in with Google (via Cognito). Paste your Roblox API key in the console, and we handle the rest."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">

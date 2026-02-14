@@ -37,22 +37,20 @@ export interface StartCognitoOAuthFlowOptions {
   loginHint?: string;
   includeRobloxAssociation?: boolean;
   roleOverride?: AuthRole;
+  postAuthRedirectPath: string;
 }
 
 export function startCognitoOAuthFlowViaPopup(
-  optionsOrLoginHint?: string | StartCognitoOAuthFlowOptions,
+  options: StartCognitoOAuthFlowOptions,
 ) {
-  const options: StartCognitoOAuthFlowOptions =
-    typeof optionsOrLoginHint === "string" || typeof optionsOrLoginHint === "undefined"
-      ? { loginHint: optionsOrLoginHint }
-      : optionsOrLoginHint;
-
   const role: AuthRole = options.roleOverride ?? inferUserRoleFromLocation();
   const params = new URLSearchParams({ role });
+  const postAuthRedirectPath = options.postAuthRedirectPath;
   if (options.loginHint) params.set("login_hint", options.loginHint);
   if (options.includeRobloxAssociation) {
     params.set("includeRobloxAssociation", "1");
   }
+  params.set("postAuthRedirectPath", postAuthRedirectPath);
   const url = `${window.location.origin}/auth/popup-start?${params}`;
   return window.open(url, "cognitoLogin", "width=520,height=640");
 }
