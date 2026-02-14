@@ -25,6 +25,7 @@ import { RolesPanel } from "./developer-portal/roles"
 import { MetricsPanel } from "./developer-portal/metrics"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "./ui/empty"
 import { ResponseError } from "gallaudet-api-typescript-react-query-hooks"
+import { shouldShowDeveloperPortalComingSoonFeatures } from "../lib/environment-utils"
 
 interface DeveloperPortalContentProps {
   user: AuthUser | null
@@ -33,16 +34,25 @@ interface DeveloperPortalContentProps {
 export function DeveloperPortalContent({ user }: DeveloperPortalContentProps) {
   type Experience = { id: string; name: string; status?: string }
   const [experiences, setExperiences] = useState<Experience[]>([])
+  const showComingSoonFeatures = shouldShowDeveloperPortalComingSoonFeatures()
   const features = useMemo(
-    () => [
-      { id: "listing", label: "Marketplace Listing", icon: Store },
-      { id: "tasks", label: "Tasks", icon: ListChecks },
-      { id: "assets", label: "Asset Manager", icon: Boxes },
-      { id: "secrets", label: "Secrets", icon: KeyRound },
-      { id: "roles", label: "Roles", icon: Users },
-      { id: "metrics", label: "Metrics", icon: ChartLine },
-    ],
-    [],
+    () => {
+      const allFeatures = [
+        { id: "listing", label: "Marketplace Listing", icon: Store },
+        { id: "tasks", label: "Tasks", icon: ListChecks },
+        { id: "assets", label: "Asset Manager", icon: Boxes },
+        { id: "secrets", label: "Secrets", icon: KeyRound },
+        { id: "roles", label: "Roles", icon: Users },
+        { id: "metrics", label: "Metrics", icon: ChartLine },
+      ]
+      if (showComingSoonFeatures) {
+        return allFeatures
+      }
+
+      const hiddenInProd = new Set(["listing", "tasks", "assets", "roles", "metrics"])
+      return allFeatures.filter((feature) => !hiddenInProd.has(feature.id))
+    },
+    [showComingSoonFeatures],
   )
   const [selectedExperience, setSelectedExperience] = useState<string | null>(null)
   const [selectedFeature, setSelectedFeature] = useState(features[0]?.id ?? "")
@@ -54,6 +64,12 @@ export function DeveloperPortalContent({ user }: DeveloperPortalContentProps) {
       setSelectedExperience(null)
     }
   }, [experiences, selectedExperience])
+
+  useEffect(() => {
+    if (!features.some((feature) => feature.id === selectedFeature)) {
+      setSelectedFeature(features[0]?.id ?? "")
+    }
+  }, [features, selectedFeature])
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
@@ -221,7 +237,9 @@ export function DeveloperPortalContent({ user }: DeveloperPortalContentProps) {
                 <EmptyDescription>
                   {isLoadingExperiences
                     ? "Fetching your Roblox experiences..."
-                    : "Add your first Roblox experience to configure listings, tasks, and secrets."}
+                    : showComingSoonFeatures
+                      ? "Add your first Roblox experience to configure listings, tasks, and secrets."
+                      : "Add your first Roblox experience to configure secrets."}
                 </EmptyDescription>
               </EmptyHeader>
               <EmptyContent>

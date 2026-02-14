@@ -7,6 +7,32 @@ interface RuntimeConfig {
   apiBasePath: string;
 }
 
+export type RuntimeStage = "local" | "beta" | "gamma" | "prod" | "unknown";
+
+export function inferRuntimeStageFromHostname(
+  hostname: string = window.location.hostname,
+): RuntimeStage {
+  if (hostname === "localhost") {
+    return "local";
+  }
+  if (hostname === "beta.school.civictech.llc") {
+    return "beta";
+  }
+  if (hostname === "gamma.school.civictech.llc") {
+    return "gamma";
+  }
+  if (hostname === "school.civictech.llc") {
+    return "prod";
+  }
+  return "unknown";
+}
+
+export function shouldShowDeveloperPortalComingSoonFeatures(
+  stage: RuntimeStage = inferRuntimeStageFromHostname(),
+): boolean {
+  return stage !== "prod";
+}
+
 export async function getRuntimeConfig(): Promise<RuntimeConfig> {
   if (window.location.hostname === "localhost") {
     return {

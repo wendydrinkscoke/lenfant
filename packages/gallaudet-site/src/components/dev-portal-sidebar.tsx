@@ -342,60 +342,64 @@ function NavFeatures({
 
   return (
     <>
-      <SidebarGroup>
-        <SidebarGroupLabel>Product</SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            {productFeatures.map((item) => {
-              const Icon = item.icon ?? featureIcons[item.id] ?? Sparkles
-              return (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    isActive={!disabled && selectedFeature === item.id}
-                    onClick={() => onSelectFeature(item.id)}
-                    disabled={disabled}
-                    aria-disabled={disabled}
-                    className={cn(
-                      "transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground w-full",
-                      disabled && "cursor-not-allowed opacity-60"
-                    )}
-                  >
-                    <Icon className="size-4" />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )
-            })}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
-      <SidebarGroup>
-        <SidebarGroupLabel>Operations</SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            {operationFeatures.map((item) => {
-              const Icon = item.icon ?? featureIcons[item.id] ?? Sparkles
-              return (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    isActive={!disabled && selectedFeature === item.id}
-                    onClick={() => onSelectFeature(item.id)}
-                    disabled={disabled}
-                    aria-disabled={disabled}
-                    className={cn(
-                      "transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground w-full",
-                      disabled && "cursor-not-allowed opacity-60"
-                    )}
-                  >
-                    <Icon className="size-4" />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )
-            })}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
+      {productFeatures.length > 0 && (
+        <SidebarGroup>
+          <SidebarGroupLabel>Product</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {productFeatures.map((item) => {
+                const Icon = item.icon ?? featureIcons[item.id] ?? Sparkles
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      isActive={!disabled && selectedFeature === item.id}
+                      onClick={() => onSelectFeature(item.id)}
+                      disabled={disabled}
+                      aria-disabled={disabled}
+                      className={cn(
+                        "transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground w-full",
+                        disabled && "cursor-not-allowed opacity-60"
+                      )}
+                    >
+                      <Icon className="size-4" />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      )}
+      {operationFeatures.length > 0 && (
+        <SidebarGroup>
+          <SidebarGroupLabel>Operations</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {operationFeatures.map((item) => {
+                const Icon = item.icon ?? featureIcons[item.id] ?? Sparkles
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      isActive={!disabled && selectedFeature === item.id}
+                      onClick={() => onSelectFeature(item.id)}
+                      disabled={disabled}
+                      aria-disabled={disabled}
+                      className={cn(
+                        "transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground w-full",
+                        disabled && "cursor-not-allowed opacity-60"
+                      )}
+                    >
+                      <Icon className="size-4" />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      )}
     </>
   )
 }
