@@ -11,11 +11,11 @@ export async function getRuntimeConfig(): Promise<RuntimeConfig> {
   if (window.location.hostname === "localhost") {
     return {
       cognitoDomainPrefix: "beta-gallaudet",
-      identityPoolId: "us-east-1:8219c563-9b24-4a29-a6e9-86ab1392971b",
+      identityPoolId: "us-east-1:0d4a3159-37d9-46ae-8bd9-51a241024bca",
       region: "us-east-1",
-      userPoolId: "us-east-1_VxiLkkU3P",
-      userPoolWebClientId: "7ndomh55j4ja578971q5fhipgk",
-      apiBasePath: "https://6vad3pwwa6.execute-api.us-east-1.amazonaws.com/prod/",
+      userPoolId: "us-east-1_K3ecEDWBj",
+      userPoolWebClientId: "6cjqp8m6e6pfjtkmlk54cff7t0",
+      apiBasePath: "https://api.beta.school.civictech.llc/",
     };
   }
 
