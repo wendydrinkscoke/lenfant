@@ -1,6 +1,10 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
-import { ResponseError } from "gallaudet-api-typescript-react-query-hooks"
+import {
+  DelegateRobloxSecretStoreAccessRequest,
+  GetRobloxSecretStoreAccessStatusRequest,
+  ResponseError,
+} from "gallaudet-api-typescript-react-query-hooks"
 import { getGallaudetApi } from "../../lib/gallaudet-api"
 import { Button } from "../ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
@@ -14,6 +18,44 @@ export function ConfigureSecretsPanel({ experienceId }: ConfigureSecretsPanelPro
   const [apiKey, setApiKey] = useState("")
   const [isSavingKey, setIsSavingKey] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [isCheckingDelegationStatus, setIsCheckingDelegationStatus] = useState(false)
+  const [hasDelegatedSecretStoreAccess, setHasDelegatedSecretStoreAccess] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true
+
+    if (!experienceId) {
+      setHasDelegatedSecretStoreAccess(false)
+      setIsCheckingDelegationStatus(false)
+      return () => {
+        isMounted = false
+      }
+    }
+
+    ;(async () => {
+      setIsCheckingDelegationStatus(true)
+      try {
+        const api = await getGallaudetApi()
+        const request: GetRobloxSecretStoreAccessStatusRequest = {
+          experienceId,
+        }
+        const response = await api.getRobloxSecretStoreAccessStatus(request)
+        if (!isMounted) return
+        setHasDelegatedSecretStoreAccess(Boolean(response.delegated))
+      } catch (error) {
+        if (!isMounted) return
+        setHasDelegatedSecretStoreAccess(false)
+      } finally {
+        if (isMounted) {
+          setIsCheckingDelegationStatus(false)
+        }
+      }
+    })()
+
+    return () => {
+      isMounted = false
+    }
+  }, [experienceId])
 
   const handleSaveApiKey = async () => {
     if (!experienceId) {
@@ -27,12 +69,14 @@ export function ConfigureSecretsPanel({ experienceId }: ConfigureSecretsPanelPro
     setIsSavingKey(true)
     try {
       const api = await getGallaudetApi()
-      await api.delegateRobloxSecretStoreAccess({
+      const request: DelegateRobloxSecretStoreAccessRequest = {
         delegateRobloxSecretStoreAccessRequestContent: {
           apiKey: apiKey.trim(),
           experienceId,
-        } as any,
-      })
+        },
+      }
+      await api.delegateRobloxSecretStoreAccess(request)
+      setHasDelegatedSecretStoreAccess(true)
       toast.success("API key saved", {
         description: "We'll use this key to manage secrets for your experience.",
       })
@@ -59,6 +103,12 @@ export function ConfigureSecretsPanel({ experienceId }: ConfigureSecretsPanelPro
   const handleCreateSecret = async () => {
     if (!experienceId) {
       toast.error("Select an experience before creating a secret.")
+      return
+    }
+    if (!hasDelegatedSecretStoreAccess) {
+      toast.error("Save your Roblox API key first.", {
+        description: "Create secret is available after secret store access is delegated.",
+      })
       return
     }
     setIsCreating(true)
@@ -99,7 +149,7 @@ export function ConfigureSecretsPanel({ experienceId }: ConfigureSecretsPanelPro
       </div>
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Save Roblox API key</CardTitle>
+          <CardTitle className="text-base">Step 1: Save Roblox API key</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <p className="text-sm text-muted-foreground">
@@ -132,16 +182,25 @@ export function ConfigureSecretsPanel({ experienceId }: ConfigureSecretsPanelPro
       </Card>
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Create a secret</CardTitle>
+          <CardTitle className="text-base">Step 2: Create a secret</CardTitle>
         </CardHeader>
         <CardContent className="flex items-start justify-between gap-4">
           <div className="space-y-1 text-sm text-muted-foreground">
-            <p>
-              We&apos;ll generate an API key for Gallaudet and encrypt it with your experience&apos;s Roblox
-              public key.
-            </p>
+            {isCheckingDelegationStatus ? (
+              <p>Checking whether Roblox Secret Store access has been delegated...</p>
+            ) : hasDelegatedSecretStoreAccess ? (
+              <p>
+                We&apos;ll generate an API key for Gallaudet and encrypt it with your experience&apos;s Roblox
+                public key.
+              </p>
+            ) : (
+              <p>Complete Step 1 before creating a secret for this experience.</p>
+            )}
           </div>
-          <Button onClick={handleCreateSecret} disabled={!experienceId || isCreating}>
+          <Button
+            onClick={handleCreateSecret}
+            disabled={!experienceId || isCreating || isCheckingDelegationStatus || !hasDelegatedSecretStoreAccess}
+          >
             {isCreating ? "Creating..." : "Create secret"}
           </Button>
         </CardContent>

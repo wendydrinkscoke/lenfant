@@ -16,6 +16,7 @@ service Gallaudet {
       DelegateGoogleClassroomAccess
       DelegateRobloxSecretStoreAccess
       GetGoogleClassroomAccessStatus
+      GetRobloxSecretStoreAccessStatus
       GetLinkedRobloxAccount
       GetTask
       GetTaskCatalog

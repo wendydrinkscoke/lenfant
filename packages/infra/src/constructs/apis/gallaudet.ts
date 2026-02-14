@@ -40,6 +40,7 @@ import {
   PutExperienceFunction,
   GetLinkedRobloxAccountFunction,
   GetGoogleClassroomAccessStatusFunction,
+  GetRobloxSecretStoreAccessStatusFunction,
   CreateProjectFunction,
   ListProjectsFunction,
   VendSecretFunction,
@@ -224,6 +225,25 @@ export class Gallaudet extends Construct {
 
     props.oauthTokensTable.grantReadData(
       getGoogleClassroomAccessStatusFunction,
+    );
+
+    const getRobloxSecretStoreAccessStatusFunction =
+      new GetRobloxSecretStoreAccessStatusFunction(
+        this,
+        "GetRobloxSecretStoreAccessStatusFunction",
+        {
+          environment: {
+            ROBLOX_EXPERIENCE_API_KEYS_TABLE_NAME:
+              props.robloxExperienceApiKeysTable.tableName,
+          },
+          description: [
+            "Returns whether the calling user has delegated Roblox Secret Store",
+            "access for the requested experience by checking for a stored API key.",
+          ].join(" "),
+        },
+      );
+    props.robloxExperienceApiKeysTable.grantReadData(
+      getRobloxSecretStoreAccessStatusFunction,
     );
 
     const getLinkedRobloxAccountFunction = new GetLinkedRobloxAccountFunction(
@@ -459,6 +479,11 @@ export class Gallaudet extends Construct {
         getGoogleClassroomAccessStatus: {
           integration: Integrations.lambda(
             getGoogleClassroomAccessStatusFunction,
+          ),
+        },
+        getRobloxSecretStoreAccessStatus: {
+          integration: Integrations.lambda(
+            getRobloxSecretStoreAccessStatusFunction,
           ),
         },
         getLinkedRobloxAccount: {
