@@ -164,5 +164,3 @@ the task is a manually-graded writing task).
 
 ## Future work
 - Integrate Gallaudet with the DC3 game.
-- Develop a client library that enables game servers to easily integrate with
-Gallaudet.

@@ -2,7 +2,6 @@ import { Link } from "react-router-dom"
 import { Clock3, Route } from "lucide-react"
 import { experienceGuides } from "../content/partner-docs"
 import { PartnerDocsShell } from "../components/partner-docs/partner-docs-shell"
-import { Badge } from "../components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 
 export default function DeveloperDocsGuidesPage() {
@@ -26,12 +25,7 @@ export default function DeveloperDocsGuidesPage() {
               to={`/create/docs/guides/${guide.slug}`}
               className="block rounded-lg border p-4 transition-colors hover:bg-muted/40"
             >
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-lg font-semibold">{guide.title}</p>
-                <Badge variant={guide.status === "ready" ? "outline" : "secondary"}>
-                  {guide.status}
-                </Badge>
-              </div>
+              <p className="text-lg font-semibold">{guide.title}</p>
               <p className="mt-2 text-sm text-muted-foreground">{guide.summary}</p>
               <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1">

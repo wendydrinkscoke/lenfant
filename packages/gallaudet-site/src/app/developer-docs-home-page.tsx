@@ -2,7 +2,6 @@ import { Link } from "react-router-dom"
 import { ArrowRight, BookOpen, Download, FileCode2, GraduationCap, Lightbulb } from "lucide-react"
 import { partnerClientDownloads, experienceExplainers, experienceGuides } from "../content/partner-docs"
 import { PartnerDocsShell } from "../components/partner-docs/partner-docs-shell"
-import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 
@@ -108,12 +107,7 @@ export default function DeveloperDocsHomePage() {
           <CardContent className="space-y-3">
             {experienceGuides.map((guide) => (
               <Link key={guide.slug} to={`/create/docs/guides/${guide.slug}`} className="block rounded-md border p-3 hover:bg-muted/50">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-medium">{guide.title}</p>
-                  <Badge variant={guide.status === "ready" ? "outline" : "secondary"}>
-                    {guide.status}
-                  </Badge>
-                </div>
+                <p className="font-medium">{guide.title}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{guide.summary}</p>
               </Link>
             ))}
@@ -128,12 +122,7 @@ export default function DeveloperDocsHomePage() {
           <CardContent className="space-y-3">
             {experienceExplainers.map((explainer) => (
               <Link key={explainer.slug} to={`/create/docs/explainers/${explainer.slug}`} className="block rounded-md border p-3 hover:bg-muted/50">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-medium">{explainer.title}</p>
-                  <Badge variant={explainer.status === "ready" ? "outline" : "secondary"}>
-                    {explainer.status}
-                  </Badge>
-                </div>
+                <p className="font-medium">{explainer.title}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{explainer.summary}</p>
               </Link>
             ))}

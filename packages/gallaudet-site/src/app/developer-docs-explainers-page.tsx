@@ -2,7 +2,6 @@ import { Link } from "react-router-dom"
 import { Clock3, Users } from "lucide-react"
 import { experienceExplainers } from "../content/partner-docs"
 import { PartnerDocsShell } from "../components/partner-docs/partner-docs-shell"
-import { Badge } from "../components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 
 export default function DeveloperDocsExplainersPage() {
@@ -26,12 +25,7 @@ export default function DeveloperDocsExplainersPage() {
               to={`/create/docs/explainers/${explainer.slug}`}
               className="block rounded-lg border p-4 transition-colors hover:bg-muted/40"
             >
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-lg font-semibold">{explainer.title}</p>
-                <Badge variant={explainer.status === "ready" ? "outline" : "secondary"}>
-                  {explainer.status}
-                </Badge>
-              </div>
+              <p className="text-lg font-semibold">{explainer.title}</p>
               <p className="mt-2 text-sm text-muted-foreground">{explainer.summary}</p>
               <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1">

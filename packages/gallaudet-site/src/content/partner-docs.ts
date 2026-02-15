@@ -1,5 +1,3 @@
-export type PartnerDocsStatus = "ready" | "draft"
-
 export type PartnerApiAuthMode = {
   kind: "api-key" | "cognito"
   label: string
@@ -35,7 +33,6 @@ export type PartnerDocsArticle = {
   audience: string
   estimatedRead: string
   updatedOn: string
-  status: PartnerDocsStatus
   sections: Array<{
     heading: string
     body: string[]
@@ -487,7 +484,6 @@ export const experienceGuides: PartnerDocsArticle[] = [
     audience: "ServerScriptService integrations without Knit",
     estimatedRead: "12 min",
     updatedOn: "2026-02-10",
-    status: "ready",
     relatedApiIds: [
       "put-experience",
       "catalog-task",
@@ -528,7 +524,6 @@ export const experienceGuides: PartnerDocsArticle[] = [
     audience: "Games using Knit service/controller architecture",
     estimatedRead: "10 min",
     updatedOn: "2026-02-10",
-    status: "ready",
     relatedApiIds: [
       "list-tasks-for-player",
       "grade-task",
@@ -564,11 +559,10 @@ export const experienceGuides: PartnerDocsArticle[] = [
     slug: "bootstrapping-secrets-and-api-keys",
     kind: "guide",
     title: "Bootstrapping secrets and API keys",
-    summary: "Use the developer portal onboarding APIs to create a project, delegate Roblox secret access, and vend the runtime experience key.",
-    audience: "Partner developers during setup and environment provisioning",
-    estimatedRead: "8 min",
-    updatedOn: "2026-02-10",
-    status: "draft",
+    summary: "Create your project, delegate Roblox Secret Store access, create your Gallaudet runtime secret, and wire it into the starter client files.",
+    audience: "Partner developers provisioning a Roblox experience for first API calls",
+    estimatedRead: "15 min",
+    updatedOn: "2026-02-15",
     relatedApiIds: [
       "list-projects",
       "create-project",
@@ -577,18 +571,78 @@ export const experienceGuides: PartnerDocsArticle[] = [
     ],
     sections: [
       {
-        heading: "Goal",
+        heading: "Outcome",
         body: [
-          "Establish a repeatable setup flow where no runtime secrets are manually copied into scripts.",
-          "Ensure experience API keys are usage-plan managed and rotated through Roblox Secret Store.",
+          "By the end of this guide, your Roblox universe will have a Gallaudet API key stored in Roblox Secret Store, and your game server code will load it via HttpService:GetSecret(...) without hardcoding credentials.",
+          "This flow is intended for first-time onboarding and should be repeated whenever you rotate credentials.",
         ],
       },
       {
-        heading: "Minimum path",
+        heading: "Prerequisites",
         body: [
-          "Create project for your experience.",
-          "Delegate Roblox secret-store access with an Open Cloud key.",
-          "Vend secret and consume it in game servers with HttpService:GetSecret.",
+          "- You are signed into the developer portal at https://school.civictech.llc/create/",
+          "- You know your Roblox universe ID (not place ID).",
+          "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/00-gleaning-your-experience-id.png | The two-step process required to determine the experience by first navigating to https://create.roblox.com/dashboard/creations?activeTab=SharedExperiences, clicking the relevant experience, and then reading the experience ID from the URL path parameter.>>",
+        ],
+      },
+      {
+        heading: "Step 1: Create your project in /create",
+        body: [
+          "In https://school.civictech.llc/create, click \"Add experience\" and enter your numeric universe ID, then click \"Confirm\".",
+          "If you accidentally paste a place ID, the UI will suggest the matching universe ID. Use the universe ID it provides.",
+          "After creation, select that experience in the sidebar dropdown, then open the Secrets feature.",
+          "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/01-add-a-roblox-experience-dialog.png | Add a Roblox experience dialog with Universe ID field and Confirm button.>>",
+          "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/01-developer-console-with-secrets-panel-visible.png | Developer console after selecting the experience, with the Secrets panel visible.>>",
+        ],
+      },
+      {
+        heading: "Step 2: Create a Roblox Open Cloud API key with the correct scopes",
+        body: [
+          "Go to https://create.roblox.com/dashboard/credentials and click \"Create API key\".",
+          "The key must include both secret permissions: secret-store:write and secret-store:read. We recommend you restrict the key to just the experience this project relates to.",
+          "Note that the `secret-store:read` scope does NOT let us read secret values; it allows metadata/list operations required for health checks and future rotation workflows.",
+          "Copy the generated key value immediately. Roblox only shows the full value when it is created.",
+          "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/02-the-roblox-credentials-dashboard-showing-no-api-keys-exist-yet-with-a-create-api-key-button-in-the-center.png | Roblox credentials dashboard with no API keys yet and the Create API key button highlighted.>>",
+          "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/02-the-roblox-create-api-key-form-filled-out-with-correct-secret-store-scopes.png | Roblox Create API key form completed for the universe with secret-store:write and secret-store:read selected.>>",
+          "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/02-the-roblox-create-api-key-page-showing-the-api-key-with-a-button-to-copy-key-to-clipboard.png | Roblox API key creation confirmation page showing the generated key and the copy-to-clipboard button.>>",
+        ],
+      },
+      {
+        heading: "Step 3: Save the Roblox API key in Gallaudet",
+        body: [
+          "Return to https://school.civictech.llc/create, keep the same experience selected, and stay on Secrets.",
+          "In \"Step 1: Save Roblox API key\", paste the Roblox key and click \"Save API key\".",
+          "Wait for the success toast before moving on. The next step depends on this delegation being stored.",
+          "Important sequencing: you cannot successfully create the Gallaudet secret until \"Save API key\" has completed for this experience.",
+          "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/03-secrets-panel-after-adding-the-api-secret-but-before-pressing-the-save-api-key-button.png | Secrets panel with the Roblox API key entered before pressing Save API key.>>",
+          "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/03-secrets-panel-after-clicking-the-save-api-key-button-and-with-a-success-toast-showing.png | Secrets panel after clicking Save API key with a success toast visible.>>",
+        ],
+      },
+      {
+        heading: "Step 4: Create the Gallaudet runtime secret",
+        body: [
+          "In the same Secrets panel, click \"Create secret\" in \"Step 2: Create a secret\".",
+          "When successful, you will see a toast containing a generated secret ID (for example: rdvdhfzvfahk). Save this ID; your Roblox game code will use it with HttpService:GetSecret(\"<secretId>\").",
+          "Under the hood, this action creates an API key, attaches usage plan limits, encrypts it with Roblox's public key, and writes the encrypted value into your universe's Secret Store.",
+          "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/04-secrets-panel-after-clicking-create-secret-button-with-success-toast-showing.png | Secrets panel after clicking Create secret with a success toast visible.>>",
+        ],
+      },
+      {
+        heading: "Step 5: Verify the secret exists in Roblox",
+        body: [
+          "Open https://create.roblox.com/dashboard/creations/experiences/${yourExperienceId}/secrets and confirm the new secret ID appears.",
+          "You should verify the ID matches the one returned by the developer portal toast.",
+          "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/05-roblox-creator-dashboard-showing-secret-now-exists-in-secret-store-for-experience.png | Roblox Creator Hub Secrets Store panel for selected experience showing a new secret exists in the Secret Store.>>",
+        ],
+      },
+      {
+        heading: "Step 6: Update your code to use the secret",
+        body: [
+          "Update your server-side code so it reads the secret ID from Roblox Secret Store instead of hardcoding an API key.",
+          "Example:",
+          "local HttpService = game:GetService(\"HttpService\")\nlocal CtsSecret = HttpService:GetSecret(\"zokziodofslk\")",
+          "Replace `zokziodofslk` with your actual secret name.",
+          "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/06-roblox-studio-ide-showing-config.png | Roblox Studio showing config code that reads the secret with HttpService:GetSecret(\"<secretId>\").>>",
         ],
       },
     ],
@@ -604,7 +658,6 @@ export const experienceExplainers: PartnerDocsArticle[] = [
     audience: "Gameplay engineers and curriculum designers",
     estimatedRead: "7 min",
     updatedOn: "2026-02-10",
-    status: "ready",
     relatedApiIds: [
       "catalog-task",
       "list-tasks-for-player",
@@ -642,7 +695,6 @@ export const experienceExplainers: PartnerDocsArticle[] = [
     audience: "Server-side gameplay and backend integration engineers",
     estimatedRead: "6 min",
     updatedOn: "2026-02-10",
-    status: "ready",
     relatedApiIds: ["grade-task", "complete-milestone"],
     sections: [
       {
@@ -675,7 +727,6 @@ export const experienceExplainers: PartnerDocsArticle[] = [
     audience: "Partner leads, platform engineers, and security reviewers",
     estimatedRead: "5 min",
     updatedOn: "2026-02-10",
-    status: "draft",
     relatedApiIds: [
       "put-experience",
       "catalog-task",
