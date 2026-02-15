@@ -1,5 +1,5 @@
 import { classroom } from '@googleapis/classroom';
-import { DynamoDB } from 'aws-sdk';
+import { DynamoDB, S3 } from 'aws-sdk';
 import {
   getTaskHandler,
   GetTaskChainedHandlerFunction,
@@ -7,15 +7,45 @@ import {
   Response,
   LoggingInterceptor,
 } from 'gallaudet-api-typescript-runtime';
-import type { Milestone } from 'gallaudet-api-typescript-runtime';
+import type {
+  Milestone,
+  AssetContentType,
+  TaskViewAsset,
+} from 'gallaudet-api-typescript-runtime';
 
 import { getCognitoUserIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError, isGaxiosError } from './utils/error-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
+const s3Client = new S3({ signatureVersion: 'v4' });
 const TASK_INSTANCE_TABLE_NAME = getRequiredEnv('TASK_INSTANCE_TABLE_NAME');
 const TASK_CATALOG_TABLE_NAME = getRequiredEnv('TASK_CATALOG_TABLE_NAME');
+const EXPERIENCES_TABLE_NAME = getRequiredEnv('EXPERIENCES_TABLE_NAME');
+const ASSETS_TABLE_NAME = getRequiredEnv('ASSETS_TABLE_NAME');
+const ASSETS_BUCKET_NAME = getRequiredEnv('ASSETS_BUCKET_NAME');
+
+const DEFAULT_ASSET_VIEW_URL_TTL_SECONDS = 900;
+const SUPPORTED_ASSET_CONTENT_TYPES = new Set<AssetContentType>([
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+]);
+
+const getOptionalPositiveIntEnv = (key: string, fallback: number): number => {
+  const rawValue = process.env[key];
+  if (!rawValue) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(rawValue, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return parsed;
+};
 
 type TaskInstanceItem = {
   InstanceId?: string;
@@ -43,6 +73,34 @@ type ExperienceItem = {
   RobloxGameId: string;
   AssetIds?: string[];
 }
+
+type AssetItem = {
+  AssetId?: string;
+  ExperienceId?: string;
+  FileName?: string;
+  ContentType?: string;
+  ObjectKey?: string;
+  Status?: string;
+};
+
+const normalizeAssetIds = (assetIds: string[] | undefined): string[] => {
+  if (!assetIds) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+  for (const assetId of assetIds) {
+    const trimmed = assetId.trim();
+    if (!trimmed || seen.has(trimmed)) {
+      continue;
+    }
+    seen.add(trimmed);
+    normalized.push(trimmed);
+  }
+
+  return normalized;
+};
 
 
 /**
@@ -320,7 +378,6 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
       `Returning task content for taskId=${taskId}, role=${resolvedRole}, title="${title}"`,
     );
 
-    const EXPERIENCES_TABLE_NAME = getRequiredEnv('EXPERIENCES_TABLE_NAME');
     let experience: ExperienceItem | undefined;
     try {
       const experienceResult = await ddbClient
@@ -363,6 +420,110 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
     const experienceName = experience?.ExperienceName ?? experienceId;
     const robloxGameId = experience?.RobloxGameId;
     const experienceAssetIds = experience?.AssetIds;
+    const assetViewUrlTtlSeconds = getOptionalPositiveIntEnv(
+      'ASSET_VIEW_URL_TTL_SECONDS',
+      DEFAULT_ASSET_VIEW_URL_TTL_SECONDS,
+    );
+    const normalizedTaskAssetIds = normalizeAssetIds(assetIds);
+    const normalizedMilestoneAssetIds = (milestones ?? []).flatMap((milestone) =>
+      normalizeAssetIds(milestone.assetIds),
+    );
+    const normalizedReferencedAssetIds = normalizeAssetIds([
+      ...normalizedTaskAssetIds,
+      ...normalizedMilestoneAssetIds,
+    ]);
+    const assets: TaskViewAsset[] = [];
+
+    for (const assetId of normalizedReferencedAssetIds) {
+      let assetRecord: AssetItem | undefined;
+      try {
+        const assetResult = await ddbClient.get({
+          TableName: ASSETS_TABLE_NAME,
+          Key: {
+            AssetId: assetId,
+          },
+        }).promise();
+        assetRecord = assetResult.Item as AssetItem | undefined;
+      } catch (ddbError) {
+        if (isAWSError(ddbError)) {
+          logger.error(
+            `Failed loading asset ${assetId} for taskId=${taskId}: ${ddbError.code} - ${ddbError.message}`,
+          );
+          return Response.internalFailure({
+            message: 'Failed to load task assets',
+            details: `DynamoDB error: ${ddbError.code}`,
+          });
+        }
+        logger.error(
+          `Unexpected error loading asset ${assetId} for taskId=${taskId}: ${JSON.stringify(ddbError)}`,
+        );
+        return Response.internalFailure({
+          message: 'Failed to load task assets',
+        });
+      }
+
+      if (!assetRecord) {
+        logger.warn(`Skipping missing asset ${assetId} for taskId=${taskId}`);
+        continue;
+      }
+
+      if (assetRecord.ExperienceId !== experienceId) {
+        logger.warn(
+          `Skipping cross-experience asset ${assetId} while loading taskId=${taskId}`,
+        );
+        continue;
+      }
+
+      if (assetRecord.Status !== 'ready') {
+        logger.warn(
+          `Skipping non-ready asset ${assetId} (status=${assetRecord.Status}) for taskId=${taskId}`,
+        );
+        continue;
+      }
+
+      if (
+        !assetRecord.FileName ||
+        !assetRecord.ObjectKey ||
+        !assetRecord.ContentType ||
+        !SUPPORTED_ASSET_CONTENT_TYPES.has(
+          assetRecord.ContentType as AssetContentType,
+        )
+      ) {
+        logger.warn(
+          `Skipping invalid asset metadata for assetId=${assetId}, taskId=${taskId}`,
+        );
+        continue;
+      }
+
+      let url: string;
+      try {
+        url = await s3Client.getSignedUrlPromise('getObject', {
+          Bucket: ASSETS_BUCKET_NAME,
+          Key: assetRecord.ObjectKey,
+          Expires: assetViewUrlTtlSeconds,
+        });
+      } catch (signError) {
+        if (isAWSError(signError)) {
+          logger.error(
+            `Failed creating view URL for assetId=${assetId}, taskId=${taskId}: ${signError.code} - ${signError.message}`,
+          );
+        } else {
+          logger.error(
+            `Unexpected error creating view URL for assetId=${assetId}, taskId=${taskId}: ${JSON.stringify(signError)}`,
+          );
+        }
+        return Response.internalFailure({
+          message: 'Failed to prepare task assets',
+        });
+      }
+
+      assets.push({
+        assetId: assetId,
+        fileName: assetRecord.FileName,
+        contentType: assetRecord.ContentType as AssetContentType,
+        url: url,
+      });
+    }
 
     return Response.success({
       task: {
@@ -372,6 +533,7 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
         experienceName,
         robloxGameId,
         ...(assetIds !== undefined ? { assetIds } : {}),
+        ...(assets.length > 0 ? { assets } : {}),
         ...(experienceAssetIds !== undefined
           ? { experienceAssetIds }
           : {}),

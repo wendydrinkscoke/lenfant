@@ -7,6 +7,7 @@ use llc.civictech.school#CatalogTaskSubheading
 use llc.civictech.school#Milestones
 use llc.civictech.school#ExperienceName
 use llc.civictech.school#AssetIds
+use llc.civictech.school#TaskViewAssets
 
 /// Details needed to render a task instance inside a Classroom iframe.
 structure TaskInstanceView {
@@ -24,6 +25,9 @@ structure TaskInstanceView {
 
     /// Optional assets attached directly to the task.
     assetIds: AssetIds
+
+    /// Render-ready metadata for assets referenced by this task and its milestones.
+    assets: TaskViewAssets
 
     /// Optional milestones that outline partial completion goals.
     milestones: Milestones

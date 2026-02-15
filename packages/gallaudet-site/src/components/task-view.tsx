@@ -25,11 +25,97 @@ type TaskViewAuthorizedProps = {
   signOut: () => Promise<void>;
 };
 
-const PREVIEW_IMAGE = "/placeholder.svg";
-const PREVIEW_CAPTION = "Classroom task preview coming soon.";
+const DEFAULT_ASSET_ROTATION_MS = 5000;
+const DEFAULT_GIF_ROTATION_MS = 8000;
+const MIN_GIF_FRAME_DELAY_CS = 2;
 
 const formatAudienceLabel = (audience: "student" | "teacher") =>
   audience === "teacher" ? "Teacher Preview" : "Student Assignment";
+
+const parseGifDurationMs = (buffer: ArrayBuffer): number | null => {
+  const bytes = new Uint8Array(buffer);
+  if (bytes.length < 13) {
+    return null;
+  }
+
+  const signature = String.fromCharCode(bytes[0], bytes[1], bytes[2]);
+  if (signature !== "GIF") {
+    return null;
+  }
+
+  let offset = 6;
+  offset += 7;
+  if (offset > bytes.length) {
+    return null;
+  }
+
+  const packedField = bytes[10] ?? 0;
+  if ((packedField & 0x80) !== 0) {
+    const globalColorTableSize = 3 * (2 ** ((packedField & 0x07) + 1));
+    offset += globalColorTableSize;
+  }
+
+  let totalDelayMs = 0;
+  let pendingFrameDelayCs: number | null = null;
+
+  while (offset < bytes.length) {
+    const blockIntroducer = bytes[offset++];
+    if (blockIntroducer === 0x3b) {
+      break;
+    }
+
+    if (blockIntroducer === 0x21) {
+      const extensionLabel = bytes[offset++];
+      if (extensionLabel === 0xf9) {
+        const blockSize = bytes[offset++];
+        if (blockSize !== 4) {
+          offset += blockSize;
+          continue;
+        }
+        offset += 1;
+        const delayLow = bytes[offset++] ?? 0;
+        const delayHigh = bytes[offset++] ?? 0;
+        pendingFrameDelayCs = delayLow + (delayHigh << 8);
+        offset += 1;
+        offset += 1;
+        continue;
+      }
+
+      while (offset < bytes.length) {
+        const subBlockLength = bytes[offset++] ?? 0;
+        if (subBlockLength === 0) {
+          break;
+        }
+        offset += subBlockLength;
+      }
+      continue;
+    }
+
+    if (blockIntroducer === 0x2c) {
+      offset += 8;
+      const localPackedField = bytes[offset++] ?? 0;
+      if ((localPackedField & 0x80) !== 0) {
+        const localColorTableSize = 3 * (2 ** ((localPackedField & 0x07) + 1));
+        offset += localColorTableSize;
+      }
+
+      offset += 1;
+      while (offset < bytes.length) {
+        const imageDataLength = bytes[offset++] ?? 0;
+        if (imageDataLength === 0) {
+          break;
+        }
+        offset += imageDataLength;
+      }
+
+      const frameDelayCs = pendingFrameDelayCs ?? 10;
+      totalDelayMs += Math.max(frameDelayCs, MIN_GIF_FRAME_DELAY_CS) * 10;
+      pendingFrameDelayCs = null;
+    }
+  }
+
+  return totalDelayMs > 0 ? totalDelayMs : null;
+};
 
 type RobloxLinkStep = {
   id: string;
@@ -85,6 +171,49 @@ const TaskViewAuthorized = ({
   );
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [hasAttemptedRobloxLink, setHasAttemptedRobloxLink] = useState(false);
+  const [activeAssetIndex, setActiveAssetIndex] = useState(0);
+  const [selectedMilestoneId, setSelectedMilestoneId] = useState<string | null>(
+    null,
+  );
+  const [hasAppliedAutoMilestoneSelection, setHasAppliedAutoMilestoneSelection] =
+    useState(false);
+  const [gifDurationsByAssetId, setGifDurationsByAssetId] = useState<
+    Record<string, number>
+  >({});
+
+  const taskAssets = useMemo(
+    () => (status === "success" && task?.assets ? task.assets : []),
+    [status, task],
+  );
+  const selectedMilestone = useMemo(() => {
+    if (!task?.milestones || !selectedMilestoneId) {
+      return null;
+    }
+
+    return (
+      task.milestones.find((milestone) => milestone.id === selectedMilestoneId) ??
+      null
+    );
+  }, [selectedMilestoneId, task?.milestones]);
+
+  const visibleAssetIds = useMemo(() => {
+    if (selectedMilestone) {
+      return selectedMilestone.assetIds ?? [];
+    }
+
+    return task?.assetIds ?? [];
+  }, [selectedMilestone, task?.assetIds]);
+
+  const visibleAssets = useMemo(() => {
+    if (taskAssets.length === 0 || visibleAssetIds.length === 0) {
+      return [];
+    }
+
+    const assetsById = new Map(taskAssets.map((asset) => [asset.assetId, asset]));
+    return visibleAssetIds
+      .map((assetId) => assetsById.get(assetId))
+      .filter((asset): asset is NonNullable<typeof asset> => Boolean(asset));
+  }, [taskAssets, visibleAssetIds]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -155,6 +284,132 @@ const TaskViewAuthorized = ({
       isCancelled = true;
     };
   }, [taskId]);
+
+  useEffect(() => {
+    setActiveAssetIndex(0);
+  }, [taskId, visibleAssets.length, selectedMilestoneId]);
+
+  useEffect(() => {
+    setSelectedMilestoneId(null);
+    setHasAppliedAutoMilestoneSelection(false);
+  }, [taskId]);
+
+  useEffect(() => {
+    if (hasAppliedAutoMilestoneSelection) {
+      return;
+    }
+    if (status !== "success" || !task) {
+      return;
+    }
+    if (selectedMilestoneId) {
+      setHasAppliedAutoMilestoneSelection(true);
+      return;
+    }
+
+    const taskLevelAssetIds = task.assetIds ?? [];
+    if (taskLevelAssetIds.length > 0) {
+      setHasAppliedAutoMilestoneSelection(true);
+      return;
+    }
+
+    const firstMilestone = task.milestones?.[0];
+    if (!firstMilestone?.assetIds?.length) {
+      setHasAppliedAutoMilestoneSelection(true);
+      return;
+    }
+
+    const availableAssetIds = new Set(taskAssets.map((asset) => asset.assetId));
+    const hasDisplayableMilestoneAsset = firstMilestone.assetIds.some((assetId) =>
+      availableAssetIds.has(assetId),
+    );
+
+    if (hasDisplayableMilestoneAsset) {
+      setSelectedMilestoneId(firstMilestone.id);
+    }
+    setHasAppliedAutoMilestoneSelection(true);
+  }, [
+    hasAppliedAutoMilestoneSelection,
+    selectedMilestoneId,
+    status,
+    task,
+    taskAssets,
+  ]);
+
+  useEffect(() => {
+    if (!taskAssets.length) {
+      return;
+    }
+
+    const controller = new AbortController();
+    let cancelled = false;
+
+    const loadGifDurations = async () => {
+      for (const asset of taskAssets) {
+        if (asset.contentType !== "image/gif") {
+          continue;
+        }
+        if (gifDurationsByAssetId[asset.assetId]) {
+          continue;
+        }
+
+        try {
+          const response = await fetch(asset.url, {
+            signal: controller.signal,
+          });
+          if (!response.ok) {
+            continue;
+          }
+          const buffer = await response.arrayBuffer();
+          if (cancelled) {
+            return;
+          }
+          const parsedDuration = parseGifDurationMs(buffer);
+          const resolvedDuration =
+            parsedDuration && parsedDuration > 0
+              ? parsedDuration
+              : DEFAULT_GIF_ROTATION_MS;
+          setGifDurationsByAssetId((prev) => ({
+            ...prev,
+            [asset.assetId]: resolvedDuration,
+          }));
+        } catch {
+          if (cancelled || controller.signal.aborted) {
+            return;
+          }
+        }
+      }
+    };
+
+    void loadGifDurations();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [taskAssets, gifDurationsByAssetId]);
+
+  useEffect(() => {
+    if (visibleAssets.length <= 1) {
+      return;
+    }
+
+    const currentAsset = visibleAssets[activeAssetIndex];
+    const rotationMs =
+      currentAsset?.contentType === "image/gif"
+        ? (gifDurationsByAssetId[currentAsset.assetId] ??
+          DEFAULT_GIF_ROTATION_MS)
+        : DEFAULT_ASSET_ROTATION_MS;
+
+    const timerId = window.setTimeout(() => {
+      setActiveAssetIndex((previousIndex) =>
+        previousIndex + 1 >= visibleAssets.length ? 0 : previousIndex + 1,
+      );
+    }, rotationMs);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [activeAssetIndex, gifDurationsByAssetId, visibleAssets]);
 
   const refreshRobloxLinkStatus = useCallback(
     async (options?: { cancelled?: () => boolean }) => {
@@ -373,6 +628,9 @@ const TaskViewAuthorized = ({
     return null;
   }, [status, task]);
 
+  const currentTaskAsset =
+    visibleAssets.length > 0 ? visibleAssets[activeAssetIndex] : null;
+
   const allRobloxStepsComplete = linkingSteps.every((step) => step.completed);
   const currentRobloxStepIndex = linkingSteps.findIndex(
     (step) => !step.completed,
@@ -534,9 +792,25 @@ const TaskViewAuthorized = ({
                         {task.milestones.map((milestone) => (
                           <li
                             key={milestone.id}
-                            className="flex items-center justify-between rounded-md border border-slate-200 bg-white/60 px-3 py-2 text-sm text-slate-700"
+                            className={
+                              selectedMilestoneId === milestone.id
+                                ? "flex items-center justify-between rounded-md border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-900"
+                                : "flex items-center justify-between rounded-md border border-slate-200 bg-white/60 px-3 py-2 text-sm text-slate-700"
+                            }
                           >
-                            <span>{milestone.name}</span>
+                            <button
+                              type="button"
+                              className="text-left underline-offset-2 hover:underline"
+                              onClick={() =>
+                                setSelectedMilestoneId((currentMilestoneId) =>
+                                  currentMilestoneId === milestone.id
+                                    ? null
+                                    : milestone.id,
+                                )
+                              }
+                            >
+                              {milestone.name}
+                            </button>
                             <Badge variant="secondary">
                               {milestone.percentageContribution}%
                             </Badge>
@@ -551,14 +825,80 @@ const TaskViewAuthorized = ({
               </div>
               <div>
                 <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
-                  <img
-                    alt={status === "success" && task ? task.title : "Task preview"}
-                    src={PREVIEW_IMAGE}
-                    className="h-48 w-full object-cover"
-                  />
-                  <Separator />
+                  {currentTaskAsset && (
+                    <>
+                      <img
+                        alt={
+                          status === "success" && task
+                            ? `${task.title} preview`
+                            : "Task preview"
+                        }
+                        src={currentTaskAsset.url}
+                        className="h-48 w-full object-cover"
+                      />
+                      <Separator />
+                    </>
+                  )}
                   <div className="space-y-3 p-3">
-                    <p className="text-sm text-slate-500">{PREVIEW_CAPTION}</p>
+                    {selectedMilestone && (
+                      <p className="text-xs text-slate-500">
+                        Showing assets for {selectedMilestone.name}
+                      </p>
+                    )}
+                    {currentTaskAsset && (
+                      <p className="text-sm text-slate-500">
+                        {currentTaskAsset.fileName}
+                      </p>
+                    )}
+                    {visibleAssets.length > 1 && (
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-1">
+                          {visibleAssets.map((asset, index) => (
+                            <button
+                              key={asset.assetId}
+                              type="button"
+                              aria-label={`Show preview ${index + 1}`}
+                              onClick={() => setActiveAssetIndex(index)}
+                              className={
+                                index === activeAssetIndex
+                                  ? "h-2 w-4 rounded-full bg-slate-900"
+                                  : "h-2 w-2 rounded-full bg-slate-300"
+                              }
+                            />
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setActiveAssetIndex((currentIndex) =>
+                                currentIndex === 0
+                                  ? visibleAssets.length - 1
+                                  : currentIndex - 1,
+                              )
+                            }
+                          >
+                            Prev
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setActiveAssetIndex((currentIndex) =>
+                                currentIndex + 1 >= visibleAssets.length
+                                  ? 0
+                                  : currentIndex + 1,
+                              )
+                            }
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                     {robloxLink && (
                       <Button asChild className="w-full">
                         <a

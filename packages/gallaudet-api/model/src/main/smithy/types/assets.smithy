@@ -56,6 +56,10 @@ string AssetObjectKey
 @length(min: 1, max: 4096)
 string AssetUploadUrl
 
+/// URL that clients can use to read asset bytes directly from S3.
+@length(min: 1, max: 4096)
+string AssetViewUrl
+
 /// S3 multipart upload part number.
 @range(min: 1, max: 10000)
 integer UploadPartNumber
@@ -113,4 +117,23 @@ structure CompletedUploadPart {
 
 list CompletedUploadParts {
     member: CompletedUploadPart
+}
+
+/// Render-ready asset metadata for task-facing UIs.
+structure TaskViewAsset {
+    @required
+    assetId: AssetId
+
+    @required
+    fileName: AssetFileName
+
+    @required
+    contentType: AssetContentType
+
+    @required
+    url: AssetViewUrl
+}
+
+list TaskViewAssets {
+    member: TaskViewAsset
 }

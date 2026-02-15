@@ -3,6 +3,8 @@ process.env.TASK_CATALOG_TABLE_NAME = 'TaskCatalog';
 process.env.OAUTH_TOKENS_TABLE_NAME = 'OAuthTokens';
 process.env.GOOGLE_OAUTH_CLIENT_SECRET_ARN = 'secretArn';
 process.env.EXPERIENCES_TABLE_NAME = 'Experiences';
+process.env.ASSETS_TABLE_NAME = 'Assets';
+process.env.ASSETS_BUCKET_NAME = 'AssetsBucket';
 
 import {
   GetTaskChainedRequestInput,
@@ -17,6 +19,7 @@ jest.mock('../src/utils/auth-utils', () => ({
 
 const getAddOnContextMock = jest.fn();
 var dynamoGetMock: jest.Mock;
+var s3GetSignedUrlPromiseMock: jest.Mock;
 
 jest.mock('@googleapis/classroom', () => ({
   classroom: jest.fn(() => ({
@@ -30,12 +33,16 @@ jest.mock('@googleapis/classroom', () => ({
 
 jest.mock('aws-sdk', () => {
   dynamoGetMock = jest.fn();
+  s3GetSignedUrlPromiseMock = jest.fn();
   return {
     DynamoDB: {
       DocumentClient: jest.fn(() => ({
         get: dynamoGetMock,
       })),
     },
+    S3: jest.fn(() => ({
+      getSignedUrlPromise: s3GetSignedUrlPromiseMock,
+    })),
   };
 });
 
@@ -58,13 +65,25 @@ beforeEach(() => {
   (getGoogleOAuthClient as jest.Mock).mockResolvedValue({});
   getAddOnContextMock.mockReset();
   dynamoGetMock.mockReset();
+  s3GetSignedUrlPromiseMock.mockReset();
+  s3GetSignedUrlPromiseMock.mockImplementation(
+    async (_operation: string, params: { Key: string }) => {
+      if (params.Key.endsWith('/task-preview.gif')) {
+        return 'https://assets-bucket.s3.amazonaws.com/presigned-task-asset';
+      }
+      if (params.Key.endsWith('/milestone-preview.png')) {
+        return 'https://assets-bucket.s3.amazonaws.com/presigned-milestone-asset';
+      }
+      return 'https://assets-bucket.s3.amazonaws.com/presigned-generic-asset';
+    },
+  );
   getAddOnContextMock.mockResolvedValue({
     data: {
       teacherContext: null,
       studentContext: null,
     },
   });
-  dynamoGetMock.mockImplementation((params: { TableName: string }) => {
+  dynamoGetMock.mockImplementation((params: { TableName: string; Key?: Record<string, string> }) => {
     const responseByTable: Record<string, unknown> = {
       TaskInstances: {
         Item: {
@@ -117,6 +136,41 @@ beforeEach(() => {
       },
     };
 
+    if (params.TableName === 'Assets') {
+      const assetId = params.Key?.AssetId;
+      if (assetId === '25242edd-4e8b-4b84-9588-3d472d927b9a') {
+        return {
+          promise: jest.fn().mockResolvedValue({
+            Item: {
+              AssetId: assetId,
+              ExperienceId: 'studio-42',
+              FileName: 'task-preview.gif',
+              ContentType: 'image/gif',
+              ObjectKey: 'mock-cognito/studio-42/25242edd-4e8b-4b84-9588-3d472d927b9a/task-preview.gif',
+              Status: 'ready',
+            },
+          }),
+        };
+      }
+      if (assetId === 'bcc9faf9-b6ce-4b1a-989f-95ce1f148f6a') {
+        return {
+          promise: jest.fn().mockResolvedValue({
+            Item: {
+              AssetId: assetId,
+              ExperienceId: 'studio-42',
+              FileName: 'milestone-preview.png',
+              ContentType: 'image/png',
+              ObjectKey: 'mock-cognito/studio-42/bcc9faf9-b6ce-4b1a-989f-95ce1f148f6a/milestone-preview.png',
+              Status: 'ready',
+            },
+          }),
+        };
+      }
+      return {
+        promise: jest.fn().mockResolvedValue({}),
+      };
+    }
+
     return {
       promise: jest.fn().mockResolvedValue(responseByTable[params.TableName] ?? {}),
     };
@@ -154,6 +208,20 @@ describe('GetTask', () => {
         assetIds: [
           '25242edd-4e8b-4b84-9588-3d472d927b9a',
         ],
+        assets: [
+          {
+            assetId: '25242edd-4e8b-4b84-9588-3d472d927b9a',
+            fileName: 'task-preview.gif',
+            contentType: 'image/gif',
+            url: 'https://assets-bucket.s3.amazonaws.com/presigned-task-asset',
+          },
+          {
+            assetId: 'bcc9faf9-b6ce-4b1a-989f-95ce1f148f6a',
+            fileName: 'milestone-preview.png',
+            contentType: 'image/png',
+            url: 'https://assets-bucket.s3.amazonaws.com/presigned-milestone-asset',
+          },
+        ],
         experienceAssetIds: [
           '07e3087d-7130-4c66-bf25-95b38295f0a7',
         ],
@@ -178,6 +246,16 @@ describe('GetTask', () => {
       courseId: 'course-456',
       itemId: 'courseWork-789',
       attachmentId: 'attach-111',
+    });
+    expect(s3GetSignedUrlPromiseMock).toHaveBeenCalledWith('getObject', {
+      Bucket: 'AssetsBucket',
+      Key: 'mock-cognito/studio-42/25242edd-4e8b-4b84-9588-3d472d927b9a/task-preview.gif',
+      Expires: 900,
+    });
+    expect(s3GetSignedUrlPromiseMock).toHaveBeenCalledWith('getObject', {
+      Bucket: 'AssetsBucket',
+      Key: 'mock-cognito/studio-42/bcc9faf9-b6ce-4b1a-989f-95ce1f148f6a/milestone-preview.png',
+      Expires: 900,
     });
   });
 

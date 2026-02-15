@@ -24,6 +24,7 @@ import {
   StartAssetUploadRequest,
   StartAssetUploadResponseContent,
   TaskInstanceView,
+  TaskViewAsset,
   VendSecretRequest,
   VendSecretResponseContent,
 } from "gallaudet-api-typescript-react-query-hooks";
@@ -71,6 +72,62 @@ const MOCK_MILESTONES: Milestone[] = [
   { id: "prototype", name: "Build your prototype", percentageContribution: 45 },
   { id: "demo", name: "Classroom demo", percentageContribution: 40 },
 ];
+
+const MOCK_TASK_PREVIEW_ASSETS: TaskViewAsset[] = [
+  {
+    assetId: "mock-task-cover",
+    fileName: "run-the-world-learn-country-names-thumbnail.png",
+    contentType: "image/png",
+    url: "/run-the-world-learn-country-names-thumbnail.png",
+  },
+  {
+    assetId: "mock-task-gameplay",
+    fileName: "run-the-world-gameplay.gif",
+    contentType: "image/gif",
+    url: "/run-the-world-gameplay.gif",
+  },
+];
+
+const MOCK_MILESTONE_PREVIEW_ASSETS: TaskViewAsset[] = [
+  {
+    assetId: "mock-milestone-briefing",
+    fileName: "teacher-assisting-student-placeholder.png",
+    contentType: "image/png",
+    url: "/teacher-assisting-student-placeholder.png",
+  },
+  {
+    assetId: "mock-milestone-prototype",
+    fileName: "gwb-lib-gameplay.gif",
+    contentType: "image/gif",
+    url: "/gwb-lib-gameplay.gif",
+  },
+  {
+    assetId: "mock-milestone-demo",
+    fileName: "google-classroom-integration-demo.gif",
+    contentType: "image/gif",
+    url: "/google-classroom-integration-demo.gif",
+  },
+];
+
+const withMockTaskAssets = (task: TaskInstanceView): TaskInstanceView => {
+  const milestonesWithAssets = (task.milestones ?? []).map((milestone, index) => ({
+    ...milestone,
+    assetIds: [
+      MOCK_MILESTONE_PREVIEW_ASSETS[index % MOCK_MILESTONE_PREVIEW_ASSETS.length]
+        .assetId,
+    ],
+  }));
+
+  return {
+    ...task,
+    assetIds: MOCK_TASK_PREVIEW_ASSETS.map((asset) => asset.assetId),
+    assets: [
+      ...MOCK_TASK_PREVIEW_ASSETS,
+      ...MOCK_MILESTONE_PREVIEW_ASSETS,
+    ],
+    milestones: milestonesWithAssets,
+  };
+};
 
 const MOCK_TASKS: Record<string, TaskInstanceView> = {
   "task-astro-001": {
@@ -295,10 +352,10 @@ export class MockGallaudetApi extends DefaultApi {
     request: Parameters<DefaultApi["getTask"]>[0],
   ): Promise<GetTaskResponseContent> {
     await delay(MOCK_LATENCY_MS);
-    const task = MOCK_TASKS[request.taskId] ?? {
+    const task = withMockTaskAssets(MOCK_TASKS[request.taskId] ?? {
       ...MOCK_FALLBACK_TASK,
       title: `Sandbox mission (${request.taskId})`,
-    };
+    });
     return { task };
   }
 
