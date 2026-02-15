@@ -155,7 +155,7 @@ export function DeveloperPortalContent({ user }: DeveloperPortalContentProps) {
       case "tasks":
         return <ConfigureTasksPanel />
       case "assets":
-        return <AssetManagerPanel />
+        return <AssetManagerPanel experienceId={selectedExperience} />
       case "secrets":
         return <ConfigureSecretsPanel experienceId={selectedExperience} />
       case "roles":

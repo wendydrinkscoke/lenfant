@@ -4,6 +4,7 @@ import { UserPool } from "aws-cdk-lib/aws-cognito";
 import { IdentityPool } from "aws-cdk-lib/aws-cognito-identitypool";
 import { AttributeType, Table } from "aws-cdk-lib/aws-dynamodb";
 import { HostedZone } from "aws-cdk-lib/aws-route53";
+import { Bucket, HttpMethods } from "aws-cdk-lib/aws-s3";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import { EmailIdentity } from "aws-cdk-lib/aws-ses";
 import { Construct } from "constructs";
@@ -25,6 +26,42 @@ export class GallaudetApiStack extends Stack {
 
   constructor(scope: Construct, id: string, props: GallaudetApiStackProps) {
     super(scope, id, props);
+
+    const websiteDomainName =
+      props.stage == "prod"
+        ? CIVICTECH_FOR_SCHOOLS_HOSTED_ZONE_NAME
+        : props.zone.zoneName;
+
+    const assetsBucket = new Bucket(this, "AssetsBucket", {
+      enforceSSL: true,
+      cors: [
+        {
+          allowedOrigins:
+            props.stage === "prod"
+              ? [`https://${websiteDomainName}`]
+              : [`https://${websiteDomainName}`, "http://localhost:3000"],
+          allowedMethods: [HttpMethods.PUT, HttpMethods.GET, HttpMethods.HEAD],
+          allowedHeaders: ["*"],
+          exposedHeaders: ["ETag"],
+        },
+      ],
+    });
+
+    const assetUploadsTable = new Table(this, "AssetUploadsDDBTable", {
+      tableName: "AssetUploads",
+      partitionKey: {
+        name: "UploadSessionId",
+        type: AttributeType.STRING,
+      },
+    });
+
+    const assetsTable = new Table(this, "AssetsDDBTable", {
+      tableName: "Assets",
+      partitionKey: {
+        name: "AssetId",
+        type: AttributeType.STRING,
+      },
+    });
 
     const robloxExperienceApiKeysTable = new Table(this, "RobloxApiKeysTable", {
       tableName: "ExperienceApiKeys",
@@ -136,13 +173,13 @@ export class GallaudetApiStack extends Stack {
       identityPool: props.identityPool,
       apiSubdomain: "api",
       domainName: props.zone.zoneName,
-      websiteDomainName:
-        props.stage == "prod"
-          ? CIVICTECH_FOR_SCHOOLS_HOSTED_ZONE_NAME
-          : props.zone.zoneName,
+      websiteDomainName,
       cognitoAuthorizer: props.cognitoAuthorizer,
       zone: props.zone,
       stage: props.stage,
+      assetsBucket,
+      assetUploadsTable,
+      assetsTable,
       oauthTokensTable,
       taskCatalogTable,
       taskInstanceTable: taskInstancesTable,

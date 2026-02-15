@@ -1,10 +1,17 @@
 import {
+  AbortAssetUploadRequest,
+  AbortAssetUploadResponseContent,
+  AssetRecord,
   AttachTaskResponseContent,
+  CompleteAssetUploadRequest,
+  CompleteAssetUploadResponseContent,
   CreateProjectResponseContent,
   DelegateRobloxSecretStoreAccessRequest,
   DelegateRobloxSecretStoreAccessResponseContent,
   DefaultApi,
   DelegateGoogleClassroomAccessResponseContent,
+  GetAssetUploadPartUrlRequest,
+  GetAssetUploadPartUrlResponseContent,
   GetGoogleClassroomAccessStatusResponseContent,
   GetLinkedRobloxAccountResponseContent,
   GetRobloxSecretStoreAccessStatusRequest,
@@ -14,6 +21,8 @@ import {
   ListProjectsResponseContent,
   LinkRobloxAccountResponseContent,
   Milestone,
+  StartAssetUploadRequest,
+  StartAssetUploadResponseContent,
   TaskInstanceView,
   VendSecretRequest,
   VendSecretResponseContent,
@@ -21,12 +30,33 @@ import {
 import { ResponseError } from "gallaudet-api-typescript-react-query-hooks";
 
 const MOCK_LATENCY_MS = 200;
+const MOCK_ASSET_MULTIPART_THRESHOLD_BYTES = 10_000_000;
+const MOCK_ASSET_MULTIPART_PART_SIZE_BYTES = 8_000_000;
+const MOCK_ASSET_UPLOAD_URL_TTL_SECONDS = 900;
+const MOCK_COGNITO_USER_NAMESPACE = "mock-cognito-user";
 const MOCK_LOCAL_STORAGE_KEYS = {
   projects: "mock-gallaudet-project-ids",
   robloxLinked: "mock-roblox-linked",
   googleClassroomDelegated: "mock-google-classroom-delegated",
   robloxSecretStoreDelegations: "mock-roblox-secret-store-delegations",
 } as const;
+
+type MockUploadSession = {
+  uploadSessionId: string;
+  assetId: string;
+  experienceId: string;
+  fileName: string;
+  contentType: "image/png" | "image/jpeg" | "image/gif" | "image/webp";
+  sizeBytes: number;
+  objectKey: string;
+  strategy: "single-part-put" | "multipart-put";
+  multipartPartCount?: number;
+  multipartPartSizeBytes?: number;
+  createdAt: number;
+};
+
+const mockUploadSessions = new Map<string, MockUploadSession>();
+const mockAssets = new Map<string, AssetRecord>();
 
 const DEFAULT_MOCK_PROJECT_IDS = ["12039485732", "9876543210"];
 const DEFAULT_ROBLOX_SECRET_STORE_DELEGATIONS: Record<string, boolean> = {
@@ -237,6 +267,24 @@ const upsertMockProject = (experienceId: string) => {
 const createMockSecretId = () =>
   `mock-${Math.random().toString(36).slice(2, 10)}`;
 
+const createMockId = () =>
+  `mock-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+
+const currentUnixSeconds = () => Math.floor(Date.now() / 1000);
+
+const mockOperationError = (
+  status: number,
+  message: string,
+  operationName: string,
+): ResponseError =>
+  new ResponseError(
+    new Response(JSON.stringify({ message }), {
+      status,
+      headers: { "Content-Type": "application/json" },
+    }),
+    operationName,
+  );
+
 export class MockGallaudetApi extends DefaultApi {
   constructor() {
     super();
@@ -292,6 +340,176 @@ export class MockGallaudetApi extends DefaultApi {
     }
 
     return { message: `Mock project created for universe ${request.experienceId}.` };
+  }
+
+  async startAssetUpload(
+    request: StartAssetUploadRequest,
+  ): Promise<StartAssetUploadResponseContent> {
+    await delay(MOCK_LATENCY_MS);
+
+    const experienceId = request.experienceId?.trim();
+    const fileName = request.startAssetUploadRequestContent.fileName?.trim();
+    const contentType = request.startAssetUploadRequestContent.contentType;
+    const contentLengthBytes = request.startAssetUploadRequestContent.contentLengthBytes;
+
+    if (!experienceId) {
+      throw mockOperationError(
+        400,
+        "experienceId is required",
+        "startAssetUpload",
+      );
+    }
+    if (!fileName) {
+      throw mockOperationError(
+        400,
+        "fileName is required",
+        "startAssetUpload",
+      );
+    }
+    if (!(contentLengthBytes > 0)) {
+      throw mockOperationError(
+        400,
+        "contentLengthBytes must be a positive number",
+        "startAssetUpload",
+      );
+    }
+
+    const strategy =
+      contentLengthBytes > MOCK_ASSET_MULTIPART_THRESHOLD_BYTES
+        ? "multipart-put"
+        : "single-part-put";
+    const assetId = createMockId();
+    const uploadSessionId = createMockId();
+    const createdAt = currentUnixSeconds();
+    const objectKey = `${MOCK_COGNITO_USER_NAMESPACE}/${experienceId}/${assetId}/${fileName.replace(/[^A-Za-z0-9._-]/g, "_")}`;
+    const partCount =
+      strategy === "multipart-put"
+        ? Math.ceil(contentLengthBytes / MOCK_ASSET_MULTIPART_PART_SIZE_BYTES)
+        : undefined;
+
+    mockUploadSessions.set(uploadSessionId, {
+      uploadSessionId,
+      assetId,
+      experienceId,
+      fileName,
+      contentType,
+      sizeBytes: contentLengthBytes,
+      objectKey,
+      strategy,
+      multipartPartCount: partCount,
+      multipartPartSizeBytes:
+        strategy === "multipart-put" ? MOCK_ASSET_MULTIPART_PART_SIZE_BYTES : undefined,
+      createdAt,
+    });
+
+    return {
+      assetId,
+      uploadSessionId,
+      strategy,
+      expiresAt: createdAt + MOCK_ASSET_UPLOAD_URL_TTL_SECONDS,
+      uploadUrl:
+        strategy === "single-part-put"
+          ? `mock://asset-upload/${uploadSessionId}/single`
+          : undefined,
+      multipartPartCount: partCount,
+      multipartPartSizeBytes:
+        strategy === "multipart-put" ? MOCK_ASSET_MULTIPART_PART_SIZE_BYTES : undefined,
+    };
+  }
+
+  async getAssetUploadPartUrl(
+    request: GetAssetUploadPartUrlRequest,
+  ): Promise<GetAssetUploadPartUrlResponseContent> {
+    await delay(MOCK_LATENCY_MS);
+
+    const session = mockUploadSessions.get(request.uploadSessionId);
+    if (!session || session.experienceId !== request.experienceId) {
+      throw mockOperationError(
+        404,
+        "Upload session not found.",
+        "getAssetUploadPartUrl",
+      );
+    }
+    if (session.strategy !== "multipart-put") {
+      throw mockOperationError(
+        400,
+        "This upload session does not use multipart uploads.",
+        "getAssetUploadPartUrl",
+      );
+    }
+    if (
+      !Number.isInteger(request.partNumber) ||
+      request.partNumber < 1 ||
+      request.partNumber > (session.multipartPartCount ?? 0)
+    ) {
+      throw mockOperationError(
+        400,
+        "partNumber exceeds multipart part count.",
+        "getAssetUploadPartUrl",
+      );
+    }
+
+    return {
+      uploadUrl: `mock://asset-upload/${request.uploadSessionId}/part/${request.partNumber}`,
+      expiresAt: currentUnixSeconds() + MOCK_ASSET_UPLOAD_URL_TTL_SECONDS,
+    };
+  }
+
+  async completeAssetUpload(
+    request: CompleteAssetUploadRequest,
+  ): Promise<CompleteAssetUploadResponseContent> {
+    await delay(MOCK_LATENCY_MS);
+
+    const session = mockUploadSessions.get(request.uploadSessionId);
+    if (!session || session.experienceId !== request.experienceId) {
+      throw mockOperationError(
+        404,
+        "Upload session not found.",
+        "completeAssetUpload",
+      );
+    }
+
+    const completion = request.completeAssetUploadRequestContent.completion;
+    const hasSinglePart = "singlePart" in completion;
+    const hasMultipart = "multipart" in completion;
+    if (hasSinglePart === hasMultipart) {
+      throw mockOperationError(
+        400,
+        "completion must include exactly one of singlePart or multipart",
+        "completeAssetUpload",
+      );
+    }
+
+    const now = currentUnixSeconds();
+    const asset: AssetRecord = {
+      assetId: session.assetId,
+      experienceId: session.experienceId,
+      fileName: session.fileName,
+      contentType: session.contentType,
+      sizeBytes: session.sizeBytes,
+      objectKey: session.objectKey,
+      status: "ready",
+      createdAt: session.createdAt,
+      updatedAt: now,
+    };
+    mockAssets.set(asset.assetId, asset);
+    mockUploadSessions.delete(request.uploadSessionId);
+
+    return { asset };
+  }
+
+  async abortAssetUpload(
+    request: AbortAssetUploadRequest,
+  ): Promise<AbortAssetUploadResponseContent> {
+    await delay(MOCK_LATENCY_MS);
+
+    const session = mockUploadSessions.get(request.uploadSessionId);
+    if (!session || session.experienceId !== request.experienceId) {
+      return { message: "Upload session already cleared." };
+    }
+
+    mockUploadSessions.delete(request.uploadSessionId);
+    return { message: "Upload session aborted." };
   }
 
   async listProjects(): Promise<ListProjectsResponseContent> {

@@ -9,12 +9,15 @@ use aws.protocols#restJson1
 service Gallaudet {
     version: "1.0"
     operations: [
+      AbortAssetUpload
       AttachTask
       CatalogTask
       CompleteMilestone
+      CompleteAssetUpload
       CreateProject
       DelegateGoogleClassroomAccess
       DelegateRobloxSecretStoreAccess
+      GetAssetUploadPartUrl
       GetGoogleClassroomAccessStatus
       GetRobloxSecretStoreAccessStatus
       GetLinkedRobloxAccount
@@ -25,6 +28,7 @@ service Gallaudet {
       ListTasksForPlayer
       LinkRobloxAccount
       PutExperience
+      StartAssetUpload
       VendSecret
     ]
     errors: [

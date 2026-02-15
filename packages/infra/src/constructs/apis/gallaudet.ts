@@ -22,22 +22,27 @@ import {
 } from "aws-cdk-lib/aws-iam";
 import { ARecord, HostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { ApiGateway } from "aws-cdk-lib/aws-route53-targets";
+import { IBucket } from "aws-cdk-lib/aws-s3";
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
 import { EmailIdentity } from "aws-cdk-lib/aws-ses";
 import { Construct } from "constructs";
 import {
+  AbortAssetUploadFunction,
   Api,
   AttachTaskFunction,
   CatalogTaskFunction,
+  CompleteAssetUploadFunction,
   CompleteMilestoneFunction,
   DelegateGoogleClassroomAccessFunction,
   DelegateRobloxSecretStoreAccessFunction,
+  GetAssetUploadPartUrlFunction,
   GetTaskFunction,
   GetTaskCatalogFunction,
   GradeTaskFunction,
   ListTasksForPlayerFunction,
   LinkRobloxAccountFunction,
   PutExperienceFunction,
+  StartAssetUploadFunction,
   GetLinkedRobloxAccountFunction,
   GetGoogleClassroomAccessStatusFunction,
   GetRobloxSecretStoreAccessStatusFunction,
@@ -57,6 +62,9 @@ export interface GallaudetProps {
   readonly cognitoAuthorizer: CognitoAuthorizer;
   readonly zone: HostedZone;
   readonly stage: string;
+  readonly assetsBucket: IBucket;
+  readonly assetUploadsTable: ITable;
+  readonly assetsTable: ITable;
   readonly oauthTokensTable: ITable;
   readonly taskCatalogTable: ITable;
   readonly taskInstanceTable: ITable;
@@ -87,6 +95,23 @@ export class Gallaudet extends Construct {
       domainName: props.apiSubdomain + "." + props.domainName,
       validation: CertificateValidation.fromDns(zone),
     });
+
+    const abortAssetUploadFunction = new AbortAssetUploadFunction(
+      this,
+      "AbortAssetUploadFunction",
+      {
+        environment: {
+          ASSETS_BUCKET_NAME: props.assetsBucket.bucketName,
+          ASSET_UPLOADS_TABLE_NAME: props.assetUploadsTable.tableName,
+        },
+        description: [
+          "Aborts a pending asset upload session and cleans up multipart",
+          "state when applicable.",
+        ].join(" "),
+      },
+    );
+    props.assetUploadsTable.grantReadWriteData(abortAssetUploadFunction);
+    props.assetsBucket.grantReadWrite(abortAssetUploadFunction);
 
     const attachTaskFunction = new AttachTaskFunction(
       this,
@@ -127,6 +152,25 @@ export class Gallaudet extends Construct {
     );
     props.taskCatalogTable.grantWriteData(catalogTaskFunction);
     props.gallaudetApiKeysTable.grantReadData(catalogTaskFunction);
+
+    const completeAssetUploadFunction = new CompleteAssetUploadFunction(
+      this,
+      "CompleteAssetUploadFunction",
+      {
+        environment: {
+          ASSETS_BUCKET_NAME: props.assetsBucket.bucketName,
+          ASSET_UPLOADS_TABLE_NAME: props.assetUploadsTable.tableName,
+          ASSETS_TABLE_NAME: props.assetsTable.tableName,
+        },
+        description: [
+          "Finalizes an asset upload and marks the asset record as ready for",
+          "downstream usage.",
+        ].join(" "),
+      },
+    );
+    props.assetUploadsTable.grantReadWriteData(completeAssetUploadFunction);
+    props.assetsTable.grantWriteData(completeAssetUploadFunction);
+    props.assetsBucket.grantReadWrite(completeAssetUploadFunction);
 
     const completeMilestoneFunction = new CompleteMilestoneFunction(
       this,
@@ -245,6 +289,23 @@ export class Gallaudet extends Construct {
     props.robloxExperienceApiKeysTable.grantReadData(
       getRobloxSecretStoreAccessStatusFunction,
     );
+
+    const getAssetUploadPartUrlFunction = new GetAssetUploadPartUrlFunction(
+      this,
+      "GetAssetUploadPartUrlFunction",
+      {
+        environment: {
+          ASSETS_BUCKET_NAME: props.assetsBucket.bucketName,
+          ASSET_UPLOADS_TABLE_NAME: props.assetUploadsTable.tableName,
+        },
+        description: [
+          "Issues presigned URLs so clients can upload multipart asset parts",
+          "directly to S3.",
+        ].join(" "),
+      },
+    );
+    props.assetUploadsTable.grantReadData(getAssetUploadPartUrlFunction);
+    props.assetsBucket.grantReadWrite(getAssetUploadPartUrlFunction);
 
     const getLinkedRobloxAccountFunction = new GetLinkedRobloxAccountFunction(
       this,
@@ -408,6 +469,27 @@ export class Gallaudet extends Construct {
     props.experiencesTable.grantWriteData(putExperienceFunction);
     props.gallaudetApiKeysTable.grantReadData(putExperienceFunction);
 
+    const startAssetUploadFunction = new StartAssetUploadFunction(
+      this,
+      "StartAssetUploadFunction",
+      {
+        environment: {
+          ASSETS_BUCKET_NAME: props.assetsBucket.bucketName,
+          ASSET_UPLOADS_TABLE_NAME: props.assetUploadsTable.tableName,
+          ASSETS_TABLE_NAME: props.assetsTable.tableName,
+          PROJECTS_TABLE_NAME: props.projectsTable.tableName,
+        },
+        description: [
+          "Creates a new asset upload session and returns presigned upload",
+          "details for single-part or multipart uploads.",
+        ].join(" "),
+      },
+    );
+    props.projectsTable.grantReadData(startAssetUploadFunction);
+    props.assetsTable.grantWriteData(startAssetUploadFunction);
+    props.assetUploadsTable.grantWriteData(startAssetUploadFunction);
+    props.assetsBucket.grantReadWrite(startAssetUploadFunction);
+
     const vendSecretFunction = new VendSecretFunction(
       this,
       "VendSecretFunction",
@@ -446,6 +528,9 @@ export class Gallaudet extends Construct {
         securityPolicy: SecurityPolicy.TLS_1_2,
       },
       integrations: {
+        abortAssetUpload: {
+          integration: Integrations.lambda(abortAssetUploadFunction),
+        },
         attachTask: {
           integration: Integrations.lambda(attachTaskFunction),
         },
@@ -462,6 +547,9 @@ export class Gallaudet extends Construct {
           options: {
             apiKeyRequired: true,
           },
+        },
+        completeAssetUpload: {
+          integration: Integrations.lambda(completeAssetUploadFunction),
         },
         createProject: {
           integration: Integrations.lambda(createProjectFunction),
@@ -485,6 +573,9 @@ export class Gallaudet extends Construct {
           integration: Integrations.lambda(
             getRobloxSecretStoreAccessStatusFunction,
           ),
+        },
+        getAssetUploadPartUrl: {
+          integration: Integrations.lambda(getAssetUploadPartUrlFunction),
         },
         getLinkedRobloxAccount: {
           integration: Integrations.lambda(getLinkedRobloxAccountFunction),
@@ -521,6 +612,9 @@ export class Gallaudet extends Construct {
           options: {
             apiKeyRequired: true,
           },
+        },
+        startAssetUpload: {
+          integration: Integrations.lambda(startAssetUploadFunction),
         },
         vendSecret: {
           integration: Integrations.lambda(vendSecretFunction),
