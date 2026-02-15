@@ -20,6 +20,9 @@ export function ConfigureSecretsPanel({ experienceId }: ConfigureSecretsPanelPro
   const [isCreating, setIsCreating] = useState(false)
   const [isCheckingDelegationStatus, setIsCheckingDelegationStatus] = useState(false)
   const [hasDelegatedSecretStoreAccess, setHasDelegatedSecretStoreAccess] = useState(false)
+  const secretStoreUrl = experienceId
+    ? `https://create.roblox.com/dashboard/creations/experiences/${experienceId}/secrets`
+    : null
 
   useEffect(() => {
     let isMounted = true
@@ -191,7 +194,18 @@ export function ConfigureSecretsPanel({ experienceId }: ConfigureSecretsPanelPro
             ) : hasDelegatedSecretStoreAccess ? (
               <p>
                 We&apos;ll generate an API key for Gallaudet and encrypt it with your experience&apos;s Roblox
-                public key.
+                public key.{" "}
+                {secretStoreUrl ? (
+                  <a
+                    href={secretStoreUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="underline underline-offset-2 hover:text-foreground"
+                  >
+                    View your Secret Store
+                  </a>
+                ) : null}
+                .
               </p>
             ) : (
               <p>Complete Step 1 before creating a secret for this experience.</p>
