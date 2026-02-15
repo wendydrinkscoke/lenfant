@@ -564,10 +564,7 @@ export const experienceGuides: PartnerDocsArticle[] = [
     estimatedRead: "15 min",
     updatedOn: "2026-02-15",
     relatedApiIds: [
-      "list-projects",
-      "create-project",
-      "delegate-roblox-secret-store-access",
-      "vend-secret",
+      "put-experience",
     ],
     sections: [
       {
@@ -715,37 +712,6 @@ export const experienceExplainers: PartnerDocsArticle[] = [
         heading: "Hybrid pattern",
         body: [
           "Use milestone tasks for objective progression and GradeTask for performance overlays where needed.",
-        ],
-      },
-    ],
-  },
-  {
-    slug: "experience-authentication-model",
-    kind: "explainer",
-    title: "Partner authentication model",
-    summary: "Understand when to use x-api-key runtime auth and when Cognito session auth applies.",
-    audience: "Partner leads, platform engineers, and security reviewers",
-    estimatedRead: "5 min",
-    updatedOn: "2026-02-10",
-    relatedApiIds: [
-      "put-experience",
-      "catalog-task",
-      "list-projects",
-      "vend-secret",
-    ],
-    sections: [
-      {
-        heading: "Two trust planes",
-        body: [
-          "Runtime game-server traffic uses experience API keys in x-api-key headers.",
-          "Developer portal traffic uses Cognito-authenticated user sessions.",
-        ],
-      },
-      {
-        heading: "Why this split exists",
-        body: [
-          "Game servers need machine credentials and low-friction deterministic auth.",
-          "Onboarding actions need user identity, ownership checks, and delegated authorization steps.",
         ],
       },
     ],

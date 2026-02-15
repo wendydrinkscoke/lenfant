@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 const sections = [
   {
     title: "API reference",
-    description: "Partner-facing runtime and onboarding endpoints with request and response details.",
+    description: "Partner-facing runtime endpoints with request and response details.",
     icon: FileCode2,
     to: "/create/docs/api",
   },
@@ -20,7 +20,7 @@ const sections = [
   },
   {
     title: "Explainers",
-    description: "Deep dives on design choices like milestone-based progress and auth model boundaries.",
+    description: "Deep dives on design choices like milestone-based progress and grading strategy.",
     icon: Lightbulb,
     to: "/create/docs/explainers",
   },
