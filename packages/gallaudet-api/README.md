@@ -40,6 +40,8 @@ written in Lua, to enable me to integrate with the Gallaudet API.
 1. **As an educational game developer,** I want to get my game in front of 
 students and teachers, leveraging CivicTech for School as a platform to promote
 my game.
+1. **As an educational game developer,** I want access to a user-friendly 
+developer portal to manage and view my integration with CivicTech for Schools.
 
 ## Terminology
 - **Primary task:** A first-party developed, administrative. Such tasks do not 
@@ -76,16 +78,16 @@ the task is a manually-graded writing task).
 - **Game servers** register tasks to the task catalog.
 
 ## Milestones
-1. Provision core infrastructure
+1. ~~Provision core infrastructure~~
     1. ~~Introduce Roblox and Google as OIDC providers for a Cognito user pool~~
     ~~so classroom-facing APIs can be secured.~~
     1. ~~Provision a DynamoDB table, called "OAuthTokens" to store OAuth~~
     ~~tokens received from users.~~
     1. ~~Provision a DynamoDB table, called "TaskCatalog", to store metadata~~
     ~~about tasks that can be attached to Google Classroom items.~~
-    1. Provision a DynamoDB table, called "Tasks", to store information about
-    specific task instances that have been attached to Google Classroom items.
-1. Develop core classroom-facing APIs
+    1. ~~Provision a DynamoDB table, called "Tasks", to store information about~~
+    ~~specific task instances that have been attached to Google Classroom items.~~
+1. ~~Develop core classroom-facing APIs~~
     1. ~~Enable teachers to sign in and delgate OAuth scopes our service~~
     ~~requires.~~
     1. ~~Enable students to link their Google and Roblox identities and~~
@@ -130,6 +132,35 @@ the task is a manually-graded writing task).
     1. ~~Enable games to assign grades to tasks.~~
     1. Introduce an API that enables game servers to submit writing from 
     students for a manually-graded writing task.
+1. Create a "developer portal" to enable self-service onboarding.
+    1. ~~Create a "Secrets" panel to enable game developers to issue us a~~
+    ~~Roblox API key that enables us to write secrets to their Secret Store.~~
+    ~~Use the this Roblox API key to write a *Gallaudet* API key to their~~
+    ~~Secret Store.~~
+    1. Create an "Asset Manager" page, which allows developers to upload
+    images and gifs and enable them to use the Gallaudet Cleint SDK to attach 
+    these assets to various task catalog items, use them as their marketplace
+    listing thumbnail, etc. 
+    1. Create a "Marketplace Listing" page, which allows developers to view
+    various aspects of their game's teacher-facing marketplace listing,
+    such as what the thumbnail and screenshots look like.
+    1. Create a "Tasks" page, which allows developers to view various aspects 
+    of their game's teacher-facing task catalog listing, such as what the 
+    task preview and description looks like for the task.
+    1. Create a "Metrics" page, which allows developers to view metrics 
+    related to their game, such as the amount of student traffic we drive to
+    their game (so they can see the value we add), the age of their secrets
+    (so they can know when to rotate), our response latency metrics for
+    their experience and globally, etc.
+1. Create and populate a "developer docs" page
+    1. ~~Create the scaffolding for the API reference, guides, explainers,~~
+    ~~download buttons for the Gallaudet Client SDK, etc.~~
+    1. Populate the page with several high-quality guides and explainers,
+    including screenshots, links, and potentially videos. The documents should
+    cover topics like how to actually instantiate a project and receive a
+    Gallaudet API secret, when to use a milestone-based task, how to integrate
+    your game with the Gallaudet client SDK, what makes an engaging task, etc.
+
 
 ## Future work
 - Integrate Gallaudet with the DC3 game.
