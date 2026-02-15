@@ -41,6 +41,9 @@ structure Milestone {
     /// Percentage credited when the milestone is marked complete.
     @required
     percentageContribution: Percentage
+
+    /// Uploaded assets that should be shown for this milestone.
+    assetIds: AssetIds
 }
 
 /// Collection of milestones contributing to a catalog task.

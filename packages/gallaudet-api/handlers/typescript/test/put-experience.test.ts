@@ -109,6 +109,9 @@ describe('PutExperience', () => {
         body: {
           experienceName: '  National USA Game ',
           robloxGameId: '  1213026131 ',
+          assetIds: [
+            'f8a2ab54-30f7-406f-af10-b1591db54b91',
+          ],
         },
       },
     });
@@ -125,6 +128,9 @@ describe('PutExperience', () => {
     expect(updateArgs.ExpressionAttributeValues).toMatchObject({
       ':experienceName': 'National USA Game',
       ':robloxGameId': '1213026131',
+      ':assetIds': [
+        'f8a2ab54-30f7-406f-af10-b1591db54b91',
+      ],
     });
 
     expect(response.statusCode).toBe(200);
@@ -154,5 +160,28 @@ describe('PutExperience', () => {
     expect(
       (response.body as InternalFailureErrorResponseContent).message,
     ).toEqual('Failed to save experience profile');
+  });
+
+  it('returns 400 when duplicate assetIds are provided', async () => {
+    const response = await putExperience({
+      ...buildRequestArgs(),
+      input: {
+        requestParameters: {},
+        body: {
+          experienceName: 'NUSA',
+          robloxGameId: '123456',
+          assetIds: [
+            'eca23e44-4d2f-4061-88d8-b5d94339d8ad',
+            'eca23e44-4d2f-4061-88d8-b5d94339d8ad',
+          ],
+        } as any,
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body).toEqual({
+      message: 'Duplicate assetId eca23e44-4d2f-4061-88d8-b5d94339d8ad',
+    });
+    expect(dynamoMocks.update).not.toHaveBeenCalled();
   });
 });

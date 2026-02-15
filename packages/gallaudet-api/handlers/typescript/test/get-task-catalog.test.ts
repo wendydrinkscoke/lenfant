@@ -71,6 +71,9 @@ describe('GetTaskCatalog', () => {
           Name: 'Draft a Bill',
           Subheading: 'Research and write legislation',
           Instructions: 'Work together to draft your bill.',
+          AssetIds: [
+            'ab5630e4-f64d-4f49-8c3e-45f87ab768e9',
+          ],
         },
         {
           ExperienceId: 'abcdefg',
@@ -83,6 +86,9 @@ describe('GetTaskCatalog', () => {
               id: 'visit-oval-office',
               name: 'Visit the Oval Office',
               percentageContribution: 50,
+              assetIds: [
+                'f2c69ed9-1ded-4ab4-a1f0-97de6d84ca5a',
+              ],
             },
             {
               id: 'visit-situation-room',
@@ -106,6 +112,9 @@ describe('GetTaskCatalog', () => {
           {
             ExperienceId: 'abcdefg',
             ExperienceName: 'Experience Alpha',
+            AssetIds: [
+              'c580fb04-787e-4c92-8dd9-d6ff22f4eb3b',
+            ],
           },
         ],
       },
@@ -142,12 +151,18 @@ describe('GetTaskCatalog', () => {
         {
           experienceId: 'abcdefg',
           experienceName: 'Experience Alpha',
+          assetIds: [
+            'c580fb04-787e-4c92-8dd9-d6ff22f4eb3b',
+          ],
           catalogEntries: [
             {
               entryId: 'draft-bill',
               name: 'Draft a Bill',
               subheading: 'Research and write legislation',
               instructions: 'Work together to draft your bill.',
+              assetIds: [
+                'ab5630e4-f64d-4f49-8c3e-45f87ab768e9',
+              ],
             },
             {
               entryId: 'tour-whitehouse',
@@ -159,6 +174,9 @@ describe('GetTaskCatalog', () => {
                   id: 'visit-oval-office',
                   name: 'Visit the Oval Office',
                   percentageContribution: 50,
+                  assetIds: [
+                    'f2c69ed9-1ded-4ab4-a1f0-97de6d84ca5a',
+                  ],
                 },
                 {
                   id: 'visit-situation-room',

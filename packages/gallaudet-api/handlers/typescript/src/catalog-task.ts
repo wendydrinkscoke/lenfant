@@ -13,6 +13,17 @@ import { isAWSError } from './utils/error-utils';
 const ddbClient = new DynamoDB.DocumentClient();
 const TASK_CATALOG_TABLE_NAME = getRequiredEnv('TASK_CATALOG_TABLE_NAME');
 
+const findFirstDuplicate = (values: readonly string[]): string | undefined => {
+  const seen = new Set<string>();
+  for (const value of values) {
+    if (seen.has(value)) {
+      return value;
+    }
+    seen.add(value);
+  }
+  return undefined;
+};
+
 /**
  * Type-safe handler for the CatalogTask operation
  */
@@ -61,6 +72,7 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
     name,
     subheading,
     instructions,
+    assetIds,
   } = input.body;
 
   if (!name?.trim()) {
@@ -84,10 +96,60 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
     });
   }
 
+  const normalizedAssetIds = assetIds?.map((assetId) => assetId.trim());
+  if (normalizedAssetIds) {
+    if (normalizedAssetIds.some((assetId) => !assetId)) {
+      return Response.badRequest({
+        message: 'assetIds must not include empty values',
+      });
+    }
+
+    const duplicateAssetId = findFirstDuplicate(normalizedAssetIds);
+    if (duplicateAssetId) {
+      return Response.badRequest({
+        message: `Duplicate assetId ${duplicateAssetId}`,
+      });
+    }
+  }
+
   const { milestones } = input.body;
+  let milestonesToPersist = milestones;
   if (milestones) {
+    const normalizedMilestones: NonNullable<typeof milestones> = [];
+    for (const milestone of milestones) {
+      const normalizedMilestoneAssetIds = milestone.assetIds?.map((assetId) =>
+        assetId.trim(),
+      );
+      if (!normalizedMilestoneAssetIds) {
+        normalizedMilestones.push(milestone);
+        continue;
+      }
+
+      if (normalizedMilestoneAssetIds.some((assetId) => !assetId)) {
+        return Response.badRequest({
+          message: `Milestone ${milestone.id} contains empty assetIds`,
+        });
+      }
+
+      const duplicateMilestoneAssetId = findFirstDuplicate(
+        normalizedMilestoneAssetIds,
+      );
+      if (duplicateMilestoneAssetId) {
+        return Response.badRequest({
+          message:
+            `Milestone ${milestone.id} contains duplicate assetId` +
+            ` ${duplicateMilestoneAssetId}`,
+        });
+      }
+
+      normalizedMilestones.push({
+        ...milestone,
+        assetIds: normalizedMilestoneAssetIds,
+      });
+    }
+
     const seenIds = new Set<string>();
-    for (const { id } of milestones) {
+    for (const { id } of normalizedMilestones) {
       if (seenIds.has(id)) {
         return Response.badRequest({
           message: `Duplicate identifier ${id}`,
@@ -96,7 +158,7 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
       seenIds.add(id);
     }
 
-    const totalPercentage = milestones.reduce(
+    const totalPercentage = normalizedMilestones.reduce(
       (total, milestone) => total + milestone.percentageContribution,
       0,
     );
@@ -107,11 +169,13 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
       });
     }
 
-    if (milestones.length == 0) {
+    if (normalizedMilestones.length == 0) {
       return Response.badRequest({
         message: 'Milestones array must not be empty if provided',
       });
     }
+
+    milestonesToPersist = normalizedMilestones;
   }
 
   const nowIso = new Date().toISOString();
@@ -150,7 +214,13 @@ export const catalogTask: CatalogTaskChainedHandlerFunction = async (request) =>
   if (milestones) {
     updateSegments.push('#milestones = :milestones');
     expressionAttributeNames['#milestones'] = 'Milestones';
-    expressionAttributeValues[':milestones'] = milestones;
+    expressionAttributeValues[':milestones'] = milestonesToPersist;
+  }
+
+  if (normalizedAssetIds) {
+    updateSegments.push('#assetIds = :assetIds');
+    expressionAttributeNames['#assetIds'] = 'AssetIds';
+    expressionAttributeValues[':assetIds'] = normalizedAssetIds;
   }
 
   const updateExpression = `SET ${updateSegments.join(', ')}`;

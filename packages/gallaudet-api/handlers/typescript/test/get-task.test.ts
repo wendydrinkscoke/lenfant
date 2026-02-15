@@ -85,11 +85,17 @@ beforeEach(() => {
           Name: 'Explore the Capitol',
           Subheading: 'Learn about the U.S. Capitol building',
           Instructions: 'Meet the guide and collect badges.',
+          AssetIds: [
+            '25242edd-4e8b-4b84-9588-3d472d927b9a',
+          ],
           Milestones: [
             {
               id: 'tour-the-rotunda',
               name: 'Tour the Rotunda',
               percentageContribution: 50,
+              assetIds: [
+                'bcc9faf9-b6ce-4b1a-989f-95ce1f148f6a',
+              ],
             },
             {
               id: 'meet-your-guide',
@@ -104,6 +110,9 @@ beforeEach(() => {
           ExperienceId: 'studio-42',
           ExperienceName: 'Studio Forty Two',
           RobloxGameId: '1213026131',
+          AssetIds: [
+            '07e3087d-7130-4c66-bf25-95b38295f0a7',
+          ],
         },
       },
     };
@@ -142,11 +151,20 @@ describe('GetTask', () => {
         instructions: 'Meet the guide and collect badges.',
         experienceName: 'Studio Forty Two',
         robloxGameId: '1213026131',
+        assetIds: [
+          '25242edd-4e8b-4b84-9588-3d472d927b9a',
+        ],
+        experienceAssetIds: [
+          '07e3087d-7130-4c66-bf25-95b38295f0a7',
+        ],
         milestones: [
           {
             id: 'tour-the-rotunda',
             name: 'Tour the Rotunda',
             percentageContribution: 50,
+            assetIds: [
+              'bcc9faf9-b6ce-4b1a-989f-95ce1f148f6a',
+            ],
           },
           {
             id: 'meet-your-guide',

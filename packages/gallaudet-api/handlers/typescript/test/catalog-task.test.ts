@@ -150,11 +150,17 @@ describe('CatalogTask', () => {
           name: 'Tour the Whitehouse',
           subheading: 'Explore iconic rooms and history',
           instructions: 'Complete each stop on your tour.',
+          assetIds: [
+            '94f5d18a-d91a-4d8f-954f-2d31cf212f68',
+          ],
           milestones: [
             {
               id: 'visit-oval-office',
               name: 'Visit the Oval Office',
               percentageContribution: 50,
+              assetIds: [
+                'c8b70471-0f2a-4a40-a3f6-75b3f87c38af',
+              ],
             },
             {
               id: 'visit-situation-room',
@@ -182,12 +188,19 @@ describe('CatalogTask', () => {
         id: 'visit-oval-office',
         name: 'Visit the Oval Office',
         percentageContribution: 50,
+        assetIds: [
+          'c8b70471-0f2a-4a40-a3f6-75b3f87c38af',
+        ],
       },
       {
         id: 'visit-situation-room',
         name: 'Visit the Situation Room',
         percentageContribution: 50,
       },
+    ]);
+    expect(updateArgs.ExpressionAttributeNames['#assetIds']).toBe('AssetIds');
+    expect(updateArgs.ExpressionAttributeValues[':assetIds']).toEqual([
+      '94f5d18a-d91a-4d8f-954f-2d31cf212f68',
     ]);
   });
 
@@ -247,6 +260,32 @@ describe('CatalogTask', () => {
     expect(response.statusCode).toBe(400);
     expect(response.body).toEqual({
       message: 'The sum of percentages awarded across all milestones must equal 100',
+    });
+    expect(dynamoMocks.update).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when duplicate task assetIds are provided', async () => {
+    const response = await catalogTask({
+      ...buildRequestArgs(),
+      input: {
+        requestParameters: {
+          entryId: 'tour-the-whitehouse',
+        },
+        body: {
+          name: 'Tour the Whitehouse',
+          subheading: 'Explore iconic rooms and history',
+          instructions: 'Complete each stop on your tour.',
+          assetIds: [
+            '3e922c1a-4893-4ab4-a9df-4dd7f2606f2b',
+            '3e922c1a-4893-4ab4-a9df-4dd7f2606f2b',
+          ],
+        } as any,
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body).toEqual({
+      message: 'Duplicate assetId 3e922c1a-4893-4ab4-a9df-4dd7f2606f2b',
     });
     expect(dynamoMocks.update).not.toHaveBeenCalled();
   });

@@ -37,6 +37,7 @@ type CatalogEntryRecord = {
   Name?: string;
   Subheading?: string;
   Instructions?: string;
+  AssetIds?: string[];
 };
 
 const listCoursesForStudent = async (logger: ReturnType<typeof LoggingInterceptor.getLogger>, classroomApi: ReturnType<typeof classroom>) => {
@@ -523,6 +524,7 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
     const name = catalogEntry?.Name?.trim();
     const subheading = catalogEntry?.Subheading?.trim();
     const instructions = catalogEntry?.Instructions?.trim();
+    const assetIds = catalogEntry?.AssetIds;
     if (!name || !subheading || !instructions) {
       logger.warn(
         `Catalog entry ${experienceId}/${taskRecord.EntryId} missing name, subheading, or instructions; skipping`,
@@ -552,6 +554,7 @@ export const listTasksForPlayer: ListTasksForPlayerChainedHandlerFunction = asyn
       subheading,
       ...milestoneFields,
       instructions,
+      ...(assetIds !== undefined ? { assetIds } : {}),
     });
   }
 

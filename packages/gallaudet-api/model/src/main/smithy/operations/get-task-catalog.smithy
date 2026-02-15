@@ -7,6 +7,7 @@ use llc.civictech.school#CatalogTaskName
 use llc.civictech.school#CatalogTaskSubheading
 use llc.civictech.school#Milestones
 use llc.civictech.school#ExperienceId
+use llc.civictech.school#AssetIds
 
 /// A task entry within an experience's catalog.
 structure TaskCatalogEntry {
@@ -26,6 +27,9 @@ structure TaskCatalogEntry {
     @required
     instructions: CatalogTaskInstructions
 
+    /// Optional assets that represent the task.
+    assetIds: AssetIds
+
     /// Optional milestones providing partial grading breakdowns.
     milestones: Milestones
 }
@@ -39,6 +43,9 @@ structure ExperienceTaskCatalog {
     /// Human-readable display name for the experience.
     @required
     experienceName: ExperienceName
+
+    /// Optional assets representing the experience.
+    assetIds: AssetIds
 
     /// Tasks made available by this experience.
     @required

@@ -33,6 +33,7 @@ type CatalogEntryItem = {
   Name?: string;
   Subheading?: string;
   Instructions?: string;
+  AssetIds?: string[];
   Milestones?: Milestone[];
 };
 
@@ -40,6 +41,7 @@ type ExperienceItem = {
   ExperienceId: string;
   ExperienceName: string;
   RobloxGameId: string;
+  AssetIds?: string[];
 }
 
 
@@ -302,6 +304,7 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
     const title = catalogEntry.Name?.trim() || fallbackTitle;
     const subheading = catalogEntry.Subheading?.trim();
     const instructions = catalogEntry.Instructions?.trim();
+    const assetIds = catalogEntry.AssetIds;
     const milestones = catalogEntry.Milestones;
 
     if (!title || !subheading || !instructions) {
@@ -359,6 +362,7 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
     }
     const experienceName = experience?.ExperienceName ?? experienceId;
     const robloxGameId = experience?.RobloxGameId;
+    const experienceAssetIds = experience?.AssetIds;
 
     return Response.success({
       task: {
@@ -367,6 +371,10 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
         instructions,
         experienceName,
         robloxGameId,
+        ...(assetIds !== undefined ? { assetIds } : {}),
+        ...(experienceAssetIds !== undefined
+          ? { experienceAssetIds }
+          : {}),
         ...(milestones !== undefined ? { milestones } : {}),
       },
     });

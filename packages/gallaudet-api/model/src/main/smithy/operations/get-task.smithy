@@ -6,6 +6,7 @@ use llc.civictech.school#CatalogTaskName
 use llc.civictech.school#CatalogTaskSubheading
 use llc.civictech.school#Milestones
 use llc.civictech.school#ExperienceName
+use llc.civictech.school#AssetIds
 
 /// Details needed to render a task instance inside a Classroom iframe.
 structure TaskInstanceView {
@@ -21,6 +22,9 @@ structure TaskInstanceView {
     @required
     instructions: CatalogTaskInstructions
 
+    /// Optional assets attached directly to the task.
+    assetIds: AssetIds
+
     /// Optional milestones that outline partial completion goals.
     milestones: Milestones
 
@@ -31,6 +35,9 @@ structure TaskInstanceView {
     /// Roblox game ID which informs the play button link
     @required
     robloxGameId: RobloxGameId
+
+    /// Optional assets attached to the owning experience.
+    experienceAssetIds: AssetIds
 }
 
 /// Retrieves a persisted task instance if the caller is authorized to view it.

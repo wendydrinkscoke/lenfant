@@ -19,6 +19,7 @@ type ExperienceItem = {
   CreatedAt?: string;
   ExperienceName?: string;
   RobloxGameId?: string;
+  AssetIds?: string[];
   UpdatedAt?: string;
 }
 
@@ -29,6 +30,7 @@ type CatalogItem = {
   Name?: string;
   Subheading?: string;
   Instructions?: string;
+  AssetIds?: string[];
   Milestones?: Milestone[];
 };
 
@@ -37,6 +39,7 @@ type CatalogEntry = {
   name: string;
   subheading: string;
   instructions: string;
+  assetIds?: string[];
   milestones?: Milestone[];
 };
 
@@ -72,6 +75,7 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
   const experiencesMap = new Map<string, {
     experienceId: string;
     experienceName: string;
+    assetIds?: string[];
     catalogEntries: CatalogEntry[];
   }>();
 
@@ -122,6 +126,7 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
     const name = item.Name;
     const subheading = item.Subheading;
     const instructions = item.Instructions;
+    const assetIds = item.AssetIds;
     const milestones = item.Milestones;
     if (
       !experienceId ||
@@ -136,9 +141,11 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
 
     if (!experiencesMap.has(experienceId)) {
       const experienceName = experiencesById.get(experienceId)?.ExperienceName ?? experienceId;
+      const experienceAssetIds = experiencesById.get(experienceId)?.AssetIds;
       experiencesMap.set(experienceId, {
         experienceId,
         experienceName,
+        ...(experienceAssetIds !== undefined ? { assetIds: experienceAssetIds } : {}),
         catalogEntries: [],
       });
     }
@@ -151,6 +158,9 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
     };
     if (milestones) {
       entry.milestones = milestones;
+    }
+    if (assetIds) {
+      entry.assetIds = assetIds;
     }
     experiencesMap.get(experienceId)?.catalogEntries.push(entry);
   });

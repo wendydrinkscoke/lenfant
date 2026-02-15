@@ -13,6 +13,17 @@ import { isAWSError } from './utils/error-utils';
 const ddbClient = new DynamoDB.DocumentClient();
 const EXPERIENCES_TABLE_NAME = getRequiredEnv('EXPERIENCES_TABLE_NAME');
 
+const findFirstDuplicate = (values: readonly string[]): string | undefined => {
+  const seen = new Set<string>();
+  for (const value of values) {
+    if (seen.has(value)) {
+      return value;
+    }
+    seen.add(value);
+  }
+  return undefined;
+};
+
 /**
  * Type-safe handler for the PutExperience operation
  */
@@ -44,10 +55,51 @@ export const putExperience: PutExperienceChainedHandlerFunction = async (request
   const body = input.body;
   const experienceNameRaw = body.experienceName;
   const robloxGameIdRaw = body.robloxGameId;
+  const assetIdsRaw = body.assetIds;
   const experienceName = experienceNameRaw.trim();
   const robloxGameId = robloxGameIdRaw.trim();
+  const assetIds = assetIdsRaw?.map((assetId) => assetId.trim());
+
+  if (assetIds) {
+    if (assetIds.some((assetId) => !assetId)) {
+      return Response.badRequest({
+        message: 'assetIds must not include empty values',
+      });
+    }
+
+    const duplicateAssetId = findFirstDuplicate(assetIds);
+    if (duplicateAssetId) {
+      return Response.badRequest({
+        message: `Duplicate assetId ${duplicateAssetId}`,
+      });
+    }
+  }
 
   const nowIso = new Date().toISOString();
+  const updateExpressionSegments = [
+    '#experienceName = :experienceName',
+    '#robloxGameId = :robloxGameId',
+    '#updatedAt = :updatedAt',
+    '#createdAt = if_not_exists(#createdAt, :createdAt)',
+  ];
+  const expressionAttributeNames: Record<string, string> = {
+    '#experienceName': 'ExperienceName',
+    '#robloxGameId': 'RobloxGameId',
+    '#updatedAt': 'UpdatedAt',
+    '#createdAt': 'CreatedAt',
+  };
+  const expressionAttributeValues: Record<string, unknown> = {
+    ':experienceName': experienceName,
+    ':robloxGameId': robloxGameId,
+    ':updatedAt': nowIso,
+    ':createdAt': nowIso,
+  };
+
+  if (assetIds) {
+    updateExpressionSegments.push('#assetIds = :assetIds');
+    expressionAttributeNames['#assetIds'] = 'AssetIds';
+    expressionAttributeValues[':assetIds'] = assetIds;
+  }
 
   logger.info(
     `Upserting experience profile (experience=${experienceId}, robloxGameId=${robloxGameId})`,
@@ -60,24 +112,9 @@ export const putExperience: PutExperienceChainedHandlerFunction = async (request
         Key: {
           ExperienceId: experienceId,
         },
-        UpdateExpression: [
-          'SET #experienceName = :experienceName',
-          '#robloxGameId = :robloxGameId',
-          '#updatedAt = :updatedAt',
-          '#createdAt = if_not_exists(#createdAt, :createdAt)',
-        ].join(', '),
-        ExpressionAttributeNames: {
-          '#experienceName': 'ExperienceName',
-          '#robloxGameId': 'RobloxGameId',
-          '#updatedAt': 'UpdatedAt',
-          '#createdAt': 'CreatedAt',
-        },
-        ExpressionAttributeValues: {
-          ':experienceName': experienceName,
-          ':robloxGameId': robloxGameId,
-          ':updatedAt': nowIso,
-          ':createdAt': nowIso,
-        },
+        UpdateExpression: `SET ${updateExpressionSegments.join(', ')}`,
+        ExpressionAttributeNames: expressionAttributeNames,
+        ExpressionAttributeValues: expressionAttributeValues,
         ReturnValues: 'NONE',
       })
       .promise();

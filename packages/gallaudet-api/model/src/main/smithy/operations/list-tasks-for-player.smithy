@@ -7,6 +7,7 @@ use llc.civictech.school#CatalogTaskName
 use llc.civictech.school#CatalogTaskSubheading
 use llc.civictech.school#CatalogEntryId
 use llc.civictech.school#Milestone
+use llc.civictech.school#AssetIds
 
 /// A task assigned to a specific Roblox player for this experience.
 structure PlayerTaskAssignment {
@@ -19,6 +20,9 @@ structure PlayerTaskAssignment {
     /// Instructions for how to complete the task.
     @required
     instructions: CatalogTaskInstructions
+
+    /// Optional assets attached directly to the task.
+    assetIds: AssetIds
 
     /// Unique identifier for the task instance.
     @required

@@ -3,6 +3,7 @@ namespace llc.civictech.school
 
 use llc.civictech.school#CatalogEntryId
 use llc.civictech.school#Milestones
+use llc.civictech.school#AssetIds
 
 /// Creates or updates a task catalog entry for the calling experience.
 @idempotent
@@ -27,6 +28,9 @@ operation CatalogTask {
         @required
         instructions: CatalogTaskInstructions
 
+        /// Optional assets that represent the task itself.
+        assetIds: AssetIds
+
         /// Optional milestones that award partial completion percentages.
         milestones: Milestones
     }
@@ -50,11 +54,17 @@ apply CatalogTask @examples([
             name: "Pee on John Harvard Statue",
             subheading: "Participate in a centuries-long urination tradition",
             instructions: "In this task, you'll be peeing on a statue in game.",
+            assetIds: [
+                "00eea6f2-c533-4633-a62e-951af6f3f643"
+            ],
             milestones: [
                 {
                     id: "find-the-statue",
                     name: "Find the John Harvard statue",
-                    percentageContribution: 50
+                    percentageContribution: 50,
+                    assetIds: [
+                        "af4f4f4f-c533-4633-a62e-951af6f3f643"
+                    ]
                 },
                 {
                     id: "complete-the-tradition",

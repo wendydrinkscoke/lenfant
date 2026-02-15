@@ -5,6 +5,11 @@ namespace llc.civictech.school
 @pattern("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
 string AssetId
 
+/// References to assets that have already been uploaded.
+list AssetIds {
+    member: AssetId
+}
+
 /// Identifier for an in-progress upload session.
 @pattern("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
 string AssetUploadSessionId
