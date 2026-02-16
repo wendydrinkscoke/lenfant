@@ -49,7 +49,7 @@ export function DeveloperPortalContent({ user }: DeveloperPortalContentProps) {
         return allFeatures
       }
 
-      const hiddenInProd = new Set(["listing", "tasks", "assets", "roles", "metrics"])
+      const hiddenInProd = new Set(["listing", "tasks", "roles", "metrics"])
       return allFeatures.filter((feature) => !hiddenInProd.has(feature.id))
     },
     [showComingSoonFeatures],
