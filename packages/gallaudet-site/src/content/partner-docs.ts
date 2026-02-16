@@ -623,7 +623,7 @@ export const experienceGuides: PartnerDocsArticle[] = [
         heading: "Step 1: Add Knit config for the starter service",
         body: [
           "Create `src/Server/Modules/Config/CivicTechForSchools.lua`:",
-          "local RunService = game:GetService(\"RunService\")\n\nlocal Config = {\n  BaseUrl = \"https://api.school.civictech.llc\",\n  ApiKey = game:GetService(\"HttpService\"):GetSecret(\"<your-secret-id>\"),\n  ExperienceProfile = {\n    experienceName = \"My Experience Name\",\n    robloxGameId = \"1234567890\",\n    -- assetIds = { \"<optional-asset-uuid>\" },\n  },\n  EnableDebugLogging = RunService:IsStudio(),\n}\n\nreturn Config",
+          "local RunService = game:GetService(\"RunService\")\n\nlocal Config = {\n  BaseUrl = \"https://api.prod.school.civictech.llc\",\n  ApiKey = game:GetService(\"HttpService\"):GetSecret(\"<your-secret-id>\"),\n  ExperienceProfile = {\n    experienceName = \"My Experience Name\",\n    robloxGameId = \"1234567890\",\n    -- assetIds = { \"<optional-asset-uuid>\" },\n  },\n  EnableDebugLogging = RunService:IsStudio(),\n}\n\nreturn Config",
           "The starter Knit service requires exactly this module path: `self.Modules.Config.CivicTechForSchools`.",
         ],
       },
