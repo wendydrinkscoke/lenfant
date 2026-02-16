@@ -6,14 +6,12 @@ import { Button } from "../ui/button"
 
 type PartnerDocsCodeBlockProps = {
   title: string
-  language: string
   code: string
   className?: string
 }
 
 export function PartnerDocsCodeBlock({
   title,
-  language,
   code,
   className,
 }: PartnerDocsCodeBlockProps) {
@@ -40,7 +38,7 @@ export function PartnerDocsCodeBlock({
       <div className="flex items-center justify-between border-b bg-muted/40 px-4 py-2">
         <div>
           <p className="text-sm font-medium">{title}</p>
-          <p className="text-xs text-muted-foreground">{language}</p>
+          <p className="text-xs text-muted-foreground">lua</p>
         </div>
         <Button variant="ghost" size="sm" onClick={handleCopy}>
           {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}

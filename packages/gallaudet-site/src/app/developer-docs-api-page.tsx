@@ -121,7 +121,6 @@ export default function DeveloperDocsApiPage() {
                       <PartnerDocsCodeBlock
                         key={`${resource.id}-${example.title}`}
                         title={example.title}
-                        language={example.language}
                         code={example.code}
                       />
                     ))}

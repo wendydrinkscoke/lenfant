@@ -9,7 +9,7 @@ export default function DeveloperDocsGuidesPage() {
     <PartnerDocsShell
       badge="Guides"
       title="Partner integration guides"
-      description="Hands-on walkthroughs for integrating Gallaudet into Roblox experiences."
+      description="Hands-on walkthroughs for integrating CivicTech for Schools into Roblox experiences."
     >
       <Card>
         <CardHeader>

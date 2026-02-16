@@ -35,7 +35,7 @@ const sections = [
 export default function DeveloperDocsHomePage() {
   return (
     <PartnerDocsShell
-      title="Partner integration docs for Gallaudet"
+      title="Partner integration docs for CivicTech for Schools"
       description="This docs portal focuses only on experience-relevant APIs and implementation patterns for Roblox game teams integrating with CivicTech for Schools."
     >
       <Card>

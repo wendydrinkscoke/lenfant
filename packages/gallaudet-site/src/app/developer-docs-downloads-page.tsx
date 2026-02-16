@@ -1,4 +1,4 @@
-import { Download, FileArchive, Package, Wrench } from "lucide-react"
+import { Download, Package, Wrench } from "lucide-react"
 import { partnerClientDownloads } from "../content/partner-docs"
 import { PartnerDocsShell } from "../components/partner-docs/partner-docs-shell"
 import { Button } from "../components/ui/button"
@@ -55,18 +55,6 @@ export default function DeveloperDocsDownloadsPage() {
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
             Start with <code>latest</code> for quick setup, then pin to a versioned artifact path for stable production releases.
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <FileArchive className="h-4 w-4 text-emerald-600" />
-              Source model linkage
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            API contracts are defined in Smithy, and generated API documentation is available in the Gallaudet API model outputs.
           </CardContent>
         </Card>
       </div>

@@ -6,7 +6,6 @@ export type PartnerApiAuthMode = {
 
 export type PartnerApiExample = {
   title: string
-  language: "lua" | "bash" | "json"
   code: string
 }
 
@@ -50,95 +49,104 @@ export type PartnerClientDownload = {
   audience: string
 }
 
-const LUA_HTTP_HELPER_SNIPPET = [
-  "local HttpService = game:GetService(\"HttpService\")",
+const LUA_PUT_EXPERIENCE_VANILLA_SNIPPET = [
+  "local result, err = service:PutExperience({",
+  "  experienceName = \"Run the World - Learn Country Names!\",",
+  "  robloxGameId = \"9228429469\",",
+  "})",
   "",
-  "local function request(method, baseUrl, path, apiKey, body)",
-  "  local requestData = {",
-  "    Url = baseUrl .. path,",
-  "    Method = method,",
-  "    Headers = {",
-  "      [\"Content-Type\"] = \"application/json\",",
-  "      [\"x-api-key\"] = apiKey,",
-  "    },",
-  "  }",
+  "if err then",
+  "  warn(\"PutExperience failed:\", err.message)",
+  "  return nil, err",
+  "end",
   "",
-  "  if body ~= nil then",
-  "    requestData.Body = HttpService:JSONEncode(body)",
+  "return result, nil",
+].join("\n")
+
+const LUA_PUT_EXPERIENCE_KNIT_SNIPPET = [
+  "function CivicTechForSchoolsService:SyncExperienceProfile()",
+  "  local result, err = self:PutExperience(self.ExperienceProfile)",
+  "  if err then",
+  "    warn(\"PutExperience failed:\", err.message)",
+  "    return nil, err",
   "  end",
   "",
-  "  local ok, response = pcall(function()",
-  "    return HttpService:RequestAsync(requestData)",
-  "  end)",
-  "",
-  "  if not ok or not response.Success then",
-  "    return nil, response and response.Body or \"request failed\"",
-  "  end",
-  "",
-  "  if response.Body == \"\" then",
-  "    return {}, nil",
-  "  end",
-  "",
-  "  return HttpService:JSONDecode(response.Body), nil",
+  "  return result, nil",
   "end",
 ].join("\n")
 
-const LUA_KNIT_SNIPPET = [
-  "local Knit = require(game:GetService(\"ReplicatedStorage\").Packages.Knit)",
-  "",
-  "local GallaudetService = Knit.CreateService({",
-  "  Name = \"GallaudetService\",",
-  "  Client = {",
-  "    TaskAssignmentsUpdated = Knit.CreateSignal(),",
+const LUA_CATALOG_TASK_VANILLA_SNIPPET = [
+  "local entryId = \"get-100-points\"",
+  "local payload = {",
+  "  name = \"Get 100 Points\",",
+  "  subheading = \"Obtain at least 100 points in one session\",",
+  "  instructions = \"Get points by selecting the correct country quickly.\",",
+  "  milestones = {",
+  "    { id = \"reach-50-points\", name = \"Reach 50 points\", percentageContribution = 50 },",
+  "    { id = \"reach-100-points\", name = \"Reach 100 points\", percentageContribution = 50 },",
   "  },",
-  "})",
+  "}",
   "",
-  "function GallaudetService:PushTasksToPlayer(player)",
-  "  local response, err = self:ListTasksForPlayer(player)",
+  "local result, err = service:CatalogTask(entryId, payload)",
+  "if err then",
+  "  warn(\"CatalogTask failed:\", err.message)",
+  "  return nil, err",
+  "end",
+  "",
+  "return result, nil",
+].join("\n")
+
+const LUA_CATALOG_TASK_KNIT_SNIPPET = [
+  "function CivicTechForSchoolsService:UpsertCatalogTask(entryId, payload)",
+  "  local result, err = self:CatalogTask(entryId, payload)",
   "  if err then",
-  "    self.Client.TaskAssignmentsUpdated:Fire(player, { success = false, message = err.message })",
+  "    warn(\"CatalogTask failed:\", err.message)",
+  "    return nil, err",
+  "  end",
+  "",
+  "  return result, nil",
+  "end",
+].join("\n")
+
+const LUA_LIST_TASKS_VANILLA_SNIPPET = [
+  "function TaskRuntime:PushTasksToPlayer(player)",
+  "  local tasks, err = self.CtsService:ListTasksForPlayer(tostring(player.UserId))",
+  "  if err then",
+  "    self.Remotes.TaskAssignmentsUpdated:FireClient(player, { success = false, error = err })",
+  "    return nil, err",
+  "  end",
+  "",
+  "  self.Remotes.TaskAssignmentsUpdated:FireClient(player, {",
+  "    success = true,",
+  "    payload = tasks,",
+  "  })",
+  "",
+  "  return tasks, nil",
+  "end",
+].join("\n")
+
+const LUA_LIST_TASKS_KNIT_SNIPPET = [
+  "function CivicTechForSchoolsService:PushTasksToPlayer(player)",
+  "  local tasks, err = self:ListTasksForPlayer(player)",
+  "  if err then",
+  "    self.Client.TaskAssignmentsUpdated:Fire(player, { success = false, error = err })",
   "    return nil, err",
   "  end",
   "",
   "  self.Client.TaskAssignmentsUpdated:Fire(player, {",
   "    success = true,",
-  "    payload = response,",
+  "    payload = tasks,",
   "  })",
   "",
-  "  return response, nil",
+  "  return tasks, nil",
   "end",
 ].join("\n")
 
-const CURL_PUT_PARTNER = [
-  "curl -X PUT 'https://api.prod.school.civictech.llc/experiences/me' \\",
-  "  -H 'Content-Type: application/json' \\",
-  "  -H 'x-api-key: <YOUR_GALLAUDET_API_KEY>' \\",
-  "  -d '{",
-  "    \"experienceName\": \"Run the World - Learn Country Names!\",",
-  "    \"robloxGameId\": \"9228429469\"",
-  "  }'",
-].join("\n")
-
-const CURL_CATALOG_TASK = [
-  "curl -X PUT 'https://api.prod.school.civictech.llc/task-catalog/get-100-points' \\",
-  "  -H 'Content-Type: application/json' \\",
-  "  -H 'x-api-key: <YOUR_GALLAUDET_API_KEY>' \\",
-  "  -d '{",
-  "    \"name\": \"Get 100 Points\",",
-  "    \"subheading\": \"Obtain at least 100 points in one session\",",
-  "    \"instructions\": \"Get points by selecting the correct country quickly.\",",
-  "    \"milestones\": [",
-  "      { \"id\": \"reach-50-points\", \"name\": \"Reach 50 points\", \"percentageContribution\": 50 },",
-  "      { \"id\": \"reach-100-points\", \"name\": \"Reach 100 points\", \"percentageContribution\": 50 }",
-  "    ]",
-  "  }'",
-].join("\n")
-
-const LUA_GRADE_TASK_SNIPPET = [
-  "function service:GradeTask(playerId, taskId, percentage)",
-  "  local result, err = self:_request(",
-  "    \"PUT\",",
-  "    \"/experiences/me/players/\" .. playerId .. \"/tasks/\" .. taskId .. \"/grade\",",
+const LUA_GRADE_TASK_VANILLA_SNIPPET = [
+  "function TaskRuntime:GradePlayerTask(player, taskId, percentage)",
+  "  local result, err = self.CtsService:GradeTask(",
+  "    tostring(player.UserId),",
+  "    taskId,",
   "    { percentage = percentage }",
   "  )",
   "",
@@ -147,22 +155,53 @@ const LUA_GRADE_TASK_SNIPPET = [
   "    return nil, err",
   "  end",
   "",
+  "  self:PushTasksToPlayer(player)",
   "  return result, nil",
   "end",
 ].join("\n")
 
-const LUA_MILESTONE_SNIPPET = [
-  "local result, err = service:_request(",
-  "  \"PUT\",",
-  "  \"/experiences/me/players/\" .. player.UserId .. \"/tasks/\" .. taskId .. \"/milestones/visit-capitol/completion\"",
-  ")",
+const LUA_GRADE_TASK_KNIT_SNIPPET = [
+  "function CivicTechForSchoolsService:GradePlayerTask(player, taskId, percentage)",
+  "  local result, err = self:GradeTask(player, taskId, { percentage = percentage })",
+  "  if err then",
+  "    self.Client.TaskAssignmentsUpdated:Fire(player, { success = false, error = err })",
+  "    return nil, err",
+  "  end",
   "",
-  "if err then",
-  "  warn(\"CompleteMilestone failed:\", err.message)",
-  "  return",
+  "  self:PushTasksToPlayer(player)",
+  "  return result, nil",
   "end",
+].join("\n")
+
+const LUA_COMPLETE_MILESTONE_VANILLA_SNIPPET = [
+  "function TaskRuntime:CompletePlayerMilestone(player, taskId, milestoneId)",
+  "  local result, err = self.CtsService:CompleteMilestone(",
+  "    tostring(player.UserId),",
+  "    taskId,",
+  "    milestoneId",
+  "  )",
   "",
-  "print(\"Updated cumulative percentage:\", result.updatedCumulativePercentage)",
+  "  if err then",
+  "    warn(\"CompleteMilestone failed:\", err.message)",
+  "    return nil, err",
+  "  end",
+  "",
+  "  self:PushTasksToPlayer(player)",
+  "  return result, nil",
+  "end",
+].join("\n")
+
+const LUA_COMPLETE_MILESTONE_KNIT_SNIPPET = [
+  "function CivicTechForSchoolsService:CompletePlayerMilestone(player, taskId, milestoneId)",
+  "  local result, err = self:CompleteMilestone(player, taskId, milestoneId)",
+  "  if err then",
+  "    self.Client.TaskAssignmentsUpdated:Fire(player, { success = false, error = err })",
+  "    return nil, err",
+  "  end",
+  "",
+  "  self:PushTasksToPlayer(player)",
+  "  return result, nil",
+  "end",
 ].join("\n")
 
 export const experienceApiResources: PartnerApiResource[] = [
@@ -193,14 +232,12 @@ export const experienceApiResources: PartnerApiResource[] = [
     ],
     examples: [
       {
-        title: "cURL",
-        language: "bash",
-        code: CURL_PUT_PARTNER,
+        title: "Vanilla (RemoteEvent/RemoteFunction style)",
+        code: LUA_PUT_EXPERIENCE_VANILLA_SNIPPET,
       },
       {
-        title: "Lua helper for Roblox server scripts",
-        language: "lua",
-        code: LUA_HTTP_HELPER_SNIPPET,
+        title: "Knit service style",
+        code: LUA_PUT_EXPERIENCE_KNIT_SNIPPET,
       },
     ],
   },
@@ -234,9 +271,12 @@ export const experienceApiResources: PartnerApiResource[] = [
     ],
     examples: [
       {
-        title: "cURL",
-        language: "bash",
-        code: CURL_CATALOG_TASK,
+        title: "Vanilla (RemoteEvent/RemoteFunction style)",
+        code: LUA_CATALOG_TASK_VANILLA_SNIPPET,
+      },
+      {
+        title: "Knit service style",
+        code: LUA_CATALOG_TASK_KNIT_SNIPPET,
       },
     ],
   },
@@ -270,31 +310,12 @@ export const experienceApiResources: PartnerApiResource[] = [
     ],
     examples: [
       {
-        title: "Lua (vanilla remotes approach)",
-        language: "lua",
-        code: [
-          "function service:ListTasksForPlayer(player)",
-          "  local robloxUserId = tostring(player.UserId)",
-          "  local result, err = self:_request(\"GET\", \"/experiences/me/players/\" .. robloxUserId .. \"/tasks\")",
-          "",
-          "  if err then",
-          "    self.Remotes.TaskAssignmentsUpdated:FireClient(player, { success = false, error = err })",
-          "    return nil, err",
-          "  end",
-          "",
-          "  self.Remotes.TaskAssignmentsUpdated:FireClient(player, {",
-          "    success = true,",
-          "    payload = result,",
-          "  })",
-          "",
-          "  return result, nil",
-          "end",
-        ].join("\n"),
+        title: "Vanilla (RemoteEvent/RemoteFunction style)",
+        code: LUA_LIST_TASKS_VANILLA_SNIPPET,
       },
       {
-        title: "Lua (Knit service push pattern)",
-        language: "lua",
-        code: LUA_KNIT_SNIPPET,
+        title: "Knit service style",
+        code: LUA_LIST_TASKS_KNIT_SNIPPET,
       },
     ],
   },
@@ -326,9 +347,12 @@ export const experienceApiResources: PartnerApiResource[] = [
     ],
     examples: [
       {
-        title: "Lua",
-        language: "lua",
-        code: LUA_GRADE_TASK_SNIPPET,
+        title: "Vanilla (RemoteEvent/RemoteFunction style)",
+        code: LUA_GRADE_TASK_VANILLA_SNIPPET,
+      },
+      {
+        title: "Knit service style",
+        code: LUA_GRADE_TASK_KNIT_SNIPPET,
       },
     ],
   },
@@ -363,9 +387,12 @@ export const experienceApiResources: PartnerApiResource[] = [
     ],
     examples: [
       {
-        title: "Lua",
-        language: "lua",
-        code: LUA_MILESTONE_SNIPPET,
+        title: "Vanilla (RemoteEvent/RemoteFunction style)",
+        code: LUA_COMPLETE_MILESTONE_VANILLA_SNIPPET,
+      },
+      {
+        title: "Knit service style",
+        code: LUA_COMPLETE_MILESTONE_KNIT_SNIPPET,
       },
     ],
   },
@@ -427,7 +454,7 @@ export const experienceApiResources: PartnerApiResource[] = [
     method: "POST",
     path: "/users/me/delegations/roblox-secret-store",
     summary: "Stores a Roblox Open Cloud API key so CivicTech can vend and rotate experience API keys.",
-    whyUseful: "This is the bridge that lets the portal install your Gallaudet API key directly into Roblox Secret Store.",
+    whyUseful: "This is the bridge that lets the portal install your CivicTechForSchools API key directly into Roblox Secret Store.",
     auth: {
       kind: "cognito",
       label: "Developer Cognito session",
@@ -479,11 +506,11 @@ export const experienceGuides: PartnerDocsArticle[] = [
   {
     slug: "getting-started-vanilla-lua",
     kind: "guide",
-    title: "Getting started with vanilla Roblox Lua",
-    summary: "Wire up experience profile registration, task cataloging, and player task retrieval using RemoteEvents/RemoteFunctions.",
-    audience: "ServerScriptService integrations without Knit",
-    estimatedRead: "12 min",
-    updatedOn: "2026-02-10",
+    title: "Integrating Run the World with CivicTech for Schools (Vanilla Lua case study)",
+    summary: "A concrete walkthrough of the Run the World integration pattern using ModuleScripts + RemoteEvents/RemoteFunctions and the modern CivicTechForSchools starter client.",
+    audience: "ServerScriptService games without Knit",
+    estimatedRead: "18 min",
+    updatedOn: "2026-02-16",
     relatedApiIds: [
       "put-experience",
       "catalog-task",
@@ -492,26 +519,72 @@ export const experienceGuides: PartnerDocsArticle[] = [
     ],
     sections: [
       {
-        heading: "What this guide builds",
+        heading: "Outcome",
         body: [
-          "A lightweight service module that wraps RequestAsync and signs experience calls with x-api-key.",
-          "A simple Task UI flow where players can fetch and view teacher-assigned tasks.",
-          "Round-end grading that updates assignment progress in Google Classroom.",
+          "By the end of this guide, your existing round-based game will register experience metadata, expose teacher-assignable tasks, push assignments to players, and write grades back at round end.",
+          "This walkthrough is based on the Run the World integration shape, but updated to use modern `CivicTechForSchools` naming and the current starter client APIs.",
         ],
       },
       {
-        heading: "Implementation notes",
+        heading: "Run the World baseline (before integration)",
         body: [
-          "Keep API keys in Roblox Secret Store and load them with HttpService:GetSecret instead of hardcoding.",
-          "Call PutExperience and CatalogTask at server startup so teacher-assignment metadata stays fresh.",
-          "Fetch tasks when players join and whenever your game needs to refresh assignment UI.",
+          "The game already had a round loop, `Lobby` and `Playing` teams, and leaderboard stats (`Points`, `RoundsPlayed`, `Accuracy`).",
+          "It already used `ReplicatedStorage` values/events for round state (`InRound`, `CountryPrompt`, `Status`, `HighlightCountry`).",
+          "Integration work focused on server-side API calls plus task UI remotes. We did not rework core gameplay systems.",
         ],
       },
       {
-        heading: "Where to extend",
+        heading: "Step 1: Add config that reads the API key from Roblox Secret Store",
         body: [
-          "Replace direct grade writes with milestone completions for objective-heavy tasks.",
-          "Add telemetry around retries and HTTP status codes to make experience support easier.",
+          "Create `ServerScriptService/CivicTechForSchoolsServer/Config.lua`:",
+          "local RunService = game:GetService(\"RunService\")\nlocal HttpService = game:GetService(\"HttpService\")\n\nlocal Config = {\n  BaseUrl = \"https://api.beta.school.civictech.llc\",\n  ApiKey = HttpService:GetSecret(\"<your-secret-id>\"),\n  ExperienceProfile = {\n    experienceName = \"Run the World - Learn Country Names!\",\n    robloxGameId = \"127120714583972\",\n    -- assetIds = { \"<optional-experience-asset-uuid>\" },\n  },\n  EnableDebugLogging = RunService:IsStudio(),\n}\n\nreturn Config",
+          "Do not hardcode raw API keys in scripts. Always load the runtime secret with `HttpService:GetSecret(...)`.",
+        ],
+      },
+      {
+        heading: "Step 2: Build a thin integration module around the starter client",
+        body: [
+          "Use the downloaded `CivicTechForSchoolsService.vanilla.lua` and wrap it with your remote plumbing:",
+          "local ReplicatedStorage = game:GetService(\"ReplicatedStorage\")\nlocal CivicTechForSchoolsService = require(script.Parent.CivicTechForSchoolsService)\nlocal Config = require(script.Parent.Config)\n\nlocal IntegrationService = {}\nIntegrationService.__index = IntegrationService\n\nlocal function ensureRemote(parent, className, name)\n  local existing = parent:FindFirstChild(name)\n  if existing and existing:IsA(className) then\n    return existing\n  end\n\n  local remote = Instance.new(className)\n  remote.Name = name\n  remote.Parent = parent\n  return remote\nend\n\nlocal function setupRemotes()\n  local folder = ReplicatedStorage:FindFirstChild(\"CivicTechForSchoolsRemotes\")\n  if not folder then\n    folder = Instance.new(\"Folder\")\n    folder.Name = \"CivicTechForSchoolsRemotes\"\n    folder.Parent = ReplicatedStorage\n  end\n\n  return {\n    TaskAssignmentsUpdated = ensureRemote(folder, \"RemoteEvent\", \"TaskAssignmentsUpdated\"),\n    RequestTasks = ensureRemote(folder, \"RemoteFunction\", \"RequestTasks\"),\n  }\nend\n\nfunction IntegrationService.new()\n  local self = setmetatable({}, IntegrationService)\n\n  self.Client = CivicTechForSchoolsService.new({\n    BaseUrl = Config.BaseUrl,\n    ApiKey = Config.ApiKey,\n    EnableDebugLogging = Config.EnableDebugLogging,\n  })\n\n  self.Remotes = setupRemotes()\n  self.Remotes.RequestTasks.OnServerInvoke = function(player)\n    return self:PushTasksToPlayer(player)\n  end\n\n  return self\nend\n\nfunction IntegrationService:PushTasksToPlayer(player)\n  if not player:IsA(\"Player\") then\n    return { success = false, message = \"Expected Player instance\" }\n  end\n\n  local payload, err = self.Client:ListTasksForPlayer(player)\n  if err then\n    self.Remotes.TaskAssignmentsUpdated:FireClient(player, { success = false, error = err })\n    return { success = false, error = err }\n  end\n\n  self.Remotes.TaskAssignmentsUpdated:FireClient(player, { success = true, payload = payload })\n  return { success = true, tasks = payload.tasks or {} }\nend\n\nreturn IntegrationService.new()",
+        ],
+      },
+      {
+        heading: "Step 3: Register experience metadata and catalog tasks at startup",
+        body: [
+          "In your server init script, call `PutExperience` once and register the tasks teachers can assign:",
+          "local Players = game:GetService(\"Players\")\n\nlocal Integration = require(script.Parent.IntegrationService)\nlocal Config = require(script.Parent.Config)\n\nlocal function callOrWarn(label, response, err)\n  if err then\n    warn(label .. \" failed: \" .. tostring(err.message))\n  end\n  return response\nend\n\ncallOrWarn(\"PutExperience\", Integration.Client:PutExperience(Config.ExperienceProfile))\n\ncallOrWarn(\"CatalogTask:get-80-percent-accuracy\", Integration.Client:CatalogTask(\"get-80-percent-accuracy-across-10-rounds\", {\n  name = \"Get 80% Accuracy In 10 Rounds\",\n  subheading = \"Have at least 80 percent accuracy after at least ten rounds\",\n  instructions = \"Try to keep high accuracy across ten rounds.\",\n}))\n\ncallOrWarn(\"CatalogTask:get-100-points\", Integration.Client:CatalogTask(\"get-100-points\", {\n  name = \"Get 100 Points\",\n  subheading = \"Obtain at least 100 points in one session\",\n  instructions = \"Get points by selecting the correct country as quickly as possible.\",\n  assetIds = { \"3a3573f1-1312-4f1f-9bed-9973b159dbcd\" },\n}))",
+          "Keep `entryId` values stable once published, because grading logic depends on them.",
+        ],
+      },
+      {
+        heading: "Step 4: Push task assignments when players join",
+        body: [
+          "Use your integration module to push tasks immediately for both new and already-connected players:",
+          "local Players = game:GetService(\"Players\")\nlocal Integration = require(script.Parent.IntegrationService)\n\nlocal function push(player)\n  task.defer(function()\n    Integration:PushTasksToPlayer(player)\n  end)\nend\n\nPlayers.PlayerAdded:Connect(push)\nfor _, player in ipairs(Players:GetPlayers()) do\n  push(player)\nend",
+        ],
+      },
+      {
+        heading: "Step 5: Grade assignments at round end using existing game stats",
+        body: [
+          "Attach this logic to your existing `InRound.Changed` flow. On round end, list assignments and write grades:",
+          "local Players = game:GetService(\"Players\")\nlocal ReplicatedStorage = game:GetService(\"ReplicatedStorage\")\n\nlocal Integration = require(script.Parent.IntegrationService)\nlocal inRound = ReplicatedStorage:WaitForChild(\"InRound\")\n\ninRound.Changed:Connect(function()\n  if inRound.Value == true then\n    return\n  end\n\n  for _, player in ipairs(Players:GetPlayers()) do\n    local taskResponse, listErr = Integration.Client:ListTasksForPlayer(player)\n    if listErr or not taskResponse then\n      continue\n    end\n\n    for _, classroomTask in ipairs(taskResponse.tasks or {}) do\n      if classroomTask.entryId == \"get-100-points\" then\n        local score = player.leaderstats.Points.Value\n        Integration.Client:GradeTask(player, classroomTask.taskId, math.clamp(score, 0, 100))\n      elseif classroomTask.entryId == \"get-80-percent-accuracy-across-10-rounds\" then\n        local rounds = player.leaderstats.RoundsPlayed.Value\n        local accuracy = player.leaderstats.Accuracy.Value\n        if rounds >= 10 and accuracy >= 80 then\n          Integration.Client:GradeTask(player, classroomTask.taskId, 100)\n        end\n      end\n    end\n\n    Integration:PushTasksToPlayer(player)\n  end\nend)",
+          "Use `player` directly when calling `ListTasksForPlayer` / `GradeTask`; the starter client handles Player-to-userId normalization safely.",
+        ],
+      },
+      {
+        heading: "Step 6: Bind your existing task UI to the remotes",
+        body: [
+          "Your local script only needs to invoke once and subscribe for updates:",
+          "local ReplicatedStorage = game:GetService(\"ReplicatedStorage\")\n\nlocal remotes = ReplicatedStorage:WaitForChild(\"CivicTechForSchoolsRemotes\")\nlocal RequestTasks = remotes:WaitForChild(\"RequestTasks\") :: RemoteFunction\nlocal TaskAssignmentsUpdated = remotes:WaitForChild(\"TaskAssignmentsUpdated\") :: RemoteEvent\n\nlocal function renderTasks(tasks)\n  -- Use your existing task panel rendering here.\n  -- Example input shape: { { name = \"...\", subheading = \"...\", cumulativePercentage = 40, ... } }\nend\n\nTaskAssignmentsUpdated.OnClientEvent:Connect(function(response)\n  if response and response.success then\n    renderTasks(response.payload.tasks or {})\n  end\nend)\n\nlocal initial = RequestTasks:InvokeServer()\nif initial and initial.success then\n  renderTasks(initial.tasks or {})\nend",
+          "This keeps gameplay-authoritative logic on the server while still giving the client live assignment updates.",
+        ],
+      },
+      {
+        heading: "Modernization notes (from older Gallaudet examples)",
+        body: [
+          "Use `CivicTechForSchoolsService` naming in module names, remotes, and UI labels instead of `Gallaudet`.",
+          "Use `PutExperience` (not `PutPartner`) and `/experiences/me` paths from the current API.",
+          "Current catalog shapes support optional `assetIds` on both task and milestone records; include them whenever your game wants task visuals in classroom surfaces.",
         ],
       },
     ],
@@ -519,38 +592,70 @@ export const experienceGuides: PartnerDocsArticle[] = [
   {
     slug: "getting-started-knit-fusion",
     kind: "guide",
-    title: "Getting started with Knit + Fusion",
-    summary: "Expose task assignment updates through Knit signals and render assignment progress with Fusion UI components.",
+    title: "Getting started with Knit (Fusion optional)",
+    summary: "Integrate the Knit starter client end-to-end: server config, startup sync, task push signal, client controller subscription, and gameplay writes.",
     audience: "Games using Knit service/controller architecture",
-    estimatedRead: "10 min",
-    updatedOn: "2026-02-10",
+    estimatedRead: "18 min",
+    updatedOn: "2026-02-16",
     relatedApiIds: [
+      "put-experience",
+      "catalog-task",
       "list-tasks-for-player",
       "grade-task",
       "complete-milestone",
     ],
     sections: [
       {
-        heading: "What this guide builds",
+        heading: "Outcome",
         body: [
-          "A server-side Knit service that wraps the same experience runtime endpoints.",
-          "A client controller that reacts to TaskAssignmentsUpdated and updates banner UI state.",
-          "A Fusion element with title, subtitle, and progress indicator from cumulativePercentage.",
+          "By the end of this guide, your game server will publish task updates through a Knit signal and your client controller will react to assignment changes.",
+          "Fusion is optional. The integration pattern is Knit-first: service -> signal -> controller -> UI layer.",
         ],
       },
       {
-        heading: "Implementation notes",
+        heading: "Recommended file layout",
         body: [
-          "Keep transport concerns in the service layer and keep UI controllers focused on data projection.",
-          "Use nextMilestone to display the next objective when tasks are milestone-based.",
-          "Push fresh tasks after each grade/milestone mutation so player UI stays eventually consistent.",
+          "Use this layout so the starter service and config resolve cleanly:",
+          "src\n  Server\n    Services\n      CivicTechForSchoolsService.lua\n      TaskCatalogBootstrapService.lua\n      RoundGradingService.lua\n    Modules\n      Config\n        CivicTechForSchools.lua\n  Client\n    Controllers\n      TaskBannerController.lua",
         ],
       },
       {
-        heading: "Where to extend",
+        heading: "Step 1: Add Knit config for the starter service",
         body: [
-          "Support multiple simultaneous tasks in your banner by rotating or stacking UI cards.",
-          "Emit task-related analytics events for completion rate and milestone drop-off analysis.",
+          "Create `src/Server/Modules/Config/CivicTechForSchools.lua`:",
+          "local RunService = game:GetService(\"RunService\")\n\nlocal Config = {\n  BaseUrl = \"https://api.school.civictech.llc\",\n  ApiKey = game:GetService(\"HttpService\"):GetSecret(\"<your-secret-id>\"),\n  ExperienceProfile = {\n    experienceName = \"My Experience Name\",\n    robloxGameId = \"1234567890\",\n    -- assetIds = { \"<optional-asset-uuid>\" },\n  },\n  EnableDebugLogging = RunService:IsStudio(),\n}\n\nreturn Config",
+          "The starter Knit service requires exactly this module path: `self.Modules.Config.CivicTechForSchools`.",
+        ],
+      },
+      {
+        heading: "Step 2: Install the starter Knit service",
+        body: [
+          "Copy `CivicTechForSchoolsService.knit.lua` into your server Knit services folder (for example `src/Server/Services/CivicTechForSchoolsService.lua`).",
+          "What it gives you out of the box: `PutExperience` on startup, `PushTasksToPlayer` for player joins, and a client signal named `TaskAssignmentsUpdated`.",
+        ],
+      },
+      {
+        heading: "Step 3: Bootstrap task catalog entries on server startup",
+        body: [
+          "Add a second service dedicated to one-time startup registration:",
+          "local ReplicatedStorage = game:GetService(\"ReplicatedStorage\")\nlocal Knit = require(ReplicatedStorage.Packages.Knit)\n\nlocal TaskCatalogBootstrapService = Knit.CreateService({\n  Name = \"TaskCatalogBootstrapService\",\n  Client = {},\n})\n\nfunction TaskCatalogBootstrapService:KnitStart()\n  local cts = Knit.GetService(\"CivicTechForSchoolsService\")\n\n  cts:CatalogTask(\"get-100-points\", {\n    name = \"Get 100 Points\",\n    subheading = \"Obtain at least 100 points in one session\",\n    instructions = \"Get points by selecting the correct country quickly.\",\n    -- assetIds = { \"<optional-asset-uuid>\" },\n    milestones = {\n      { id = \"reach-50-points\", name = \"Reach 50 points\", percentageContribution = 50 },\n      { id = \"reach-100-points\", name = \"Reach 100 points\", percentageContribution = 50 },\n    },\n  })\nend\n\nreturn TaskCatalogBootstrapService",
+          "Keep this separate from round/gameplay services so startup concerns and runtime concerns do not mix.",
+        ],
+      },
+      {
+        heading: "Step 4: Subscribe from a Knit client controller",
+        body: [
+          "Client controllers should only consume the signal payload and map it into view state:",
+          "local Knit = require(game:GetService(\"ReplicatedStorage\").Packages.Knit)\n\nlocal TaskBannerController = Knit.CreateController({\n  Name = \"TaskBannerController\",\n})\n\nfunction TaskBannerController:KnitInit()\n  self.CtsService = Knit.GetService(\"CivicTechForSchoolsService\")\nend\n\nfunction TaskBannerController:KnitStart()\n  self._connection = self.CtsService.TaskAssignmentsUpdated:Connect(function(response)\n    if not response or response.success == false then\n      self:HideBanner()\n      return\n    end\n\n    local tasks = response.payload and response.payload.tasks or {}\n    if #tasks == 0 then\n      self:HideBanner()\n      return\n    end\n\n    local task = tasks[1]\n    local nextMilestone = task.nextMilestone\n\n    self:ShowBanner({\n      title = task.name,\n      subtitle = (nextMilestone and nextMilestone.name) or task.subheading,\n      completion = task.cumulativePercentage or 0,\n    })\n  end)\nend\n\nreturn TaskBannerController",
+          "If you use Fusion, Roact, or plain ScreenGuis, keep that inside `ShowBanner`/`HideBanner` only.",
+        ],
+      },
+      {
+        heading: "Step 5: Write progress from gameplay events",
+        body: [
+          "At meaningful checkpoints (round end, objective completion), look up tasks and write either grade or milestone completion:",
+          "local Players = game:GetService(\"Players\")\nlocal ReplicatedStorage = game:GetService(\"ReplicatedStorage\")\nlocal Knit = require(ReplicatedStorage.Packages.Knit)\n\nlocal cts = Knit.GetService(\"CivicTechForSchoolsService\")\n\nlocal function gradeRound(player, computedPercentage)\n  local taskList, err = cts:ListTasksForPlayer(player)\n  if err or not taskList then\n    return\n  end\n\n  for _, task in ipairs(taskList.tasks or {}) do\n    if task.entryId == \"get-100-points\" then\n      cts:GradeTask(player, task.taskId, { percentage = math.clamp(computedPercentage, 0, 100) })\n    end\n  end\n\n  cts:PushTasksToPlayer(player)\nend\n\nlocal function completeObjective(player, taskId, milestoneId)\n  cts:CompleteMilestone(player, taskId, milestoneId)\n  cts:PushTasksToPlayer(player)\nend",
+          "Choose one write model per task family: `GradeTask` for score-based tasks, `CompleteMilestone` for objective-based tasks.",
         ],
       },
     ],
@@ -559,7 +664,7 @@ export const experienceGuides: PartnerDocsArticle[] = [
     slug: "bootstrapping-secrets-and-api-keys",
     kind: "guide",
     title: "Bootstrapping secrets and API keys",
-    summary: "Create your project, delegate Roblox Secret Store access, create your Gallaudet runtime secret, and wire it into the starter client files.",
+    summary: "Create your project, delegate Roblox Secret Store access, create your CivicTechForSchools runtime secret, and wire it into the starter client files.",
     audience: "Partner developers provisioning a Roblox experience for first API calls",
     estimatedRead: "15 min",
     updatedOn: "2026-02-15",
@@ -570,7 +675,7 @@ export const experienceGuides: PartnerDocsArticle[] = [
       {
         heading: "Outcome",
         body: [
-          "By the end of this guide, your Roblox universe will have a Gallaudet API key stored in Roblox Secret Store, and your game server code will load it via HttpService:GetSecret(...) without hardcoding credentials.",
+          "By the end of this guide, your Roblox universe will have a CivicTechForSchools API key stored in Roblox Secret Store, and your game server code will load it via HttpService:GetSecret(...) without hardcoding credentials.",
           "This flow is intended for first-time onboarding and should be repeated whenever you rotate credentials.",
         ],
       },
@@ -605,18 +710,18 @@ export const experienceGuides: PartnerDocsArticle[] = [
         ],
       },
       {
-        heading: "Step 3: Save the Roblox API key in Gallaudet",
+        heading: "Step 3: Save the Roblox API key in CivicTechForSchools",
         body: [
           "Return to https://school.civictech.llc/create, keep the same experience selected, and stay on Secrets.",
           "In \"Step 1: Save Roblox API key\", paste the Roblox key and click \"Save API key\".",
           "Wait for the success toast before moving on. The next step depends on this delegation being stored.",
-          "Important sequencing: you cannot successfully create the Gallaudet secret until \"Save API key\" has completed for this experience.",
+          "Important sequencing: you cannot successfully create the CivicTechForSchools secret until \"Save API key\" has completed for this experience.",
           "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/03-secrets-panel-after-adding-the-api-secret-but-before-pressing-the-save-api-key-button.png | Secrets panel with the Roblox API key entered before pressing Save API key.>>",
           "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/03-secrets-panel-after-clicking-the-save-api-key-button-and-with-a-success-toast-showing.png | Secrets panel after clicking Save API key with a success toast visible.>>",
         ],
       },
       {
-        heading: "Step 4: Create the Gallaudet runtime secret",
+        heading: "Step 4: Create the CivicTechForSchools runtime secret",
         body: [
           "In the same Secrets panel, click \"Create secret\" in \"Step 2: Create a secret\".",
           "When successful, you will see a toast containing a generated secret ID (for example: rdvdhfzvfahk). Save this ID; your Roblox game code will use it with HttpService:GetSecret(\"<secretId>\").",
@@ -684,67 +789,26 @@ export const experienceExplainers: PartnerDocsArticle[] = [
       },
     ],
   },
-  {
-    slug: "grade-task-vs-complete-milestone",
-    kind: "explainer",
-    title: "GradeTask vs CompleteMilestone",
-    summary: "Choose the right write API based on whether progress is computed continuously or emitted as discrete objectives.",
-    audience: "Server-side gameplay and backend integration engineers",
-    estimatedRead: "6 min",
-    updatedOn: "2026-02-10",
-    relatedApiIds: ["grade-task", "complete-milestone"],
-    sections: [
-      {
-        heading: "Use GradeTask when",
-        body: [
-          "Your game continuously computes a percentage like accuracy or score normalizations.",
-          "You already have a single authoritative number at meaningful checkpoints.",
-        ],
-      },
-      {
-        heading: "Use CompleteMilestone when",
-        body: [
-          "Progress is event-based and easier to emit as individual completions.",
-          "You want backend-managed cumulative percentage and next-milestone hints.",
-        ],
-      },
-      {
-        heading: "Hybrid pattern",
-        body: [
-          "Use milestone tasks for objective progression and GradeTask for performance overlays where needed.",
-        ],
-      },
-    ],
-  },
 ]
 
 export const partnerClientDownloads: PartnerClientDownload[] = [
   {
-    id: "client-readme",
-    title: "Gallaudet client pack README",
-    summary: "High-level setup and environment guidance for Roblox integrations.",
-    href: "/downloads/gallaudet-client/latest/README.txt",
-    format: "txt",
-    updatedOn: "2026-02-10",
-    audience: "All experience developers",
-  },
-  {
     id: "vanilla-client",
     title: "Vanilla Lua starter client",
     summary: "Drop-in server module for games using RemoteFunction/RemoteEvent patterns.",
-    href: "/downloads/gallaudet-client/latest/GallaudetService.vanilla.lua",
+    href: "/downloads/civictech-for-schools-client/latest/CivicTechForSchoolsService.vanilla.lua",
     format: "lua",
-    updatedOn: "2026-02-10",
-    audience: "ServerScriptService + remotes architecture",
+    updatedOn: "2026-02-16",
+    audience: "Developers who code within Roblox Studio",
   },
   {
     id: "knit-client",
     title: "Knit service starter client",
     summary: "Knit-style starter service that pushes task updates to clients.",
-    href: "/downloads/gallaudet-client/latest/GallaudetService.knit.lua",
+    href: "/downloads/civictech-for-schools-client/latest/CivicTechForSchoolsService.knit.lua",
     format: "lua",
-    updatedOn: "2026-02-10",
-    audience: "Knit/Fusion/Rojo architecture",
+    updatedOn: "2026-02-16",
+    audience: "Developers who code within VSCode using Knit/Rojo",
   },
 ]
 
