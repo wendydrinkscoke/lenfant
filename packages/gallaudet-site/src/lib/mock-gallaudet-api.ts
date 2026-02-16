@@ -32,7 +32,7 @@ import {
 } from "gallaudet-api-typescript-react-query-hooks";
 import { ResponseError } from "gallaudet-api-typescript-react-query-hooks";
 
-const MOCK_LATENCY_MS = 200;
+const MOCK_LATENCY_MS = 1800;
 const MOCK_ASSET_MULTIPART_THRESHOLD_BYTES = 10_000_000;
 const MOCK_ASSET_MULTIPART_PART_SIZE_BYTES = 8_000_000;
 const MOCK_ASSET_UPLOAD_URL_TTL_SECONDS = 900;
@@ -70,9 +70,9 @@ const DEFAULT_MOCK_ROBLOX_LINKED = true;
 const DEFAULT_MOCK_GOOGLE_CLASSROOM_DELEGATED = true;
 
 const MOCK_MILESTONES: Milestone[] = [
-  { id: "briefing", name: "Mission briefing", percentageContribution: 15 },
-  { id: "prototype", name: "Build your prototype", percentageContribution: 45 },
-  { id: "demo", name: "Classroom demo", percentageContribution: 40 },
+  { id: "rose-garden", name: "Spend 30 Seconds in the Rose Garden", percentageContribution: 40 },
+  { id: "green-room", name: "Visit the Green Room", percentageContribution: 15 },
+  { id: "resolute-desk", name: "Sit at the Resolute Desk", percentageContribution: 45 },
 ];
 
 const MOCK_TASK_PREVIEW_ASSETS: TaskViewAsset[] = [
@@ -207,12 +207,12 @@ const MOCK_CATALOG: GetTaskCatalogResponseContent = {
 
 const MOCK_FALLBACK_TASK: TaskInstanceView = {
   title: "Classroom sandbox task",
-  subheading: "Offline preview mode with mock data.",
+  subheading: "Take a tour in the home of the nation's First Family!",
   instructions:
-    "This mock assignment is served locally so you can build UI without backend calls. Add a ?taskId= parameter to the URL to see per-task titles.",
+    "Run around the White House exploring the various special rooms and areas to earn points.",
   milestones: MOCK_MILESTONES,
-  experienceName: "Gallaudet Dev Sandbox",
-  robloxGameId: "default-mock-game-id",
+  experienceName: "Be Politician - Learn DC Politics",
+  robloxGameId: "1213026131",
 };
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -356,7 +356,7 @@ export class MockGallaudetApi extends DefaultApi {
     await delay(MOCK_LATENCY_MS);
     const task = withMockTaskAssets(MOCK_TASKS[request.taskId] ?? {
       ...MOCK_FALLBACK_TASK,
-      title: `Sandbox mission (${request.taskId})`,
+      title: "Tour the White House",
     });
     return { task };
   }

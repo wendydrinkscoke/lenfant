@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
 import { Button } from "./ui/button";
+import { Skeleton } from "./ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { AlertTriangle, CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { getGallaudetApi } from "../lib/gallaudet-api";
@@ -180,6 +181,7 @@ const TaskViewAuthorized = ({
   const [gifDurationsByAssetId, setGifDurationsByAssetId] = useState<
     Record<string, number>
   >({});
+  const [isLoadedContentVisible, setIsLoadedContentVisible] = useState(false);
 
   const taskAssets = useMemo(
     () => (status === "success" && task?.assets ? task.assets : []),
@@ -293,6 +295,21 @@ const TaskViewAuthorized = ({
     setSelectedMilestoneId(null);
     setHasAppliedAutoMilestoneSelection(false);
   }, [taskId]);
+
+  useEffect(() => {
+    if (status === "loading") {
+      setIsLoadedContentVisible(false);
+      return;
+    }
+
+    const animationFrameId = window.requestAnimationFrame(() => {
+      setIsLoadedContentVisible(true);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+    };
+  }, [status, taskId]);
 
   useEffect(() => {
     if (hasAppliedAutoMilestoneSelection) {
@@ -582,16 +599,24 @@ const TaskViewAuthorized = ({
   const instructionsContent = useMemo(() => {
     if (status === "loading") {
       return (
-        <p className="text-slate-600">
-          Fetching assignment details from Google Classroom. This usually takes
-          just a moment.
-        </p>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-3/5" />
+        </div>
       );
     }
 
     if (status === "error") {
       return (
-        <p className="text-red-600">
+        <p
+          className={`text-red-600 transition-all duration-300 ease-out ${
+            isLoadedContentVisible
+              ? "translate-y-0 opacity-100"
+              : "translate-y-1 opacity-0"
+          }`}
+        >
           {errorMessage ??
             "Something went wrong while attempting to display this task."}
         </p>
@@ -600,7 +625,15 @@ const TaskViewAuthorized = ({
 
     if (status === "success" && task) {
       return (
-        <p className="text-slate-600 leading-relaxed">{task.instructions}</p>
+        <p
+          className={`text-slate-600 leading-relaxed transition-all duration-300 ease-out ${
+            isLoadedContentVisible
+              ? "translate-y-0 opacity-100"
+              : "translate-y-1 opacity-0"
+          }`}
+        >
+          {task.instructions}
+        </p>
       );
     }
 
@@ -609,7 +642,7 @@ const TaskViewAuthorized = ({
         Provide a task identifier in the URL to see assignment details.
       </p>
     );
-  }, [status, task, errorMessage]);
+  }, [status, task, errorMessage, isLoadedContentVisible]);
 
   const experienceDisplay = useMemo(() => {
     if (status === "success" && task) {
@@ -757,15 +790,52 @@ const TaskViewAuthorized = ({
                 {formatAudienceLabel(audience)}
               </Badge>
               <CardTitle className="mt-3 text-3xl font-semibold text-slate-900">
-                {headerTitle}
+                {status === "loading" ? (
+                  <Skeleton className="h-9 w-full max-w-[40rem]" />
+                ) : (
+                  <span
+                    className={`block transition-all duration-300 ease-out ${
+                      isLoadedContentVisible
+                        ? "translate-y-0 opacity-100"
+                        : "translate-y-1 opacity-0"
+                    }`}
+                  >
+                    {headerTitle}
+                  </span>
+                )}
               </CardTitle>
               <p className="mt-2 text-base text-slate-600">
-                {headerSubheading}
+                {status === "loading" ? (
+                  <Skeleton className="h-4 w-full max-w-[24rem]" />
+                ) : (
+                  <span
+                    className={`block transition-all duration-300 ease-out ${
+                      isLoadedContentVisible
+                        ? "translate-y-0 opacity-100"
+                        : "translate-y-1 opacity-0"
+                    }`}
+                  >
+                    {headerSubheading}
+                  </span>
+                )}
               </p>
             </div>
             <div className="flex flex-col items-start gap-2 text-sm text-slate-500 md:items-end">
               <span>
-                <strong>Partner:</strong> {experienceDisplay}
+                <strong>Partner:</strong>{" "}
+                {status === "loading" ? (
+                  <Skeleton className="inline-block h-4 w-44 align-middle" />
+                ) : (
+                  <span
+                    className={`inline-block transition-all duration-300 ease-out ${
+                      isLoadedContentVisible
+                        ? "translate-y-0 opacity-100"
+                        : "translate-y-1 opacity-0"
+                    }`}
+                  >
+                    {experienceDisplay}
+                  </span>
+                )}
               </span>
               {taskId && (
                 <span className="font-mono text-xs text-slate-400">
@@ -825,92 +895,123 @@ const TaskViewAuthorized = ({
               </div>
               <div>
                 <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
-                  {currentTaskAsset && (
+                  {status === "loading" ? (
                     <>
-                      <img
-                        alt={
-                          status === "success" && task
-                            ? `${task.title} preview`
-                            : "Task preview"
-                        }
-                        src={currentTaskAsset.url}
-                        className="h-48 w-full object-cover"
-                      />
+                      <Skeleton className="h-48 w-full rounded-none" />
                       <Separator />
-                    </>
-                  )}
-                  <div className="space-y-3 p-3">
-                    {selectedMilestone && (
-                      <p className="text-xs text-slate-500">
-                        Showing assets for {selectedMilestone.name}
-                      </p>
-                    )}
-                    {currentTaskAsset && (
-                      <p className="text-sm text-slate-500">
-                        {currentTaskAsset.fileName}
-                      </p>
-                    )}
-                    {visibleAssets.length > 1 && (
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-1">
-                          {visibleAssets.map((asset, index) => (
-                            <button
-                              key={asset.assetId}
-                              type="button"
-                              aria-label={`Show preview ${index + 1}`}
-                              onClick={() => setActiveAssetIndex(index)}
-                              className={
-                                index === activeAssetIndex
-                                  ? "h-2 w-4 rounded-full bg-slate-900"
-                                  : "h-2 w-2 rounded-full bg-slate-300"
-                              }
-                            />
-                          ))}
+                      <div className="space-y-3 p-3">
+                        <Skeleton className="h-3 w-36" />
+                        <Skeleton className="h-4 w-48" />
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-1">
+                            <Skeleton className="h-2 w-4 rounded-full" />
+                            <Skeleton className="h-2 w-2 rounded-full" />
+                            <Skeleton className="h-2 w-2 rounded-full" />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-8 w-14" />
+                            <Skeleton className="h-8 w-14" />
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              setActiveAssetIndex((currentIndex) =>
-                                currentIndex === 0
-                                  ? visibleAssets.length - 1
-                                  : currentIndex - 1,
-                              )
-                            }
-                          >
-                            Prev
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              setActiveAssetIndex((currentIndex) =>
-                                currentIndex + 1 >= visibleAssets.length
-                                  ? 0
-                                  : currentIndex + 1,
-                              )
-                            }
-                          >
-                            Next
-                          </Button>
-                        </div>
+                        <Skeleton className="h-9 w-full" />
                       </div>
-                    )}
-                    {robloxLink && (
-                      <Button asChild className="w-full">
-                        <a
-                          href={robloxLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          View on Roblox
-                        </a>
-                      </Button>
-                    )}
-                  </div>
+                    </>
+                  ) : (
+                    <div
+                      className={`transition-all duration-300 ease-out ${
+                        isLoadedContentVisible
+                          ? "translate-y-0 opacity-100"
+                          : "translate-y-1 opacity-0"
+                      }`}
+                    >
+                      {currentTaskAsset && (
+                        <>
+                          <img
+                            alt={
+                              status === "success" && task
+                                ? `${task.title} preview`
+                                : "Task preview"
+                            }
+                            src={currentTaskAsset.url}
+                            className="h-48 w-full object-cover"
+                          />
+                          <Separator />
+                        </>
+                      )}
+                      <div className="space-y-3 p-3">
+                        {selectedMilestone && (
+                          <p className="text-xs text-slate-500">
+                            Showing assets for {selectedMilestone.name}
+                          </p>
+                        )}
+                        {currentTaskAsset && (
+                          <p className="text-sm text-slate-500">
+                            {currentTaskAsset.fileName}
+                          </p>
+                        )}
+                        {visibleAssets.length > 1 && (
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-1">
+                              {visibleAssets.map((asset, index) => (
+                                <button
+                                  key={asset.assetId}
+                                  type="button"
+                                  aria-label={`Show preview ${index + 1}`}
+                                  onClick={() => setActiveAssetIndex(index)}
+                                  className={
+                                    index === activeAssetIndex
+                                      ? "h-2 w-4 rounded-full bg-slate-900"
+                                      : "h-2 w-2 rounded-full bg-slate-300"
+                                  }
+                                />
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  setActiveAssetIndex((currentIndex) =>
+                                    currentIndex === 0
+                                      ? visibleAssets.length - 1
+                                      : currentIndex - 1,
+                                  )
+                                }
+                              >
+                                Prev
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  setActiveAssetIndex((currentIndex) =>
+                                    currentIndex + 1 >= visibleAssets.length
+                                      ? 0
+                                      : currentIndex + 1,
+                                  )
+                                }
+                              >
+                                Next
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        {robloxLink && (
+                          <Button asChild className="w-full">
+                            <a
+                              href={robloxLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              View on Roblox
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
