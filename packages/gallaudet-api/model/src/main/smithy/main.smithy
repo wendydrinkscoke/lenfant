@@ -25,6 +25,7 @@ service Gallaudet {
       GetTaskCatalog
       GradeTask
       ListProjects
+      ListAssets
       ListTasksForPlayer
       LinkRobloxAccount
       PutExperience

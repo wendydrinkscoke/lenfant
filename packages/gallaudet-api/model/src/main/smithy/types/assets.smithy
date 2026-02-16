@@ -106,6 +106,11 @@ structure AssetRecord {
     updatedAt: Timestamp
 }
 
+/// Asset records returned when listing project assets.
+list AssetRecords {
+    member: AssetRecord
+}
+
 /// Multipart completion record for one uploaded part.
 structure CompletedUploadPart {
     @required

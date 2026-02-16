@@ -18,6 +18,8 @@ import {
   GetRobloxSecretStoreAccessStatusResponseContent,
   GetTaskCatalogResponseContent,
   GetTaskResponseContent,
+  ListAssetsRequest,
+  ListAssetsResponseContent,
   ListProjectsResponseContent,
   LinkRobloxAccountResponseContent,
   Milestone,
@@ -567,6 +569,35 @@ export class MockGallaudetApi extends DefaultApi {
 
     mockUploadSessions.delete(request.uploadSessionId);
     return { message: "Upload session aborted." };
+  }
+
+  async listAssets(
+    request: ListAssetsRequest,
+  ): Promise<ListAssetsResponseContent> {
+    await delay(MOCK_LATENCY_MS);
+
+    const experienceId = request.experienceId?.trim();
+    if (!experienceId) {
+      throw mockOperationError(
+        400,
+        "experienceId is required",
+        "listAssets",
+      );
+    }
+
+    const assets = [...mockAssets.values()]
+      .filter((asset) => asset.experienceId === experienceId)
+      .sort((left, right) => {
+        if (right.updatedAt !== left.updatedAt) {
+          return right.updatedAt - left.updatedAt;
+        }
+        if (right.createdAt !== left.createdAt) {
+          return right.createdAt - left.createdAt;
+        }
+        return left.assetId.localeCompare(right.assetId);
+      });
+
+    return { assets };
   }
 
   async listProjects(): Promise<ListProjectsResponseContent> {

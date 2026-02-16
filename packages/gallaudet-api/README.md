@@ -137,10 +137,10 @@ the task is a manually-graded writing task).
     ~~Roblox API key that enables us to write secrets to their Secret Store.~~
     ~~Use the this Roblox API key to write a *Gallaudet* API key to their~~
     ~~Secret Store.~~
-    1. Create an "Asset Manager" page, which allows developers to upload
-    images and gifs and enable them to use the Gallaudet Cleint SDK to attach 
-    these assets to various task catalog items, use them as their marketplace
-    listing thumbnail, etc. 
+    1. ~~Create an "Asset Manager" page, which allows developers to upload~~
+    ~~images and gifs and enable them to use the Gallaudet Cleint SDK to attach~~
+    ~~these assets to various task catalog items, use them as their marketplace~~
+    ~~listing thumbnail, etc.~~
     1. Create a "Marketplace Listing" page, which allows developers to view
     various aspects of their game's teacher-facing marketplace listing,
     such as what the thumbnail and screenshots look like.

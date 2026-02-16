@@ -1,7 +1,8 @@
-import { useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import {
   AssetContentType,
   AssetRecord,
+  ListAssetsRequest,
   ResponseError,
 } from "gallaudet-api-typescript-react-query-hooks"
 import { toast } from "sonner"
@@ -65,11 +66,65 @@ const getEtagFromResponse = (response: Response): string | null => {
 
 const isMockUploadUrl = (url: string): boolean => url.startsWith("mock://")
 
+const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024) {
+    return `${bytes} B`
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+const formatTimestamp = (timestamp: number): string => {
+  if (!Number.isFinite(timestamp)) {
+    return "Unknown"
+  }
+  return new Date(timestamp * 1000).toLocaleString()
+}
+
 export function AssetManagerPanel({ experienceId }: AssetManagerPanelProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [progressPercent, setProgressPercent] = useState<number | null>(null)
   const [lastUploadedAsset, setLastUploadedAsset] = useState<AssetRecord | null>(null)
+  const [assets, setAssets] = useState<AssetRecord[]>([])
+  const [isLoadingAssets, setIsLoadingAssets] = useState(false)
+  const [assetsLoadError, setAssetsLoadError] = useState<string | null>(null)
+
+  const loadAssets = useCallback(
+    async (options?: { showFailureToast?: boolean }) => {
+      if (!experienceId) {
+        setAssets([])
+        setAssetsLoadError(null)
+        return
+      }
+
+      setIsLoadingAssets(true)
+      try {
+        const api = await getGallaudetApi()
+        const request: ListAssetsRequest = { experienceId }
+        const response = await api.listAssets(request)
+        setAssets(response.assets ?? [])
+        setAssetsLoadError(null)
+      } catch (error) {
+        const message = await getErrorMessage(error)
+        setAssetsLoadError(message)
+        if (options?.showFailureToast) {
+          toast.error("Failed to load assets", {
+            description: message,
+          })
+        }
+      } finally {
+        setIsLoadingAssets(false)
+      }
+    },
+    [experienceId],
+  )
+
+  useEffect(() => {
+    void loadAssets()
+  }, [loadAssets])
 
   const handleUpload = async () => {
     if (!experienceId) {
@@ -208,6 +263,7 @@ export function AssetManagerPanel({ experienceId }: AssetManagerPanelProps) {
       setProgressPercent(100)
       setSelectedFile(null)
       setLastUploadedAsset(uploadedAsset)
+      await loadAssets()
       toast.success("Asset uploaded", {
         description: `Asset ${uploadedAsset.assetId} is ready.`,
       })
@@ -228,6 +284,17 @@ export function AssetManagerPanel({ experienceId }: AssetManagerPanelProps) {
       })
     } finally {
       setIsUploading(false)
+    }
+  }
+
+  const handleCopyAssetId = async (assetId: string) => {
+    try {
+      await navigator.clipboard.writeText(assetId)
+      toast.success("Asset ID copied", {
+        description: assetId,
+      })
+    } catch {
+      toast.error("Unable to copy asset ID.")
     }
   }
 
@@ -292,6 +359,68 @@ export function AssetManagerPanel({ experienceId }: AssetManagerPanelProps) {
               </p>
             </div>
           ) : null}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Project assets</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              onClick={() => {
+                void loadAssets({ showFailureToast: true })
+              }}
+              disabled={!experienceId || isLoadingAssets}
+            >
+              {isLoadingAssets ? "Refreshing..." : "Refresh list"}
+            </Button>
+          </div>
+
+          {!experienceId ? (
+            <p className="text-muted-foreground">Select an experience to see project assets.</p>
+          ) : isLoadingAssets && assets.length === 0 ? (
+            <p className="text-muted-foreground">Loading assets...</p>
+          ) : assetsLoadError ? (
+            <p className="text-destructive">{assetsLoadError}</p>
+          ) : assets.length === 0 ? (
+            <p className="text-muted-foreground">No assets uploaded yet for this project.</p>
+          ) : (
+            <div className="space-y-2">
+              {assets.map((asset) => (
+                <div
+                  key={asset.assetId}
+                  className="rounded-md border bg-muted/30 p-3 text-xs text-foreground"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-semibold">{asset.fileName}</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        void handleCopyAssetId(asset.assetId)
+                      }}
+                    >
+                      Copy ID
+                    </Button>
+                  </div>
+                  <p className="break-all pt-1">
+                    <span className="font-semibold">Asset ID:</span> {asset.assetId}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Status:</span> {asset.status}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Size:</span> {formatFileSize(asset.sizeBytes)}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Updated:</span> {formatTimestamp(asset.updatedAt)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

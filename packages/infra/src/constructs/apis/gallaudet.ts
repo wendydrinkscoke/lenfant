@@ -39,6 +39,7 @@ import {
   GetTaskFunction,
   GetTaskCatalogFunction,
   GradeTaskFunction,
+  ListAssetsFunction,
   ListTasksForPlayerFunction,
   LinkRobloxAccountFunction,
   PutExperienceFunction,
@@ -455,6 +456,21 @@ export class Gallaudet extends Construct {
     );
     props.projectsTable.grantReadData(listProjectsFunction);
 
+    const listAssetsFunction = new ListAssetsFunction(
+      this,
+      "ListAssetsFunction",
+      {
+        environment: {
+          ASSETS_TABLE_NAME: props.assetsTable.tableName,
+        },
+        description: [
+          "Lists uploaded assets scoped to the caller and selected experience",
+          "so developers can copy asset IDs for task and experience metadata.",
+        ].join(" "),
+      },
+    );
+    props.assetsTable.grantReadData(listAssetsFunction);
+
     const putExperienceFunction = new PutExperienceFunction(
       this,
       "PutExperienceFunction",
@@ -599,6 +615,9 @@ export class Gallaudet extends Construct {
         },
         listProjects: {
           integration: Integrations.lambda(listProjectsFunction),
+        },
+        listAssets: {
+          integration: Integrations.lambda(listAssetsFunction),
         },
         listTasksForPlayer: {
           integration: Integrations.lambda(listTasksForPlayerFunction),

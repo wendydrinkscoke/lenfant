@@ -62,6 +62,17 @@ export class GallaudetApiStack extends Stack {
         type: AttributeType.STRING,
       },
     });
+    assetsTable.addGlobalSecondaryIndex({
+      indexName: "CognitoUserIdExperienceIdIndex",
+      partitionKey: {
+        name: "CognitoUserId",
+        type: AttributeType.STRING,
+      },
+      sortKey: {
+        name: "ExperienceId",
+        type: AttributeType.STRING,
+      },
+    });
 
     const robloxExperienceApiKeysTable = new Table(this, "RobloxApiKeysTable", {
       tableName: "ExperienceApiKeys",
