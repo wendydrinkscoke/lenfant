@@ -36,6 +36,7 @@ git clone https://github.com/wendydrinkscoke/lenfant.git &&
 cd lenfant &&
 brew install openjdk@17 &&
 sudo ln -sfn $(brew --prefix openjdk@17)/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk &&
+brew install node &&
 npm install -g pnpm &&
 npm install -g @aws/pdk &&
 pnpm i

@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { exchangeCognitoRedirectCodeForCognitoTokens } from "../lib/auth-utils";
+import {
+  clearPopupAuthFlowContext,
+  exchangeCognitoRedirectCodeForCognitoTokens,
+  getPopupAuthFlowContext,
+} from "../lib/auth-utils";
 import { getGoogleAuthClientID } from "../lib/environment-utils";
 import { getGallaudetApi } from "../lib/gallaudet-api";
 import { generateCodeChallenge, generateCodeVerifier } from "../lib/pkce-utils";
@@ -25,6 +29,7 @@ export default function CognitoPopupCallback() {
         // 2) Recover app context from 'state'
         const rawState = url.searchParams.get("state");
         let parsedState: {
+          flow?: string;
           role?: "teacher" | "student" | "developer";
           login_hint?: string | undefined;
           includeRobloxAssociation?: boolean;
@@ -38,11 +43,21 @@ export default function CognitoPopupCallback() {
             console.warn("Invalid state parameter: " + rawState);
           }
         }
-        const role = parsedState.role;
-        const loginHint = parsedState.login_hint;
+
+        const flowId =
+          typeof parsedState.flow === "string" ? parsedState.flow : undefined;
+        const flowContext = flowId
+          ? getPopupAuthFlowContext(flowId)
+          : null;
+
+        const role = flowContext?.role ?? parsedState.role;
+        const loginHint = flowContext?.loginHint ?? parsedState.login_hint;
         const stage = parsedState.stage === "roblox" ? "roblox" : "google";
-        const includeRobloxAssociation = Boolean(parsedState.includeRobloxAssociation);
-        const postAuthRedirectPath = parsedState.postAuthRedirectPath;
+        const includeRobloxAssociation =
+          flowContext?.includeRobloxAssociation ??
+          Boolean(parsedState.includeRobloxAssociation);
+        const postAuthRedirectPath =
+          flowContext?.postAuthRedirectPath ?? parsedState.postAuthRedirectPath;
         if (!role) {
           throw new Error("Missing role in state parameter");
         }
@@ -59,7 +74,13 @@ export default function CognitoPopupCallback() {
         const cognitoTokens =
           await exchangeCognitoRedirectCodeForCognitoTokens(code);
 
-        const completeAuthFlow = (options?: { sendRobloxComplete?: boolean }) => {
+        const completeAuthFlow = (
+          options?: { sendRobloxComplete?: boolean; clearFlow?: boolean },
+        ) => {
+          if (flowId && options?.clearFlow !== false) {
+            clearPopupAuthFlowContext(flowId);
+          }
+
           if (window.opener && window.opener !== window) {
             if (options?.sendRobloxComplete) {
               window.opener.postMessage(
@@ -168,14 +189,20 @@ export default function CognitoPopupCallback() {
           }
           if (loginHint) googleParams.set("login_hint", loginHint);
 
-          const googleState = new URLSearchParams({
-            role,
-            includeRobloxAssociation: includeRobloxAssociation ? "1" : "0",
-          });
-          if (loginHint) {
+          const googleState = flowId
+            ? new URLSearchParams({
+                flow: flowId,
+              })
+            : new URLSearchParams({
+                role,
+                includeRobloxAssociation: includeRobloxAssociation ? "1" : "0",
+              });
+          if (!flowId && loginHint) {
             googleState.set("login_hint", loginHint);
           }
-          googleState.set("postAuthRedirectPath", postAuthRedirectPath);
+          if (!flowId) {
+            googleState.set("postAuthRedirectPath", postAuthRedirectPath);
+          }
           googleParams.set("state", googleState.toString());
 
           window.location.replace(

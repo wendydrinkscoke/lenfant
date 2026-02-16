@@ -40,17 +40,139 @@ export interface StartCognitoOAuthFlowOptions {
   postAuthRedirectPath: string;
 }
 
+export interface PopupAuthFlowContext {
+  role: AuthRole;
+  loginHint?: string;
+  includeRobloxAssociation: boolean;
+  postAuthRedirectPath: string;
+}
+
+interface StoredPopupAuthFlowContext extends PopupAuthFlowContext {
+  createdAt: number;
+}
+
+const POPUP_AUTH_FLOW_STORAGE_PREFIX = "cognito_popup_auth_flow:";
+const POPUP_AUTH_FLOW_MAX_AGE_MS = 1000 * 60 * 30;
+
+const getPopupAuthFlowStorageKey = (flowId: string): string =>
+  `${POPUP_AUTH_FLOW_STORAGE_PREFIX}${flowId}`;
+
+const pruneExpiredPopupAuthFlows = () => {
+  const now = Date.now();
+  for (let i = window.sessionStorage.length - 1; i >= 0; i -= 1) {
+    const key = window.sessionStorage.key(i);
+    if (!key || !key.startsWith(POPUP_AUTH_FLOW_STORAGE_PREFIX)) {
+      continue;
+    }
+
+    const rawValue = window.sessionStorage.getItem(key);
+    if (!rawValue) {
+      window.sessionStorage.removeItem(key);
+      continue;
+    }
+
+    try {
+      const parsed = JSON.parse(rawValue) as Partial<StoredPopupAuthFlowContext>;
+      if (
+        typeof parsed.createdAt !== "number" ||
+        now - parsed.createdAt > POPUP_AUTH_FLOW_MAX_AGE_MS
+      ) {
+        window.sessionStorage.removeItem(key);
+      }
+    } catch {
+      window.sessionStorage.removeItem(key);
+    }
+  }
+};
+
+const generatePopupAuthFlowId = (): string => {
+  const bytes = new Uint8Array(16);
+  window.crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
+};
+
+export function createPopupAuthFlowContext(
+  context: PopupAuthFlowContext,
+): string {
+  pruneExpiredPopupAuthFlows();
+
+  const flowId = generatePopupAuthFlowId();
+  const payload: StoredPopupAuthFlowContext = {
+    ...context,
+    createdAt: Date.now(),
+  };
+
+  window.sessionStorage.setItem(
+    getPopupAuthFlowStorageKey(flowId),
+    JSON.stringify(payload),
+  );
+
+  return flowId;
+}
+
+export function getPopupAuthFlowContext(
+  flowId: string,
+): PopupAuthFlowContext | null {
+  pruneExpiredPopupAuthFlows();
+
+  const storageKey = getPopupAuthFlowStorageKey(flowId);
+  const rawValue = window.sessionStorage.getItem(storageKey);
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as Partial<StoredPopupAuthFlowContext>;
+    if (
+      parsed.role !== "teacher" &&
+      parsed.role !== "student" &&
+      parsed.role !== "developer"
+    ) {
+      window.sessionStorage.removeItem(storageKey);
+      return null;
+    }
+
+    if (
+      typeof parsed.postAuthRedirectPath !== "string" ||
+      parsed.postAuthRedirectPath.length === 0
+    ) {
+      window.sessionStorage.removeItem(storageKey);
+      return null;
+    }
+
+    return {
+      role: parsed.role,
+      loginHint:
+        typeof parsed.loginHint === "string" ? parsed.loginHint : undefined,
+      includeRobloxAssociation: Boolean(parsed.includeRobloxAssociation),
+      postAuthRedirectPath: parsed.postAuthRedirectPath,
+    };
+  } catch {
+    window.sessionStorage.removeItem(storageKey);
+    return null;
+  }
+}
+
+export function clearPopupAuthFlowContext(flowId: string): void {
+  window.sessionStorage.removeItem(getPopupAuthFlowStorageKey(flowId));
+}
+
 export function startCognitoOAuthFlowViaPopup(
   options: StartCognitoOAuthFlowOptions,
 ) {
   const role: AuthRole = options.roleOverride ?? inferUserRoleFromLocation();
-  const params = new URLSearchParams({ role });
-  const postAuthRedirectPath = options.postAuthRedirectPath;
-  if (options.loginHint) params.set("login_hint", options.loginHint);
+  const params = new URLSearchParams({
+    role,
+    postAuthRedirectPath: options.postAuthRedirectPath,
+  });
+  if (options.loginHint) {
+    params.set("login_hint", options.loginHint);
+  }
   if (options.includeRobloxAssociation) {
     params.set("includeRobloxAssociation", "1");
   }
-  params.set("postAuthRedirectPath", postAuthRedirectPath);
   const url = `${window.location.origin}/auth/popup-start?${params}`;
   return window.open(url, "cognitoLogin", "width=520,height=640");
 }

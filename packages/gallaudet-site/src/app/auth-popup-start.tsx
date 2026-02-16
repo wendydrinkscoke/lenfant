@@ -1,6 +1,10 @@
 import { useEffect } from "react";
 import { generateCodeChallenge, generateCodeVerifier } from "../lib/pkce-utils";
 import { getRuntimeConfig } from "../lib/environment-utils";
+import {
+  createPopupAuthFlowContext,
+  getPopupAuthFlowContext,
+} from "../lib/auth-utils";
 
 // simple base64url helpers (avoid +,/ and =)
 const toB64Url = (s: string) =>
@@ -15,8 +19,8 @@ export default function AuthPopupStart() {
       const domain = `https://${domainPrefix}.auth.us-east-1.amazoncognito.com`;
 
       const url = new URL(window.location.href);
-      const loginHint = url.searchParams.get("login_hint");
-      const roleParam  = url.searchParams.get("role");
+      const loginHint = url.searchParams.get("login_hint") ?? undefined;
+      const roleParam = url.searchParams.get("role");
       const includeRobloxAssociation =
         url.searchParams.get("includeRobloxAssociation") === "1";
       const postAuthRedirectPath =
@@ -26,8 +30,24 @@ export default function AuthPopupStart() {
         throw new Error("Missing required parameters");
       }
 
-      if (roleParam !== "teacher" && roleParam !== "student" && roleParam !== "developer") {
+      if (
+        roleParam !== "teacher" &&
+        roleParam !== "student" &&
+        roleParam !== "developer"
+      ) {
         throw new Error(`Invalid role parameter: ${roleParam}`);
+      }
+
+      const flowId = createPopupAuthFlowContext({
+        role: roleParam,
+        loginHint,
+        includeRobloxAssociation,
+        postAuthRedirectPath,
+      });
+
+      const flowContext = getPopupAuthFlowContext(flowId);
+      if (!flowContext) {
+        throw new Error("Missing or expired sign-in flow");
       }
 
       // Generate PKCE **in the popup**
@@ -40,10 +60,7 @@ export default function AuthPopupStart() {
 
       // Put your app's state into the OAuth 'state' param
       const stateObj = {
-        role: roleParam,
-        login_hint: loginHint,
-        includeRobloxAssociation,
-        postAuthRedirectPath,
+        flow: flowId,
         stage: "google" as const,
       };
       const state = toB64Url(JSON.stringify(stateObj));
@@ -58,7 +75,9 @@ export default function AuthPopupStart() {
         state,
         identity_provider: "Google",
       });
-      if (loginHint) params.set("login_hint", loginHint);
+      if (flowContext.loginHint) {
+        params.set("login_hint", flowContext.loginHint);
+      }
 
       const authUrl = `${domain}/oauth2/authorize?${params}`;
       window.location.replace(authUrl);

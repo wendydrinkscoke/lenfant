@@ -1,4 +1,8 @@
 import { useEffect, useState } from "react";
+import {
+  clearPopupAuthFlowContext,
+  getPopupAuthFlowContext,
+} from "../lib/auth-utils";
 import { getGallaudetApi } from "../lib/gallaudet-api";
 import { getRuntimeConfig } from "../lib/environment-utils";
 import { generateCodeChallenge, generateCodeVerifier } from "../lib/pkce-utils";
@@ -20,15 +24,25 @@ export default function GooglePopupCallback() {
 
         const rawState = url.searchParams.get("state");
         const stateParams = rawState ? new URLSearchParams(rawState) : null;
+        const flowId = stateParams?.get("flow") ?? undefined;
+        const flowContext = flowId ? getPopupAuthFlowContext(flowId) : null;
+
         const includeRobloxAssociation =
+          flowContext?.includeRobloxAssociation ??
           stateParams?.get("includeRobloxAssociation") === "1";
-        const roleParam = stateParams?.get("role");
+        const roleParam = flowContext?.role ?? stateParams?.get("role");
         const role =
-          roleParam === "teacher" || roleParam === "student" || roleParam === "developer"
+          roleParam === "teacher" ||
+          roleParam === "student" ||
+          roleParam === "developer"
             ? roleParam
             : undefined;
-        const loginHint = stateParams?.get("login_hint") ?? undefined;
-        const postAuthRedirectPath = stateParams?.get("postAuthRedirectPath") ?? undefined;
+        const loginHint =
+          flowContext?.loginHint ?? stateParams?.get("login_hint") ?? undefined;
+        const postAuthRedirectPath =
+          flowContext?.postAuthRedirectPath ??
+          stateParams?.get("postAuthRedirectPath") ??
+          undefined;
         if (!role) throw new Error("Missing role in Google OAuth state");
         if (!postAuthRedirectPath) {
           throw new Error("Missing postAuthRedirectPath in Google OAuth state");
@@ -62,13 +76,18 @@ export default function GooglePopupCallback() {
           const robloxChallenge = await generateCodeChallenge(robloxVerifier);
           localStorage.setItem("cognito_pkce_code_verifier", robloxVerifier);
 
-          const stateObj = {
-            role,
-            login_hint: loginHint,
-            includeRobloxAssociation: true,
-            postAuthRedirectPath,
-            stage: "roblox" as const,
-          };
+          const stateObj = flowId
+            ? {
+                flow: flowId,
+                stage: "roblox" as const,
+              }
+            : {
+                role,
+                login_hint: loginHint,
+                includeRobloxAssociation: true,
+                postAuthRedirectPath,
+                stage: "roblox" as const,
+              };
           const robloxState = toB64Url(JSON.stringify(stateObj));
 
           const robloxParams = new URLSearchParams({
@@ -84,6 +103,10 @@ export default function GooglePopupCallback() {
 
           window.location.replace(`${domain}/oauth2/authorize?${robloxParams}`);
           return;
+        }
+
+        if (flowId) {
+          clearPopupAuthFlowContext(flowId);
         }
 
         const idToken = localStorage.getItem("cognito_id_token");
