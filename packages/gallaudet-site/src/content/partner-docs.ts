@@ -51,7 +51,6 @@ export type PartnerClientDownload = {
 
 const LUA_PUT_EXPERIENCE_VANILLA_SNIPPET = [
   "local result, err = service:PutExperience({",
-  "  experienceName = \"Run the World - Learn Country Names!\",",
   "  robloxGameId = \"9228429469\",",
   "})",
   "",
@@ -219,7 +218,6 @@ export const experienceApiResources: PartnerApiResource[] = [
       details: "Send your experience key in the x-api-key header from your Roblox server.",
     },
     requestFields: [
-      "experienceName (string, required): Human-friendly game name.",
       "robloxGameId (string, required): Numeric Roblox place/game identifier.",
     ],
     responseFields: [
@@ -227,7 +225,7 @@ export const experienceApiResources: PartnerApiResource[] = [
     ],
     commonErrors: [
       "403 NotAuthorized: missing or invalid API key.",
-      "400 BadRequest: malformed experienceName or robloxGameId.",
+      "400 BadRequest: malformed robloxGameId.",
       "500 InternalFailure: backend persistence failure.",
     ],
     examples: [
@@ -546,7 +544,7 @@ export const experienceGuides: PartnerDocsArticle[] = [
         heading: "Step 1: Add config that reads the API key from Roblox Secret Store",
         body: [
           "Create `ServerScriptService/CivicTechForSchoolsServer/Config.lua`:",
-          "local RunService = game:GetService(\"RunService\")\nlocal HttpService = game:GetService(\"HttpService\")\n\nlocal Config = {\n  BaseUrl = \"https://api.prod.school.civictech.llc\",\n  ApiKey = HttpService:GetSecret(\"<your-secret-id>\"),\n  ExperienceProfile = {\n    experienceName = \"Run the World - Learn Country Names!\",\n    robloxGameId = \"127120714583972\",\n    -- assetIds = { \"<optional-experience-asset-uuid>\" },\n  },\n  EnableDebugLogging = RunService:IsStudio(),\n}\n\nreturn Config",
+          "local RunService = game:GetService(\"RunService\")\nlocal HttpService = game:GetService(\"HttpService\")\n\nlocal Config = {\n  BaseUrl = \"https://api.prod.school.civictech.llc\",\n  ApiKey = HttpService:GetSecret(\"<your-secret-id>\"),\n  ExperienceProfile = {\n    robloxGameId = \"127120714583972\",\n    -- assetIds = { \"<optional-experience-asset-uuid>\" },\n  },\n  EnableDebugLogging = RunService:IsStudio(),\n}\n\nreturn Config",
           "Do not hardcode raw API keys in scripts. Always load the runtime secret with `HttpService:GetSecret(...)`.",
         ],
       },
@@ -641,7 +639,7 @@ export const experienceGuides: PartnerDocsArticle[] = [
         heading: "Step 1: Add Knit config for the starter service",
         body: [
           "Create `src/Server/Modules/Config/CivicTechForSchools.lua`:",
-          "local RunService = game:GetService(\"RunService\")\n\nlocal Config = {\n  BaseUrl = \"https://api.prod.school.civictech.llc\",\n  ApiKey = game:GetService(\"HttpService\"):GetSecret(\"<your-secret-id>\"),\n  ExperienceProfile = {\n    experienceName = \"My Experience Name\",\n    robloxGameId = \"1234567890\",\n    -- assetIds = { \"<optional-asset-uuid>\" },\n  },\n  EnableDebugLogging = RunService:IsStudio(),\n}\n\nreturn Config",
+          "local RunService = game:GetService(\"RunService\")\n\nlocal Config = {\n  BaseUrl = \"https://api.prod.school.civictech.llc\",\n  ApiKey = game:GetService(\"HttpService\"):GetSecret(\"<your-secret-id>\"),\n  ExperienceProfile = {\n    robloxGameId = \"1234567890\",\n    -- assetIds = { \"<optional-asset-uuid>\" },\n  },\n  EnableDebugLogging = RunService:IsStudio(),\n}\n\nreturn Config",
           "The starter Knit service requires exactly this module path: `self.Modules.Config.CivicTechForSchools`.",
         ],
       },
@@ -750,7 +748,7 @@ export const experienceGuides: PartnerDocsArticle[] = [
       {
         heading: "Step 5: Verify the secret exists in Roblox",
         body: [
-          "Open https://create.roblox.com/dashboard/creations/experiences/${yourExperienceId}/secrets and confirm the new secret ID appears.",
+          "Open https://create.roblox.com/dashboard/creations/experiences/<yourExperienceId>/secrets and confirm the new secret ID appears.",
           "You should verify the ID matches the one returned by the developer portal toast.",
           "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/05-roblox-creator-dashboard-showing-secret-now-exists-in-secret-store-for-experience.png | Roblox Creator Hub Secrets Store panel for selected experience showing a new secret exists in the Secret Store.>>",
         ],

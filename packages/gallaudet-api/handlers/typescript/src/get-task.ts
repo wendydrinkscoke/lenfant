@@ -16,12 +16,12 @@ import type {
 import { getCognitoUserIdFromEvent, getGoogleOAuthClient } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError, isGaxiosError } from './utils/error-utils';
+import { getExperienceWithResolvedName } from './utils/experience-metadata-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
 const s3Client = new S3({ signatureVersion: 'v4' });
 const TASK_INSTANCE_TABLE_NAME = getRequiredEnv('TASK_INSTANCE_TABLE_NAME');
 const TASK_CATALOG_TABLE_NAME = getRequiredEnv('TASK_CATALOG_TABLE_NAME');
-const EXPERIENCES_TABLE_NAME = getRequiredEnv('EXPERIENCES_TABLE_NAME');
 const ASSETS_TABLE_NAME = getRequiredEnv('ASSETS_TABLE_NAME');
 const ASSETS_BUCKET_NAME = getRequiredEnv('ASSETS_BUCKET_NAME');
 
@@ -66,13 +66,6 @@ type CatalogEntryItem = {
   AssetIds?: string[];
   Milestones?: Milestone[];
 };
-
-type ExperienceItem = {
-  ExperienceId: string;
-  ExperienceName: string;
-  RobloxGameId: string;
-  AssetIds?: string[];
-}
 
 type AssetItem = {
   AssetId?: string;
@@ -378,48 +371,36 @@ export const getTask: GetTaskChainedHandlerFunction = async (request) => {
       `Returning task content for taskId=${taskId}, role=${resolvedRole}, title="${title}"`,
     );
 
-    let experience: ExperienceItem | undefined;
+    let experienceName: string;
+    let robloxGameId: string;
+    let experienceAssetIds: string[] | undefined;
     try {
-      const experienceResult = await ddbClient
-        .get({
-          TableName: EXPERIENCES_TABLE_NAME,
-          Key: {
-            ExperienceId: experienceId,
-          },
-        })
-        .promise();
-      experience = experienceResult.Item as ExperienceItem | undefined;
-      if (!experience) {
+      const resolvedExperience = await getExperienceWithResolvedName(experienceId, logger);
+      experienceName = resolvedExperience.experienceName;
+      const resolvedRobloxGameId = resolvedExperience.robloxGameId?.trim();
+      if (!resolvedRobloxGameId) {
         logger.error(
-          `Experience entry missing for experienceId=${experienceId}, taskId=${taskId}`,
+          `Resolved experience metadata missing RobloxGameId for experienceId=${experienceId}, taskId=${taskId}`,
         );
+        // TODO(metrics): emit a metric when task load fails due to missing RobloxGameId.
         return Response.internalFailure({
-          message: 'Task content no longer available',
+          message: 'Task content incomplete',
         });
       }
+      robloxGameId = resolvedRobloxGameId;
+      experienceAssetIds = resolvedExperience.assetIds;
       logger.info(
-        `Loaded experience entry for experienceId=${experienceId}, Name=${experience.ExperienceName}`,
+        `Loaded resolved experience metadata for experienceId=${experienceId}, name=${experienceName}`,
       );
-    } catch (ddbError) {
-      if (isAWSError(ddbError)) {
-        logger.error(
-          `DynamoDB failure loading experience entry ${experienceId}: ${ddbError.code} - ${ddbError.message}`,
-        );
-        return Response.internalFailure({
-          message: 'Failed to load task content',
-          details: `DynamoDB error: ${ddbError.code}`,
-        });
-      }
+    } catch (experienceError) {
       logger.error(
-        `Unexpected error reading experience entry ${experienceId}: ${JSON.stringify(ddbError)}`,
+        `Failed to resolve experience metadata for experienceId=${experienceId}, taskId=${taskId}: ${(experienceError as Error).message}`,
       );
+      // TODO(metrics): emit a metric when task load fails due to unresolved experience metadata.
       return Response.internalFailure({
         message: 'Failed to load task content',
       });
     }
-    const experienceName = experience?.ExperienceName ?? experienceId;
-    const robloxGameId = experience?.RobloxGameId;
-    const experienceAssetIds = experience?.AssetIds;
     const assetViewUrlTtlSeconds = getOptionalPositiveIntEnv(
       'ASSET_VIEW_URL_TTL_SECONDS',
       DEFAULT_ASSET_VIEW_URL_TTL_SECONDS,

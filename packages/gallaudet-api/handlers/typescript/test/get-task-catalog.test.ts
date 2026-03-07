@@ -112,9 +112,15 @@ describe('GetTaskCatalog', () => {
           {
             ExperienceId: 'abcdefg',
             ExperienceName: 'Experience Alpha',
+            ExperienceNameFetchedAt: '2999-01-01T00:00:00.000Z',
             AssetIds: [
               'c580fb04-787e-4c92-8dd9-d6ff22f4eb3b',
             ],
+          },
+          {
+            ExperienceId: 'qredasg',
+            ExperienceName: 'Experience Beta',
+            ExperienceNameFetchedAt: '2999-01-01T00:00:00.000Z',
           },
         ],
       },
@@ -189,7 +195,7 @@ describe('GetTaskCatalog', () => {
         },
         {
           experienceId: 'qredasg',
-          experienceName: 'qredasg',
+          experienceName: 'Experience Beta',
           catalogEntries: [
             {
               entryId: 'press-briefing',
@@ -209,6 +215,38 @@ describe('GetTaskCatalog', () => {
       message: 'Throughput exceeded',
     });
     dynamoMocks.scanPromise.mockRejectedValueOnce(dynamoError);
+
+    const response = await getTaskCatalog({
+      ...baseArgs,
+      input: {
+        requestParameters: {},
+        body: undefined as never,
+      },
+    });
+
+    expect(response.statusCode).toBe(500);
+    expect((response.body as InternalFailureErrorResponseContent).message).toEqual(
+      'Failed to load task catalog',
+    );
+  });
+
+  it('returns 500 when an experience entry is missing', async () => {
+    dynamoMocks.scanPromise.mockResolvedValueOnce({
+      Items: [
+        {
+          ExperienceId: 'missing-exp',
+          EntryId: 'entry-1',
+          Name: 'Name',
+          Subheading: 'Subheading',
+          Instructions: 'Instructions',
+        },
+      ],
+    });
+    dynamoMocks.batchGetPromise.mockResolvedValueOnce({
+      Responses: {
+        Experiences: [],
+      },
+    });
 
     const response = await getTaskCatalog({
       ...baseArgs,

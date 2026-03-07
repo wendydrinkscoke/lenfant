@@ -43,6 +43,25 @@ const { __mock: dynamoMocks } = jest.requireMock('aws-sdk') as {
 };
 
 const mockedGetExperienceIdFromEvent = getExperienceIdFromEvent as jest.Mock;
+const fetchMock = jest.fn();
+
+const buildRobloxGamesLookupResponse = (
+  status = 200,
+  body: unknown = {
+    data: [
+      {
+        id: 9228429469,
+        name: 'National USA Game',
+      },
+    ],
+  },
+) => ({
+  ok: status >= 200 && status < 300,
+  status,
+  text: jest.fn().mockResolvedValue(
+    typeof body === 'string' ? body : JSON.stringify(body),
+  ),
+});
 
 const buildRequestArgs = (
   overrides: Partial<PutExperienceChainedRequestInput> = {},
@@ -72,6 +91,9 @@ beforeEach(() => {
     throw new Error('DynamoDB mocks were not initialised');
   }
   jest.clearAllMocks();
+  (globalThis as typeof globalThis & { fetch: jest.Mock }).fetch = fetchMock;
+  fetchMock.mockReset();
+  fetchMock.mockResolvedValue(buildRobloxGamesLookupResponse());
   dynamoMocks.updatePromise.mockResolvedValue({});
   mockedGetExperienceIdFromEvent.mockResolvedValue('9228429469');
 });
@@ -88,7 +110,6 @@ describe('PutExperience', () => {
       input: {
         requestParameters: {},
         body: {
-          experienceName: 'NUSA',
           robloxGameId: '12345',
         },
       },
@@ -107,7 +128,6 @@ describe('PutExperience', () => {
       input: {
         requestParameters: {},
         body: {
-          experienceName: '  National USA Game ',
           robloxGameId: '  1213026131 ',
           assetIds: [
             'f8a2ab54-30f7-406f-af10-b1591db54b91',
@@ -125,8 +145,12 @@ describe('PutExperience', () => {
     expect(updateArgs.Key).toEqual({
       ExperienceId: '9228429469',
     });
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://games.roblox.com/v1/games?universeIds=9228429469',
+    );
     expect(updateArgs.ExpressionAttributeValues).toMatchObject({
       ':experienceName': 'National USA Game',
+      ':experienceNameFetchedAt': expect.any(String),
       ':robloxGameId': '1213026131',
       ':assetIds': [
         'f8a2ab54-30f7-406f-af10-b1591db54b91',
@@ -150,7 +174,6 @@ describe('PutExperience', () => {
       input: {
         requestParameters: {},
         body: {
-          experienceName: 'NUSA',
           robloxGameId: '123456',
         },
       },
@@ -168,7 +191,6 @@ describe('PutExperience', () => {
       input: {
         requestParameters: {},
         body: {
-          experienceName: 'NUSA',
           robloxGameId: '123456',
           assetIds: [
             'eca23e44-4d2f-4061-88d8-b5d94339d8ad',
@@ -181,6 +203,28 @@ describe('PutExperience', () => {
     expect(response.statusCode).toBe(400);
     expect(response.body).toEqual({
       message: 'Duplicate assetId eca23e44-4d2f-4061-88d8-b5d94339d8ad',
+    });
+    expect(dynamoMocks.update).not.toHaveBeenCalled();
+  });
+
+  it('returns 500 when Roblox experience-name lookup fails and does not write', async () => {
+    fetchMock.mockResolvedValueOnce(
+      buildRobloxGamesLookupResponse(500, { message: 'boom' }),
+    );
+
+    const response = await putExperience({
+      ...buildRequestArgs(),
+      input: {
+        requestParameters: {},
+        body: {
+          robloxGameId: '123456',
+        },
+      },
+    });
+
+    expect(response.statusCode).toBe(500);
+    expect(response.body).toEqual({
+      message: 'Failed to resolve experience name from Roblox.',
     });
     expect(dynamoMocks.update).not.toHaveBeenCalled();
   });

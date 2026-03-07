@@ -9,10 +9,6 @@ use llc.civictech.school#AssetIds
 @idempotent
 operation PutExperience {
     input := {
-        /// Human-friendly name for the experience.
-        @required
-        experienceName: ExperienceName
-
         /// Roblox identifier for the experience's published game.
         @required
         robloxGameId: RobloxGameId

@@ -26,7 +26,6 @@ type Milestone = {
 }
 
 type ExperienceProfile = {
-  experienceName: string,
   robloxGameId: string,
   assetIds: AssetIds?,
 }

@@ -65,3 +65,46 @@ export const getRobloxUserNameFromUserId = async (userId: string, apiKeyValue: s
   const userData = await response.json();
   return userData.name;
 };
+
+type RobloxGamesLookupResponse = {
+  data?: Array<{
+    id?: number | string;
+    name?: string;
+  }>;
+};
+
+export const getRobloxExperienceNameFromUniverseId = async (
+  universeId: string,
+): Promise<string> => {
+  const endpoint = `https://games.roblox.com/v1/games?universeIds=${encodeURIComponent(universeId)}`;
+  const response = await fetch(endpoint);
+  const bodyText = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`Roblox games lookup failed (${response.status}): ${bodyText}`);
+  }
+
+  let parsed: RobloxGamesLookupResponse;
+  try {
+    parsed = JSON.parse(bodyText) as RobloxGamesLookupResponse;
+  } catch {
+    throw new Error(`Roblox games lookup returned non-JSON payload: ${bodyText}`);
+  }
+
+  const matchingEntry = parsed.data?.find((entry) => {
+    if (typeof entry.id === 'number') {
+      return String(entry.id) === universeId;
+    }
+    if (typeof entry.id === 'string') {
+      return entry.id.trim() === universeId;
+    }
+    return false;
+  });
+
+  const experienceName = matchingEntry?.name?.trim();
+  if (!experienceName) {
+    throw new Error(`Roblox games lookup did not return a name for universeId=${universeId}`);
+  }
+
+  return experienceName;
+};

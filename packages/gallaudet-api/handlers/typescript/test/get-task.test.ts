@@ -128,6 +128,7 @@ beforeEach(() => {
         Item: {
           ExperienceId: 'studio-42',
           ExperienceName: 'Studio Forty Two',
+          ExperienceNameFetchedAt: '2999-01-01T00:00:00.000Z',
           RobloxGameId: '1213026131',
           AssetIds: [
             '07e3087d-7130-4c66-bf25-95b38295f0a7',
@@ -309,6 +310,49 @@ describe('GetTask', () => {
       courseId: 'course-456',
       itemId: 'courseWork-789',
       attachmentId: 'attach-111',
+    });
+  });
+
+  it('returns 500 when the experience metadata is missing', async () => {
+    getAddOnContextMock.mockResolvedValueOnce({
+      data: {
+        teacherContext: {
+          userId: 'teacher-321',
+        },
+        studentContext: null,
+      },
+    });
+
+    const originalGetImplementation = dynamoGetMock.getMockImplementation();
+    dynamoGetMock.mockImplementation((params: { TableName: string; Key?: Record<string, string> }) => {
+      if (params.TableName === 'Experiences') {
+        return {
+          promise: jest.fn().mockResolvedValue({}),
+        };
+      }
+
+      if (originalGetImplementation) {
+        return originalGetImplementation(params);
+      }
+
+      return {
+        promise: jest.fn().mockResolvedValue({}),
+      };
+    });
+
+    const response = await getTask({
+      ...baseArgs,
+      input: {
+        requestParameters: {
+          taskId: 'task-123',
+        },
+        body: undefined as never,
+      },
+    });
+
+    expect(response.statusCode).toBe(500);
+    expect(response.body).toEqual({
+      message: 'Failed to load task content',
     });
   });
 });

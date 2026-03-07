@@ -9,6 +9,7 @@ import {
 import { getExperienceIdFromEvent } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError } from './utils/error-utils';
+import { getRobloxExperienceNameFromUniverseId } from './utils/roblox-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
 const EXPERIENCES_TABLE_NAME = getRequiredEnv('EXPERIENCES_TABLE_NAME');
@@ -53,10 +54,8 @@ export const putExperience: PutExperienceChainedHandlerFunction = async (request
 
   const { input } = request;
   const body = input.body;
-  const experienceNameRaw = body.experienceName;
   const robloxGameIdRaw = body.robloxGameId;
   const assetIdsRaw = body.assetIds;
-  const experienceName = experienceNameRaw.trim();
   const robloxGameId = robloxGameIdRaw.trim();
   const assetIds = assetIdsRaw?.map((assetId) => assetId.trim());
 
@@ -75,21 +74,38 @@ export const putExperience: PutExperienceChainedHandlerFunction = async (request
     }
   }
 
+  let experienceName: string;
+  try {
+    experienceName = await getRobloxExperienceNameFromUniverseId(experienceId);
+    logger.info(`Resolved experience name from Roblox for experienceId=${experienceId}`);
+  } catch (error) {
+    logger.error(
+      `Failed to resolve experience name from Roblox for experienceId=${experienceId}: ${(error as Error).message}`,
+    );
+    // TODO(metrics): emit a metric when PutExperience fails on Roblox name resolution.
+    return Response.internalFailure({
+      message: 'Failed to resolve experience name from Roblox.',
+    });
+  }
+
   const nowIso = new Date().toISOString();
   const updateExpressionSegments = [
     '#experienceName = :experienceName',
+    '#experienceNameFetchedAt = :experienceNameFetchedAt',
     '#robloxGameId = :robloxGameId',
     '#updatedAt = :updatedAt',
     '#createdAt = if_not_exists(#createdAt, :createdAt)',
   ];
   const expressionAttributeNames: Record<string, string> = {
     '#experienceName': 'ExperienceName',
+    '#experienceNameFetchedAt': 'ExperienceNameFetchedAt',
     '#robloxGameId': 'RobloxGameId',
     '#updatedAt': 'UpdatedAt',
     '#createdAt': 'CreatedAt',
   };
   const expressionAttributeValues: Record<string, unknown> = {
     ':experienceName': experienceName,
+    ':experienceNameFetchedAt': nowIso,
     ':robloxGameId': robloxGameId,
     ':updatedAt': nowIso,
     ':createdAt': nowIso,

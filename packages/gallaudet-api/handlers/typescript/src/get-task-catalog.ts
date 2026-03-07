@@ -9,19 +9,13 @@ import {
 import type { Milestone } from 'gallaudet-api-typescript-runtime';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError } from './utils/error-utils';
+import {
+  getExperiencesWithResolvedNames,
+  type ResolvedExperienceMetadata,
+} from './utils/experience-metadata-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
 const TASK_CATALOG_TABLE_NAME = getRequiredEnv('TASK_CATALOG_TABLE_NAME');
-const EXPERIENCES_TABLE_NAME = getRequiredEnv('EXPERIENCES_TABLE_NAME');
-
-type ExperienceItem = {
-  ExperienceId?: string;
-  CreatedAt?: string;
-  ExperienceName?: string;
-  RobloxGameId?: string;
-  AssetIds?: string[];
-  UpdatedAt?: string;
-}
 
 type CatalogItem = {
   ExperienceId?: string;
@@ -83,44 +77,21 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
     items.map((item) => item.ExperienceId).filter((experienceId): experienceId is string => !!experienceId),
   ));
 
-  const experiencesById = new Map<string, ExperienceItem>();
+  let experiencesById = new Map<string, ResolvedExperienceMetadata>();
   if (experienceIds.length > 0) {
     try {
-      const experiencesResult = await ddbClient.batchGet({
-        RequestItems: {
-          [EXPERIENCES_TABLE_NAME]: {
-            Keys: experienceIds.map((experienceId) => ({ ExperienceId: experienceId })),
-          },
-        },
-      }).promise();
-      const experiences = (experiencesResult.Responses?.[EXPERIENCES_TABLE_NAME] as ExperienceItem[]) ?? [];
-      experiences.forEach((experience) => {
-        if (experience.ExperienceId) {
-          experiencesById.set(experience.ExperienceId, experience);
-        }
-      });
-      const unprocessed = experiencesResult.UnprocessedKeys?.[EXPERIENCES_TABLE_NAME]?.Keys;
-      if (unprocessed?.length) {
-        logger.warn(`Unprocessed experience keys: ${JSON.stringify(unprocessed)}`);
-      }
+      experiencesById = await getExperiencesWithResolvedNames(experienceIds, logger);
       logger.info(`Fetched ${experiencesById.size} experiences`);
     } catch (error) {
-      if (isAWSError(error)) {
-        logger.error(`Failed to read experiences: ${error.code} - ${error.message}`);
-        return Response.internalFailure({
-          message: 'Failed to load task catalog',
-          details: `DynamoDB error: ${error.code}`,
-        });
-      }
-
-      logger.error(`Unexpected error loading experiences: ${JSON.stringify(error)}`);
+      logger.error(`Failed to resolve experiences: ${(error as Error).message}`);
+      // TODO(metrics): emit a metric when task catalog fails on experience metadata resolution.
       return Response.internalFailure({
         message: 'Failed to load task catalog',
       });
     }
   }
 
-  items.forEach((item) => {
+  for (const item of items) {
     const experienceId = item.ExperienceId;
     const entryId = item.EntryId;
     const name = item.Name;
@@ -136,12 +107,21 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
       !instructions
     ) {
       logger.warn(`Skipping malformed catalog entry: ${JSON.stringify(item)}`);
-      return;
+      continue;
     }
 
     if (!experiencesMap.has(experienceId)) {
-      const experienceName = experiencesById.get(experienceId)?.ExperienceName ?? experienceId;
-      const experienceAssetIds = experiencesById.get(experienceId)?.AssetIds;
+      const resolvedExperience = experiencesById.get(experienceId);
+      if (!resolvedExperience) {
+        logger.error(`Resolved experience metadata missing for experienceId=${experienceId}`);
+        // TODO(metrics): emit a metric when expected experience metadata is missing in task catalog assembly.
+        return Response.internalFailure({
+          message: 'Failed to load task catalog',
+        });
+      }
+
+      const experienceName = resolvedExperience.experienceName;
+      const experienceAssetIds = resolvedExperience.assetIds;
       experiencesMap.set(experienceId, {
         experienceId,
         experienceName,
@@ -163,7 +143,7 @@ export const getTaskCatalog: GetTaskCatalogChainedHandlerFunction = async (reque
       entry.assetIds = assetIds;
     }
     experiencesMap.get(experienceId)?.catalogEntries.push(entry);
-  });
+  }
 
   const experiences = Array.from(experiencesMap.values()).map((experience) => ({
     ...experience,

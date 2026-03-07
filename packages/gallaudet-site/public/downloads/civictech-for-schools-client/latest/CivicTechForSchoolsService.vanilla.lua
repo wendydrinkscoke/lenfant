@@ -18,7 +18,6 @@ export type Milestone = {
 }
 
 export type ExperienceProfile = {
-  experienceName: string,
   robloxGameId: string,
   assetIds: AssetIds?,
 }
