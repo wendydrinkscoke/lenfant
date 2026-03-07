@@ -526,15 +526,6 @@ export const experienceGuides: PartnerDocsArticle[] = [
         ],
       },
       {
-        heading: "Prerequisite: Enable HTTP requests for your Roblox experience",
-        body: [
-          "Before attempting any CivicTechForSchools API call, open Roblox Creator Hub for your experience and go to \"Experience Settings\".",
-          "Enable the toggle labeled \"Allow HTTP Requests\" and save/publish the change.",
-          "This is required for both vanilla Studio integrations and Knit/Rojo workflows because both rely on outbound `HttpService` calls.",
-          "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/00-prerequisite-enable-http-requests-in-experience-settings.png | Roblox Experience Settings showing the Allow HTTP Requests toggle enabled.>>",
-        ],
-      },
-      {
         heading: "Run the World baseline (before integration)",
         body: [
           "The game already had a round loop, `Lobby` and `Playing` teams, and leaderboard stats (`Points`, `RoundsPlayed`, `Accuracy`).",
@@ -543,10 +534,19 @@ export const experienceGuides: PartnerDocsArticle[] = [
         ],
       },
       {
+        heading: "Step 0: Enable HTTP requests for your Roblox experience",
+        body: [
+          "Before attempting any CivicTechForSchools API call, open Roblox Creator Hub for your experience and go to \"Experience Settings\".",
+          "Enable the toggle labeled \"Allow HTTP Requests\" and save/publish the change.",
+          "This is required for both vanilla Studio integrations and Knit/Rojo workflows because both rely on outbound `HttpService` calls.",
+          "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/00-prerequisite-enable-http-requests-in-experience-settings.png | Roblox Experience Settings showing the Allow HTTP Requests toggle enabled.>>",
+        ],
+      },
+      {
         heading: "Step 1: Add config that reads the API key from Roblox Secret Store",
         body: [
           "Create `ServerScriptService/CivicTechForSchoolsServer/Config.lua`:",
-          "local RunService = game:GetService(\"RunService\")\nlocal HttpService = game:GetService(\"HttpService\")\n\nlocal Config = {\n  BaseUrl = \"https://api.beta.school.civictech.llc\",\n  ApiKey = HttpService:GetSecret(\"<your-secret-id>\"),\n  ExperienceProfile = {\n    experienceName = \"Run the World - Learn Country Names!\",\n    robloxGameId = \"127120714583972\",\n    -- assetIds = { \"<optional-experience-asset-uuid>\" },\n  },\n  EnableDebugLogging = RunService:IsStudio(),\n}\n\nreturn Config",
+          "local RunService = game:GetService(\"RunService\")\nlocal HttpService = game:GetService(\"HttpService\")\n\nlocal Config = {\n  BaseUrl = \"https://api.prod.school.civictech.llc\",\n  ApiKey = HttpService:GetSecret(\"<your-secret-id>\"),\n  ExperienceProfile = {\n    experienceName = \"Run the World - Learn Country Names!\",\n    robloxGameId = \"127120714583972\",\n    -- assetIds = { \"<optional-experience-asset-uuid>\" },\n  },\n  EnableDebugLogging = RunService:IsStudio(),\n}\n\nreturn Config",
           "Do not hardcode raw API keys in scripts. Always load the runtime secret with `HttpService:GetSecret(...)`.",
         ],
       },
