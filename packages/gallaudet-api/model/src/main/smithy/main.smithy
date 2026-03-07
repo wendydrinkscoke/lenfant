@@ -21,8 +21,10 @@ service Gallaudet {
       GetGoogleClassroomAccessStatus
       GetRobloxSecretStoreAccessStatus
       GetLinkedRobloxAccount
+      GetSimulatedTask
       GetTask
       GetTaskCatalog
+      GetTaskCatalogForProject
       GradeTask
       ListProjects
       ListAssets

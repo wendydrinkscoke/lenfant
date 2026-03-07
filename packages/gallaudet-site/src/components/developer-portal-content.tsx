@@ -49,7 +49,7 @@ export function DeveloperPortalContent({ user }: DeveloperPortalContentProps) {
         return allFeatures
       }
 
-      const hiddenInProd = new Set(["listing", "tasks", "roles", "metrics"])
+      const hiddenInProd = new Set(["listing", "roles", "metrics"])
       return allFeatures.filter((feature) => !hiddenInProd.has(feature.id))
     },
     [showComingSoonFeatures],
@@ -153,7 +153,7 @@ export function DeveloperPortalContent({ user }: DeveloperPortalContentProps) {
       case "listing":
         return <MarketplaceListingPanel />
       case "tasks":
-        return <ConfigureTasksPanel />
+        return <ConfigureTasksPanel experienceId={selectedExperience} />
       case "assets":
         return <AssetManagerPanel experienceId={selectedExperience} />
       case "secrets":
@@ -239,7 +239,7 @@ export function DeveloperPortalContent({ user }: DeveloperPortalContentProps) {
                     ? "Fetching your Roblox experiences..."
                     : showComingSoonFeatures
                       ? "Add your first Roblox experience to configure listings, tasks, and secrets."
-                      : "Add your first Roblox experience to configure secrets."}
+                      : "Add your first Roblox experience to configure tasks, assets, and secrets."}
                 </EmptyDescription>
               </EmptyHeader>
               <EmptyContent>

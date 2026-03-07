@@ -8,19 +8,25 @@ import { Skeleton } from "./ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { AlertTriangle, CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { getGallaudetApi } from "../lib/gallaudet-api";
-import type { GetTaskResponseContent } from "gallaudet-api-typescript-react-query-hooks";
+import type { TaskInstanceView } from "gallaudet-api-typescript-react-query-hooks";
 import { ResponseError } from "gallaudet-api-typescript-react-query-hooks";
 import { CognitoAuthGate } from "./cognito-auth-gate";
 import type { AuthUser } from "../hooks/use-auth";
 import { startCognitoOAuthFlowViaPopup } from "../lib/auth-utils";
 
+type TaskViewMode = "live" | "simulated";
+
 type TaskViewProps = {
   audience: "student" | "teacher";
+  mode?: TaskViewMode;
 };
 
 type TaskViewAuthorizedProps = {
   audience: TaskViewProps["audience"];
+  mode: TaskViewMode;
   taskId: string | null;
+  experienceId: string | null;
+  entryId: string | null;
   loginHint?: string;
   user: AuthUser | null;
   signOut: () => Promise<void>;
@@ -29,6 +35,24 @@ type TaskViewAuthorizedProps = {
 const DEFAULT_ASSET_ROTATION_MS = 5000;
 const DEFAULT_GIF_ROTATION_MS = 8000;
 const MIN_GIF_FRAME_DELAY_CS = 2;
+
+const createSyntheticTaskId = (): string => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0"));
+    return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10, 16).join("")}`;
+  }
+
+  const fallbackHex = () => Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, "0");
+  return `${fallbackHex()}-${fallbackHex().slice(0, 4)}-4${fallbackHex().slice(1, 4)}-a${fallbackHex().slice(1, 4)}-${fallbackHex()}${fallbackHex().slice(0, 4)}`;
+};
 
 const formatAudienceLabel = (audience: "student" | "teacher") =>
   audience === "teacher" ? "Teacher Preview" : "Student Assignment";
@@ -151,7 +175,10 @@ const createRobloxLinkSteps = (): RobloxLinkStep[] => [
 
 const TaskViewAuthorized = ({
   audience,
+  mode,
   taskId,
+  experienceId,
+  entryId,
   loginHint,
   user,
   signOut,
@@ -159,7 +186,7 @@ const TaskViewAuthorized = ({
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
     "idle",
   );
-  const [task, setTask] = useState<GetTaskResponseContent["task"] | null>(null);
+  const [task, setTask] = useState<TaskInstanceView | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [robloxLinkStatus, setRobloxLinkStatus] = useState<
     "idle" | "loading" | "linked" | "unlinked" | "error"
@@ -182,6 +209,7 @@ const TaskViewAuthorized = ({
     Record<string, number>
   >({});
   const [isLoadedContentVisible, setIsLoadedContentVisible] = useState(false);
+  const [simulatedTaskId, setSimulatedTaskId] = useState<string | null>(null);
 
   const taskAssets = useMemo(
     () => (status === "success" && task?.assets ? task.assets : []),
@@ -220,10 +248,17 @@ const TaskViewAuthorized = ({
   useEffect(() => {
     let isCancelled = false;
 
-    if (!taskId) {
+    if (mode === "live") {
+      if (!taskId) {
+        setTask(null);
+        setStatus("error");
+        setErrorMessage("Missing task identifier in the URL.");
+        return;
+      }
+    } else if (!experienceId || !entryId) {
       setTask(null);
       setStatus("error");
-      setErrorMessage("Missing task identifier in the URL.");
+      setErrorMessage("Missing experienceId or entryId in the URL.");
       return;
     }
 
@@ -234,7 +269,13 @@ const TaskViewAuthorized = ({
 
       try {
         const api = await getGallaudetApi();
-        const response = await api.getTask({ taskId });
+        const response =
+          mode === "live"
+            ? await api.getTask({ taskId: taskId as string })
+            : await api.getSimulatedTask({
+                experienceId: experienceId as string,
+                entryId: entryId as string,
+              });
         if (isCancelled) {
           return;
         }
@@ -264,11 +305,17 @@ const TaskViewAuthorized = ({
               responseMessage ??
               "You are not authorized to view this Classroom task.";
           } else if (statusCode === 404) {
-            message = responseMessage ?? "We could not find this Classroom task.";
+            message =
+              responseMessage ??
+              (mode === "simulated"
+                ? "We could not find this task catalog entry."
+                : "We could not find this Classroom task.");
           } else {
             message =
               responseMessage ??
-              "Failed to verify your Google Classroom context. Please try again.";
+              (mode === "simulated"
+                ? "Failed to load the simulated task preview. Please try again."
+                : "Failed to verify your Google Classroom context. Please try again.");
           }
         } else if (error instanceof Error && error.message) {
           message = error.message;
@@ -285,16 +332,16 @@ const TaskViewAuthorized = ({
     return () => {
       isCancelled = true;
     };
-  }, [taskId]);
+  }, [entryId, experienceId, mode, taskId]);
 
   useEffect(() => {
     setActiveAssetIndex(0);
-  }, [taskId, visibleAssets.length, selectedMilestoneId]);
+  }, [entryId, experienceId, mode, taskId, visibleAssets.length, selectedMilestoneId]);
 
   useEffect(() => {
     setSelectedMilestoneId(null);
     setHasAppliedAutoMilestoneSelection(false);
-  }, [taskId]);
+  }, [entryId, experienceId, mode, taskId]);
 
   useEffect(() => {
     if (status === "loading") {
@@ -309,7 +356,7 @@ const TaskViewAuthorized = ({
     return () => {
       window.cancelAnimationFrame(animationFrameId);
     };
-  }, [status, taskId]);
+  }, [entryId, experienceId, mode, status, taskId]);
 
   useEffect(() => {
     if (hasAppliedAutoMilestoneSelection) {
@@ -663,6 +710,16 @@ const TaskViewAuthorized = ({
 
   const currentTaskAsset =
     visibleAssets.length > 0 ? visibleAssets[activeAssetIndex] : null;
+  const displayedTaskId = mode === "simulated" ? simulatedTaskId : taskId;
+
+  useEffect(() => {
+    if (mode !== "simulated") {
+      setSimulatedTaskId(null);
+      return;
+    }
+
+    setSimulatedTaskId(createSyntheticTaskId());
+  }, [entryId, experienceId, mode]);
 
   const allRobloxStepsComplete = linkingSteps.every((step) => step.completed);
   const currentRobloxStepIndex = linkingSteps.findIndex(
@@ -837,9 +894,9 @@ const TaskViewAuthorized = ({
                   </span>
                 )}
               </span>
-              {taskId && (
+              {displayedTaskId && (
                 <span className="font-mono text-xs text-slate-400">
-                  Task ID: {taskId}
+                  Task ID: {displayedTaskId}
                 </span>
               )}
             </div>
@@ -1038,17 +1095,25 @@ const TaskViewAuthorized = ({
   );
 };
 
-const TaskView = ({ audience }: TaskViewProps) => {
+const TaskView = ({ audience, mode = "live" }: TaskViewProps) => {
   const [searchParams] = useSearchParams();
   const taskId = searchParams.get("taskId");
+  const experienceId = searchParams.get("experienceId");
+  const entryId = searchParams.get("entryId");
   const loginHint = searchParams.get("login_hint") ?? undefined;
 
   return (
-    <CognitoAuthGate loginHint={loginHint}>
+    <CognitoAuthGate
+      loginHint={loginHint}
+      roleOverride={mode === "simulated" ? "developer" : undefined}
+    >
       {({ user, signOut }) => (
         <TaskViewAuthorized
           audience={audience}
+          mode={mode}
           taskId={taskId}
+          experienceId={experienceId}
+          entryId={entryId}
           loginHint={loginHint}
           user={user}
           signOut={signOut}

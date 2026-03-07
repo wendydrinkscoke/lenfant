@@ -16,6 +16,8 @@ import {
   GetLinkedRobloxAccountResponseContent,
   GetRobloxSecretStoreAccessStatusRequest,
   GetRobloxSecretStoreAccessStatusResponseContent,
+  GetSimulatedTaskResponseContent,
+  GetTaskCatalogForProjectResponseContent,
   GetTaskCatalogResponseContent,
   GetTaskResponseContent,
   ListAssetsRequest,
@@ -159,7 +161,7 @@ const MOCK_TASKS: Record<string, TaskInstanceView> = {
 const MOCK_CATALOG: GetTaskCatalogResponseContent = {
   experiences: [
     {
-      experienceId: "nusa-aero",
+      experienceId: "12039485732",
       experienceName: "NUSA Aerospace",
       catalogEntries: [
         {
@@ -185,7 +187,7 @@ const MOCK_CATALOG: GetTaskCatalogResponseContent = {
       ],
     },
     {
-      experienceId: "blue-coral",
+      experienceId: "9876543210",
       experienceName: "Blue Coral Labs",
       catalogEntries: [
         {
@@ -361,9 +363,68 @@ export class MockGallaudetApi extends DefaultApi {
     return { task };
   }
 
+  async getSimulatedTask(
+    request: Parameters<DefaultApi["getSimulatedTask"]>[0],
+  ): Promise<GetSimulatedTaskResponseContent> {
+    await delay(MOCK_LATENCY_MS);
+
+    const experience = MOCK_CATALOG.experiences.find(
+      (catalogExperience) => catalogExperience.experienceId === request.experienceId,
+    );
+    const entry = experience?.catalogEntries.find(
+      (catalogEntry) => catalogEntry.entryId === request.entryId,
+    );
+
+    if (!experience || !entry) {
+      throw mockOperationError(
+        404,
+        "Task catalog entry not found",
+        "getSimulatedTask",
+      );
+    }
+
+    const task = withMockTaskAssets({
+      title: entry.name,
+      subheading: entry.subheading,
+      instructions: entry.instructions,
+      milestones: entry.milestones,
+      assetIds: entry.assetIds,
+      experienceName: experience.experienceName,
+      robloxGameId: request.experienceId,
+      experienceAssetIds: experience.assetIds,
+    });
+
+    return { task };
+  }
+
   async getTaskCatalog(): Promise<GetTaskCatalogResponseContent> {
     await delay(MOCK_LATENCY_MS);
     return MOCK_CATALOG;
+  }
+
+  async getTaskCatalogForProject(
+    request: Parameters<DefaultApi["getTaskCatalogForProject"]>[0],
+  ): Promise<GetTaskCatalogForProjectResponseContent> {
+    await delay(MOCK_LATENCY_MS);
+
+    const experienceId = request.experienceId.trim();
+    const matchingExperience = MOCK_CATALOG.experiences.find(
+      (experience) => experience.experienceId === experienceId,
+    );
+
+    if (matchingExperience) {
+      return {
+        experience: matchingExperience,
+      };
+    }
+
+    return {
+      experience: {
+        experienceId,
+        experienceName: `Universe ${experienceId}`,
+        catalogEntries: [],
+      },
+    };
   }
 
   async attachTask(

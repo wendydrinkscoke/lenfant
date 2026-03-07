@@ -36,8 +36,10 @@ import {
   DelegateGoogleClassroomAccessFunction,
   DelegateRobloxSecretStoreAccessFunction,
   GetAssetUploadPartUrlFunction,
+  GetSimulatedTaskFunction,
   GetTaskFunction,
   GetTaskCatalogFunction,
+  GetTaskCatalogForProjectFunction,
   GradeTaskFunction,
   ListAssetsFunction,
   ListTasksForPlayerFunction,
@@ -347,6 +349,27 @@ export class Gallaudet extends Construct {
     props.assetsBucket.grantRead(getTaskFunction);
     props.googleOAuthClientSecret.grantRead(getTaskFunction);
 
+    const getSimulatedTaskFunction = new GetSimulatedTaskFunction(
+      this,
+      "GetSimulatedTaskFunction",
+      {
+        environment: {
+          TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
+          EXPERIENCES_TABLE_NAME: props.experiencesTable.tableName,
+          ASSETS_TABLE_NAME: props.assetsTable.tableName,
+          ASSETS_BUCKET_NAME: props.assetsBucket.bucketName,
+        },
+        description: [
+          "Builds a simulated task instance view from a task catalog entry",
+          "for developer preview workflows.",
+        ].join(" "),
+      },
+    );
+    props.taskCatalogTable.grantReadData(getSimulatedTaskFunction);
+    props.experiencesTable.grantReadData(getSimulatedTaskFunction);
+    props.assetsTable.grantReadData(getSimulatedTaskFunction);
+    props.assetsBucket.grantRead(getSimulatedTaskFunction);
+
     const gradeTaskFunction = new GradeTaskFunction(this, "GradeTaskFunction", {
       environment: {
         TASK_INSTANCE_TABLE_NAME: props.taskInstanceTable.tableName,
@@ -410,6 +433,24 @@ export class Gallaudet extends Construct {
     );
     props.taskCatalogTable.grantReadData(getTaskCatalogFunction);
     props.experiencesTable.grantReadData(getTaskCatalogFunction);
+
+    const getTaskCatalogForProjectFunction =
+      new GetTaskCatalogForProjectFunction(
+        this,
+        "GetTaskCatalogForProjectFunction",
+        {
+          environment: {
+            TASK_CATALOG_TABLE_NAME: props.taskCatalogTable.tableName,
+            EXPERIENCES_TABLE_NAME: props.experiencesTable.tableName,
+          },
+          description: [
+            "Returns a single project's task catalog after verifying the caller",
+            "has access to the requested experience.",
+          ].join(" "),
+        },
+      );
+    props.taskCatalogTable.grantReadData(getTaskCatalogForProjectFunction);
+    props.experiencesTable.grantReadWriteData(getTaskCatalogForProjectFunction);
 
     const linkRobloxAccountFunction = new LinkRobloxAccountFunction(
       this,
@@ -603,8 +644,14 @@ export class Gallaudet extends Construct {
         getTask: {
           integration: Integrations.lambda(getTaskFunction),
         },
+        getSimulatedTask: {
+          integration: Integrations.lambda(getSimulatedTaskFunction),
+        },
         getTaskCatalog: {
           integration: Integrations.lambda(getTaskCatalogFunction),
+        },
+        getTaskCatalogForProject: {
+          integration: Integrations.lambda(getTaskCatalogForProjectFunction),
         },
         gradeTask: {
           integration: Integrations.lambda(gradeTaskFunction),

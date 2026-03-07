@@ -145,6 +145,7 @@ new TypeSafeWebsiteProject({
     "@radix-ui/react-tooltip",
     "@radix-ui/react-select",
     "@shadcn/ui",
+    "@tanstack/react-table",
     "class-variance-authority",
     "clsx",
     "lucide-react",

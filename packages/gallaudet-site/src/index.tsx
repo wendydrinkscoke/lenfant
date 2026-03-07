@@ -70,6 +70,10 @@ root.render(
           path='/teacher-task-view'
           element={<TaskView audience="teacher" />}
         />
+        <Route
+          path='/task-preview'
+          element={<TaskView audience="teacher" mode="simulated" />}
+        />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>,
