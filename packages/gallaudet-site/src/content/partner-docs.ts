@@ -526,6 +526,15 @@ export const experienceGuides: PartnerDocsArticle[] = [
         ],
       },
       {
+        heading: "Prerequisite: Enable HTTP requests for your Roblox experience",
+        body: [
+          "Before attempting any CivicTechForSchools API call, open Roblox Creator Hub for your experience and go to \"Experience Settings\".",
+          "Enable the toggle labeled \"Allow HTTP Requests\" and save/publish the change.",
+          "This is required for both vanilla Studio integrations and Knit/Rojo workflows because both rely on outbound `HttpService` calls.",
+          "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/00-prerequisite-enable-http-requests-in-experience-settings.png | Roblox Experience Settings showing the Allow HTTP Requests toggle enabled.>>",
+        ],
+      },
+      {
         heading: "Run the World baseline (before integration)",
         body: [
           "The game already had a round loop, `Lobby` and `Playing` teams, and leaderboard stats (`Points`, `RoundsPlayed`, `Accuracy`).",
@@ -610,6 +619,15 @@ export const experienceGuides: PartnerDocsArticle[] = [
         body: [
           "By the end of this guide, your game server will publish task updates through a Knit signal and your client controller will react to assignment changes.",
           "Fusion is optional. The integration pattern is Knit-first: service -> signal -> controller -> UI layer.",
+        ],
+      },
+      {
+        heading: "Prerequisite: Enable HTTP requests for your Roblox experience",
+        body: [
+          "Before attempting any CivicTechForSchools API call, open Roblox Creator Hub for your experience and go to \"Experience Settings\".",
+          "Enable the toggle labeled \"Allow HTTP Requests\" and save/publish the change.",
+          "This is required for both vanilla Studio integrations and Knit/Rojo workflows because both rely on outbound `HttpService` calls.",
+          "<<Screenshot: /docs/guides/bootstrapping-secrets-and-api-keys/00-prerequisite-enable-http-requests-in-experience-settings.png | Roblox Experience Settings showing the Allow HTTP Requests toggle enabled.>>",
         ],
       },
       {
