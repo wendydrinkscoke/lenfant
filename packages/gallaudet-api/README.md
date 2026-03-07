@@ -44,11 +44,7 @@ my game.
 developer portal to manage and view my integration with CivicTech for Schools.
 
 ## Terminology
-- **Primary task:** A first-party developed, administrative. Such tasks do not 
-correspond to any specific Roblox game. For instance, the sign-up task, which 
-teachers which guides students to link their Google and Roblox identities, is a 
-primary task.
-- **Secondary task:** A task created by game developers. These tasks must 
+- **Task:** A task created by game developers. These tasks must 
 correspond to some in-game action.
 - **Completion-graded task:** A task which can be graded instantly as either 
 completed or not complete. For instance, a task that requires the player visit a 
@@ -62,8 +58,8 @@ due date passes.
 - **Manually-graded writing task:** A task which requires the teacher review a 
 student's writing in order to manually assign a grade. 
 - **Task catalog:** The task catalog will be a DynamoDB table listing all
-primary and secondary tasks. These tasks can be **attached** to Google Classroom
-items, such as course work items.
+tasks. These tasks can be **attached** to Google Classroom items, such as course
+work items.
 
 ## Key Responsibilities
 - **Teachers** assign tasks using the `/create-attachment` webpage.
@@ -94,8 +90,6 @@ the task is a manually-graded writing task).
     ~~delegate OAuth scopes our service requires.~~
     1. ~~Leverage the Classrooms API to enable teachers to assign a dummy task~~
     ~~to assignments.~~
-    1. ~~Develop a primary task–"the singup task"–that enables students to~~
-    ~~link their Google and Roblox identities.~~
     1. ~~Enable teachers to assign real tasks (that are dynamically fetched~~
     ~~from the task catalog~~ and correspond to real student/teacher views) 
     ~~rather than dummy tasks~~ that just point to dummy pages as the 
@@ -112,11 +106,6 @@ the task is a manually-graded writing task).
         ~~retrieve task instance data by `taskId`.~~
         - ~~Hydrate the TaskView frontend by calling `getTask` with the~~
         ~~provided `taskId`.~~
-    1. Edit the Gallaudet API in order to suppport the frontend's 
-    `create-attachment` page in **enforcing** that the first task teachers 
-    assign to each classroom is the "signup task".
-    1. _Maybe_ use a custom resource to add primary tasks to the Task Catalog to
-    avoid manual effort.
 1. Develop core game-facing APIs
     1. ~~Introduce an API-key fronted endpoint.~~
     1. ~~Introduce an API that enables game servers to register user-facing~~
