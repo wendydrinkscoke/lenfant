@@ -49,7 +49,7 @@ const buildRequestArgs = (
     event: ({
       requestContext: {
         identity: {
-          apiKeyId: 'api-key-123',
+          apiKeyId: 'f2ouqfm233',
         },
       },
     }) as any,

@@ -42,7 +42,7 @@ const requestArguments = {
     requestContext: {
       authorizer: {
         claims: {
-          sub: 'cognito-user-123',
+          sub: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
         },
       },
     },
@@ -61,7 +61,7 @@ describe('GetTaskCatalogForProject', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedGetExperienceWithResolvedName.mockResolvedValue({
-      experienceId: 'exp-123',
+      experienceId: '9228429469',
       experienceName: 'Civics City',
       experienceNameFetchedAt: '2999-01-01T00:00:00.000Z',
       assetIds: ['2f41022d-b8b6-4997-bf94-23f6f47c4790'],
@@ -75,7 +75,7 @@ describe('GetTaskCatalogForProject', () => {
     dynamoMocks.queryPromise.mockResolvedValueOnce({
       Items: [
         {
-          ExperienceId: 'exp-123',
+          ExperienceId: '9228429469',
           EntryId: 'tour-whitehouse',
           Name: 'Tour the White House',
           Subheading: 'Guided tour through iconic rooms',
@@ -89,7 +89,7 @@ describe('GetTaskCatalogForProject', () => {
           ],
         },
         {
-          ExperienceId: 'exp-123',
+          ExperienceId: '9228429469',
           EntryId: 'draft-bill',
           Name: 'Draft a Bill',
           Subheading: 'Research and write legislation',
@@ -97,7 +97,7 @@ describe('GetTaskCatalogForProject', () => {
           AssetIds: ['d11e1567-d6d2-49ea-9bb0-8c30d70b35e4'],
         },
         {
-          ExperienceId: 'exp-123',
+          ExperienceId: '9228429469',
           EntryId: 'malformed-entry',
           Name: 'Malformed',
           Subheading: 'Missing instructions',
@@ -108,7 +108,7 @@ describe('GetTaskCatalogForProject', () => {
     const response = await getTaskCatalogForProject({
       ...requestArguments,
       input: {
-        requestParameters: { experienceId: 'exp-123' },
+        requestParameters: { experienceId: '9228429469' },
         body: undefined as never,
       },
     });
@@ -121,17 +121,17 @@ describe('GetTaskCatalogForProject', () => {
         '#experienceId': 'ExperienceId',
       },
       ExpressionAttributeValues: {
-        ':experienceId': 'exp-123',
+        ':experienceId': '9228429469',
       },
       ExclusiveStartKey: undefined,
     });
     expect(mockedGetExperienceWithResolvedName).toHaveBeenCalledWith(
-      'exp-123',
+      '9228429469',
       requestArguments.interceptorContext.logger,
     );
     expect(response.body).toEqual({
       experience: {
-        experienceId: 'exp-123',
+        experienceId: '9228429469',
         experienceName: 'Civics City',
         assetIds: ['2f41022d-b8b6-4997-bf94-23f6f47c4790'],
         catalogEntries: [
@@ -168,7 +168,7 @@ describe('GetTaskCatalogForProject', () => {
     const response = await getTaskCatalogForProject({
       ...requestArguments,
       input: {
-        requestParameters: { experienceId: 'exp-123' },
+        requestParameters: { experienceId: '9228429469' },
         body: undefined as never,
       },
     });
@@ -176,7 +176,7 @@ describe('GetTaskCatalogForProject', () => {
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
       experience: {
-        experienceId: 'exp-123',
+        experienceId: '9228429469',
         experienceName: 'Civics City',
         assetIds: ['2f41022d-b8b6-4997-bf94-23f6f47c4790'],
         catalogEntries: [],
@@ -194,7 +194,7 @@ describe('GetTaskCatalogForProject', () => {
     const response = await getTaskCatalogForProject({
       ...requestArguments,
       input: {
-        requestParameters: { experienceId: 'exp-123' },
+        requestParameters: { experienceId: '9228429469' },
         body: undefined as never,
       },
     });
@@ -207,13 +207,13 @@ describe('GetTaskCatalogForProject', () => {
 
   it('returns 500 when experience metadata cannot be resolved', async () => {
     mockedGetExperienceWithResolvedName.mockRejectedValueOnce(
-      new Error('Experience entry missing for experienceId=exp-123'),
+      new Error('Experience entry missing for experienceId=9228429469'),
     );
 
     const response = await getTaskCatalogForProject({
       ...requestArguments,
       input: {
-        requestParameters: { experienceId: 'exp-123' },
+        requestParameters: { experienceId: '9228429469' },
         body: undefined as never,
       },
     });

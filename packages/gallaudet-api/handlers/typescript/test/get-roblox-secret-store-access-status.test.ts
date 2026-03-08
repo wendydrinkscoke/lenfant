@@ -46,7 +46,7 @@ const requestArguments = {
     requestContext: {
       authorizer: {
         claims: {
-          sub: 'cognito-user-123',
+          sub: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
         },
       },
     },
@@ -60,6 +60,9 @@ const requestArguments = {
     },
   },
 } satisfies Omit<GetRobloxSecretStoreAccessStatusChainedRequestInput, 'input'>;
+const EXPERIENCE_ID = '9228429469';
+const API_KEY =
+  'vNSgD9p1Xkq2Ht7Rj4Lm0Bz8Yw3Qa6EcUf5Pi2CnSr9Td1Mv8Lo7Gh4Kx0Wp3Rb6Yt2Ju9AeCq5Nz1Fk';
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -72,9 +75,9 @@ describe('GetRobloxSecretStoreAccessStatus', () => {
   it('returns delegated true when an API key exists for the user and experience', async () => {
     dynamoMocks.getPromise.mockResolvedValueOnce({
       Item: {
-        CognitoUserId: 'cognito-user-123',
-        ExperienceId: '1234567890',
-        ApiKey: 'rbx-api-key',
+        CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+        ExperienceId: EXPERIENCE_ID,
+        ApiKey: API_KEY,
       },
     });
 
@@ -82,7 +85,7 @@ describe('GetRobloxSecretStoreAccessStatus', () => {
       ...requestArguments,
       input: {
         requestParameters: {
-          experienceId: '1234567890',
+          experienceId: EXPERIENCE_ID,
         },
         body: undefined as never,
       },
@@ -91,8 +94,8 @@ describe('GetRobloxSecretStoreAccessStatus', () => {
     expect(dynamoMocks.get).toHaveBeenCalledWith({
       TableName: 'RobloxExperienceApiKeys',
       Key: {
-        CognitoUserId: 'cognito-user-123',
-        ExperienceId: '1234567890',
+        CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+        ExperienceId: EXPERIENCE_ID,
       },
       ConsistentRead: true,
     });
@@ -107,7 +110,7 @@ describe('GetRobloxSecretStoreAccessStatus', () => {
       ...requestArguments,
       input: {
         requestParameters: {
-          experienceId: '1234567890',
+          experienceId: EXPERIENCE_ID,
         },
         body: undefined as never,
       },
@@ -122,8 +125,8 @@ describe('GetRobloxSecretStoreAccessStatus', () => {
   it('returns delegated false when API key is blank', async () => {
     dynamoMocks.getPromise.mockResolvedValueOnce({
       Item: {
-        CognitoUserId: 'cognito-user-123',
-        ExperienceId: '1234567890',
+        CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+        ExperienceId: EXPERIENCE_ID,
         ApiKey: '   ',
       },
     });
@@ -132,7 +135,7 @@ describe('GetRobloxSecretStoreAccessStatus', () => {
       ...requestArguments,
       input: {
         requestParameters: {
-          experienceId: '1234567890',
+          experienceId: EXPERIENCE_ID,
         },
         body: undefined as never,
       },
@@ -168,7 +171,7 @@ describe('GetRobloxSecretStoreAccessStatus', () => {
       event: { requestContext: {} } as any,
       input: {
         requestParameters: {
-          experienceId: '1234567890',
+          experienceId: EXPERIENCE_ID,
         },
         body: undefined as never,
       },
@@ -192,7 +195,7 @@ describe('GetRobloxSecretStoreAccessStatus', () => {
       ...requestArguments,
       input: {
         requestParameters: {
-          experienceId: '1234567890',
+          experienceId: EXPERIENCE_ID,
         },
         body: undefined as never,
       },

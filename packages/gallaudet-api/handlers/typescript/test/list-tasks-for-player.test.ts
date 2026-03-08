@@ -97,13 +97,15 @@ const {
     addOnAttachmentsListMock: jest.Mock;
   };
 };
+const COURSE_WORK_ID = '844809637151';
+const ENTRY_ID = 'get-100-points';
 
 const baseRequestArgs = {
   chain: undefined as never,
   event: {
     requestContext: {
       identity: {
-        apiKeyId: 'experience-key-1',
+        apiKeyId: 'f2ouqfm233',
       },
     },
   } as any,
@@ -129,7 +131,7 @@ beforeEach(() => {
   addOnAttachmentsListMock.mockReset();
   (getGoogleOAuthClient as jest.Mock).mockReset();
   (getExperienceIdFromEvent as jest.Mock).mockReset();
-  (getExperienceIdFromEvent as jest.Mock).mockResolvedValue('experience-key-1');
+  (getExperienceIdFromEvent as jest.Mock).mockResolvedValue('9228429469');
 });
 
 const buildRequestArgs = (
@@ -142,7 +144,7 @@ const buildRequestArgs = (
       ({
         requestContext: {
           identity: {
-            apiKeyId: 'experience-key-1',
+            apiKeyId: 'f2ouqfm233',
           },
         },
       } as any),
@@ -160,7 +162,7 @@ describe('ListTasksForPlayer', () => {
       }),
       input: {
         requestParameters: {
-          robloxUserId: '12345',
+          robloxUserId: '7954006733',
         },
         body: undefined as never,
       },
@@ -184,7 +186,7 @@ describe('ListTasksForPlayer', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: '12345',
+          robloxUserId: '7954006733',
         },
         body: undefined as never,
       },
@@ -200,7 +202,7 @@ describe('ListTasksForPlayer', () => {
         '#robloxUserId': 'RobloxUserId',
       },
       ExpressionAttributeValues: {
-        ':robloxUserId': '12345',
+        ':robloxUserId': '7954006733',
       },
       Limit: 1,
       ConsistentRead: false,
@@ -212,7 +214,7 @@ describe('ListTasksForPlayer', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            CognitoUserId: 'cognito-user-1',
+            CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
           },
         ],
       }),
@@ -221,13 +223,13 @@ describe('ListTasksForPlayer', () => {
 
     coursesListMock.mockReturnValue({
       data: {
-        courses: [{ id: 'course-1' }],
+        courses: [{ id: '810781632040' }],
       },
     });
 
     courseWorkListMock.mockReturnValue({
       data: {
-        courseWork: [{ id: 'cw-1' }],
+        courseWork: [{ id: COURSE_WORK_ID }],
       },
     });
 
@@ -235,7 +237,7 @@ describe('ListTasksForPlayer', () => {
       data: {
         addOnAttachments: [
           {
-            id: 'attachment-1',
+            id: '844810086236',
           },
         ],
       },
@@ -245,12 +247,12 @@ describe('ListTasksForPlayer', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            InstanceId: 'task-123',
-            EntryId: 'catalog-entry-1',
-            ExperienceId: 'experience-key-1',
-            AttachmentId: 'attachment-1',
+            InstanceId: '35188e83-4c18-4138-9352-0c878422cc30',
+            EntryId: ENTRY_ID,
+            ExperienceId: '9228429469',
+            AttachmentId: '844810086236',
             MilestoneCompletions: {
-              'cognito-user-1': ['visit-oval-office'],
+              '3448c4d8-70e1-703a-6450-fbf81e4d71b4': ['visit-oval-office'],
             },
             Instructions: 'To do this task, you need to do a thing.',
           },
@@ -261,8 +263,8 @@ describe('ListTasksForPlayer', () => {
     dynamoMocks.get.mockReturnValueOnce({
       promise: jest.fn().mockResolvedValue({
         Item: {
-          ExperienceId: 'experience-key-1',
-          EntryId: 'catalog-entry-1',
+          ExperienceId: '9228429469',
+          EntryId: ENTRY_ID,
           Name: 'Tour the White House',
           Subheading: 'Explore iconic rooms and history',
           Instructions: 'To do this task, you need to do a thing.',
@@ -286,7 +288,7 @@ describe('ListTasksForPlayer', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: '12345',
+          robloxUserId: '7954006733',
         },
         body: undefined as never,
       },
@@ -296,8 +298,8 @@ describe('ListTasksForPlayer', () => {
     expect(response.body).toEqual({
       tasks: [
         {
-          taskId: 'task-123',
-          entryId: 'catalog-entry-1',
+          taskId: '35188e83-4c18-4138-9352-0c878422cc30',
+          entryId: ENTRY_ID,
           name: 'Tour the White House',
           subheading: 'Explore iconic rooms and history',
           instructions: 'To do this task, you need to do a thing.',
@@ -318,7 +320,7 @@ describe('ListTasksForPlayer', () => {
         '#attachmentId': 'AttachmentId',
       },
       ExpressionAttributeValues: {
-        ':attachmentId': 'attachment-1',
+        ':attachmentId': '844810086236',
       },
       Limit: 1,
       ConsistentRead: false,
@@ -326,8 +328,8 @@ describe('ListTasksForPlayer', () => {
     expect(dynamoMocks.get).toHaveBeenCalledWith({
       TableName: 'TaskCatalog',
       Key: {
-        ExperienceId: 'experience-key-1',
-        EntryId: 'catalog-entry-1',
+        ExperienceId: '9228429469',
+        EntryId: ENTRY_ID,
       },
     });
     expect(dynamoMocks.scan).not.toHaveBeenCalled();
@@ -338,7 +340,7 @@ describe('ListTasksForPlayer', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            CognitoUserId: 'cognito-user-1',
+            CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
           },
         ],
       }),
@@ -347,13 +349,13 @@ describe('ListTasksForPlayer', () => {
 
     coursesListMock.mockReturnValue({
       data: {
-        courses: [{ id: 'course-1' }],
+        courses: [{ id: '810781632040' }],
       },
     });
 
     courseWorkListMock.mockReturnValue({
       data: {
-        courseWork: [{ id: 'cw-1' }],
+        courseWork: [{ id: COURSE_WORK_ID }],
       },
     });
 
@@ -361,7 +363,7 @@ describe('ListTasksForPlayer', () => {
       data: {
         addOnAttachments: [
           {
-            id: 'attachment-1',
+            id: '844810086236',
           },
         ],
       },
@@ -371,10 +373,10 @@ describe('ListTasksForPlayer', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            InstanceId: 'task-123',
-            EntryId: 'catalog-entry-1',
-            ExperienceId: 'experience-key-1',
-            AttachmentId: 'attachment-1',
+            InstanceId: '35188e83-4c18-4138-9352-0c878422cc30',
+            EntryId: ENTRY_ID,
+            ExperienceId: '9228429469',
+            AttachmentId: '844810086236',
             Instructions: 'To do this task, you need to do a thing.',
           },
         ],
@@ -384,8 +386,8 @@ describe('ListTasksForPlayer', () => {
     dynamoMocks.get.mockReturnValueOnce({
       promise: jest.fn().mockResolvedValue({
         Item: {
-          ExperienceId: 'experience-key-1',
-          EntryId: 'catalog-entry-1',
+          ExperienceId: '9228429469',
+          EntryId: ENTRY_ID,
           Name: 'Tour the White House',
           Subheading: 'Explore iconic rooms and history',
           Instructions: 'To do this task, you need to do a thing.',
@@ -409,7 +411,7 @@ describe('ListTasksForPlayer', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: '12345',
+          robloxUserId: '7954006733',
         },
         body: undefined as never,
       },
@@ -419,8 +421,8 @@ describe('ListTasksForPlayer', () => {
     expect(response.body).toEqual({
       tasks: [
         {
-          taskId: 'task-123',
-          entryId: 'catalog-entry-1',
+          taskId: '35188e83-4c18-4138-9352-0c878422cc30',
+          entryId: ENTRY_ID,
           name: 'Tour the White House',
           subheading: 'Explore iconic rooms and history',
           instructions: 'To do this task, you need to do a thing.',

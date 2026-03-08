@@ -40,6 +40,9 @@ const {
     };
   };
 };
+const COGNITO_USER_ID = '0488e498-10c1-7003-8e1b-930673943caf';
+const GOOGLE_REFRESH_TOKEN =
+  '1//uUgStpmuJ_lsbzZu8WuMx7PZe9pyWiMRJcvPPR3xbr9OXHZNyHaCp9gQrINHuZB-Ynyl1K5u6CERCFBU73CvrnIV1OhTObDbG755';
 
 // Common request arguments
 const requestArguments = {
@@ -48,7 +51,7 @@ const requestArguments = {
     requestContext: {
       authorizer: {
         claims: {
-          sub: 'cognito-user-123',
+          sub: COGNITO_USER_ID,
         },
       },
     },
@@ -75,9 +78,9 @@ describe('GetGoogleClassroomAccessStatus', () => {
   it('returns delegated true when a refresh token exists', async () => {
     dynamoMocks.getPromise.mockResolvedValueOnce({
       Item: {
-        CognitoUserId: 'cognito-user-123',
+        CognitoUserId: COGNITO_USER_ID,
         Provider: 'google',
-        RefreshToken: 'refresh-token',
+        RefreshToken: GOOGLE_REFRESH_TOKEN,
       },
     });
 
@@ -92,7 +95,7 @@ describe('GetGoogleClassroomAccessStatus', () => {
     expect(dynamoMocks.get).toHaveBeenCalledWith({
       TableName: 'OAuthTokens',
       Key: {
-        CognitoUserId: 'cognito-user-123',
+        CognitoUserId: COGNITO_USER_ID,
         Provider: 'google',
       },
       ConsistentRead: true,
@@ -106,7 +109,7 @@ describe('GetGoogleClassroomAccessStatus', () => {
   it('returns delegated false when no refresh token exists', async () => {
     dynamoMocks.getPromise.mockResolvedValueOnce({
       Item: {
-        CognitoUserId: 'cognito-user-123',
+        CognitoUserId: COGNITO_USER_ID,
         Provider: 'google',
       },
     });

@@ -71,7 +71,7 @@ const buildRequestArgs = (
     event: ({
       requestContext: {
         identity: {
-          apiKeyId: 'api-key-123',
+          apiKeyId: 'f2ouqfm233',
         },
       },
     }) as any,
@@ -110,7 +110,7 @@ describe('PutExperience', () => {
       input: {
         requestParameters: {},
         body: {
-          robloxGameId: '12345',
+          robloxGameId: '127120714583972',
         },
       },
     });
@@ -128,7 +128,7 @@ describe('PutExperience', () => {
       input: {
         requestParameters: {},
         body: {
-          robloxGameId: '  1213026131 ',
+          robloxGameId: '  127120714583972 ',
           assetIds: [
             'f8a2ab54-30f7-406f-af10-b1591db54b91',
           ],
@@ -151,7 +151,7 @@ describe('PutExperience', () => {
     expect(updateArgs.ExpressionAttributeValues).toMatchObject({
       ':experienceName': 'National USA Game',
       ':experienceNameFetchedAt': expect.any(String),
-      ':robloxGameId': '1213026131',
+      ':robloxGameId': '127120714583972',
       ':assetIds': [
         'f8a2ab54-30f7-406f-af10-b1591db54b91',
       ],
@@ -174,7 +174,7 @@ describe('PutExperience', () => {
       input: {
         requestParameters: {},
         body: {
-          robloxGameId: '123456',
+          robloxGameId: '127120714583972',
         },
       },
     });
@@ -191,7 +191,7 @@ describe('PutExperience', () => {
       input: {
         requestParameters: {},
         body: {
-          robloxGameId: '123456',
+          robloxGameId: '127120714583972',
           assetIds: [
             'eca23e44-4d2f-4061-88d8-b5d94339d8ad',
             'eca23e44-4d2f-4061-88d8-b5d94339d8ad',
@@ -217,7 +217,7 @@ describe('PutExperience', () => {
       input: {
         requestParameters: {},
         body: {
-          robloxGameId: '123456',
+          robloxGameId: '127120714583972',
         },
       },
     });

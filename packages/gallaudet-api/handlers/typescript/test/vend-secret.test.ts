@@ -80,6 +80,14 @@ const sealedboxMock = sealedbox as jest.Mock;
 const decodeBase64Mock = decodeBase64 as jest.Mock;
 const decodeUTF8Mock = decodeUTF8 as jest.Mock;
 const encodeBase64Mock = encodeBase64 as jest.Mock;
+const EXPERIENCE_ID = '9228429469';
+const EXPERIENCE_API_KEY =
+  '+8sp+3suhk+wDivG44M038KYSX4x79JasN0HmOiCaXjq4Raem4kZczjmP3LOTvWHVtQ1AhKTIPeREbW7xEGsW8EuxxeiEJQD5VdLCPygG3xuMDDQpzX3Bv1QJ6PoTfhKZgz8S1UwFYGW3A6pOK2Jc4NphnAypQOvu3iilrQ1nzfA';
+const API_GATEWAY_KEY_ID = 'f2ouqfm233';
+const USAGE_PLAN_ID = 'uu38lb';
+const ROBLOX_PUBLIC_KEY_ID = '3306711258444485250';
+const ROBLOX_SECRET_ID = 'rdvdhfzvfahk';
+const ROBLOX_PUBLIC_KEY = 'EqBmrAbc1Obxz4AB+laBcdEQ3lxHmIg/RkKGoACt4ar=';
 
 const fetchMock = jest.fn();
 const baseRequest: Omit<VendSecretChainedRequestInput, 'input'> = {
@@ -87,7 +95,7 @@ const baseRequest: Omit<VendSecretChainedRequestInput, 'input'> = {
   event: {
     requestContext: {
       authorizer: {
-        claims: { sub: 'cognito-user-123' },
+        claims: { sub: '3448c4d8-70e1-703a-6450-fbf81e4d71b4' },
       },
     },
   } as any,
@@ -101,7 +109,7 @@ const baseRequest: Omit<VendSecretChainedRequestInput, 'input'> = {
   },
 };
 
-const buildRequest = (experienceId = '9228429469') => ({
+const buildRequest = (experienceId = EXPERIENCE_ID) => ({
   ...baseRequest,
   input: {
     requestParameters: {
@@ -126,7 +134,7 @@ describe('VendSecret', () => {
 
     get.mockReturnValue({
       promise: jest.fn().mockResolvedValue({
-        Item: { ApiKey: 'roblox-api-key' },
+        Item: { ApiKey: EXPERIENCE_API_KEY },
       }),
     });
     put.mockReturnValue({
@@ -134,13 +142,13 @@ describe('VendSecret', () => {
     });
     createApiKey.mockReturnValue({
       promise: jest.fn().mockResolvedValue({
-        id: 'api-key-id',
-        value: 'api-key-value',
+        id: API_GATEWAY_KEY_ID,
+        value: EXPERIENCE_API_KEY,
       }),
     });
     getUsagePlans.mockReturnValue({
       promise: jest.fn().mockResolvedValue({
-        items: [{ id: 'usage-plan-123', name: 'experience-api-key-usage-plan-beta' }],
+        items: [{ id: USAGE_PLAN_ID, name: 'experience-api-key-usage-plan-beta' }],
       }),
     });
     createUsagePlanKey.mockReturnValue({
@@ -161,10 +169,26 @@ describe('VendSecret', () => {
 
   it('creates, encrypts, and stores a secret for the experience', async () => {
     fetchMock
-      .mockResolvedValueOnce(buildFetchResponse({ secret: 'public-key', key_id: 'key-123' }))
-      .mockResolvedValueOnce(buildFetchResponse({ id: 'secret-id' }, true, 200));
+      .mockResolvedValueOnce(
+        buildFetchResponse({
+          id: 'public-key',
+          secret: ROBLOX_PUBLIC_KEY,
+          key_id: ROBLOX_PUBLIC_KEY_ID,
+        }),
+      )
+      .mockResolvedValueOnce(
+        buildFetchResponse(
+          {
+            id: ROBLOX_SECRET_ID,
+            create_time: '2026-02-11T07:54:30.062Z',
+            update_time: '2026-02-11T07:54:30.062Z',
+          },
+          true,
+          200,
+        ),
+      );
 
-    const response = await vendSecret(buildRequest('1234567890'));
+    const response = await vendSecret(buildRequest());
 
     expect(response.statusCode).toBe(200);
     const secretId = (response.body as { secretId: string }).secretId;
@@ -172,45 +196,45 @@ describe('VendSecret', () => {
     expect(get).toHaveBeenCalledWith({
       TableName: 'RobloxExperienceApiKeys',
       Key: {
-        CognitoUserId: 'cognito-user-123',
-        ExperienceId: '1234567890',
+        CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+        ExperienceId: EXPERIENCE_ID,
       },
       ConsistentRead: true,
     });
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      'https://apis.roblox.com/cloud/v2/universes/1234567890/secrets/public-key',
+      `https://apis.roblox.com/cloud/v2/universes/${EXPERIENCE_ID}/secrets/public-key`,
       expect.objectContaining({
         headers: expect.objectContaining({
-          'x-api-key': 'roblox-api-key',
+          'x-api-key': EXPERIENCE_API_KEY,
         }),
       }),
     );
 
     expect(createUsagePlanKey).toHaveBeenCalledWith({
-      keyId: 'api-key-id',
+      keyId: API_GATEWAY_KEY_ID,
       keyType: 'API_KEY',
-      usagePlanId: 'usage-plan-123',
+      usagePlanId: USAGE_PLAN_ID,
     });
     expect(getUsagePlans).toHaveBeenCalled();
 
     const secretCall = fetchMock.mock.calls[1];
     expect(secretCall[0]).toBe(
-      'https://apis.roblox.com/cloud/v2/universes/1234567890/secrets',
+      `https://apis.roblox.com/cloud/v2/universes/${EXPERIENCE_ID}/secrets`,
     );
     const secretPayload = JSON.parse(secretCall[1].body as string);
     expect(secretPayload).toEqual({
       id: secretId,
       secret: 'encrypted-api-key',
-      key_id: 'key-123',
+      key_id: ROBLOX_PUBLIC_KEY_ID,
       domain: '*.beta.school.civictech.llc',
     });
     expect(put).toHaveBeenCalledWith({
       TableName: 'GallaudetApiKeys',
       Item: expect.objectContaining({
-        ApiGatewayKeyId: 'api-key-id',
-        ExperienceId: '1234567890',
+        ApiGatewayKeyId: API_GATEWAY_KEY_ID,
+        ExperienceId: EXPERIENCE_ID,
         RobloxSecretId: secretId,
       }),
     });
@@ -249,7 +273,13 @@ describe('VendSecret', () => {
 
   it('returns SecretAlreadyExistsError when Roblox reports a conflict and cleans up the key', async () => {
     fetchMock
-      .mockResolvedValueOnce(buildFetchResponse({ secret: 'public-key', key_id: 'key-123' }))
+      .mockResolvedValueOnce(
+        buildFetchResponse({
+          id: 'public-key',
+          secret: ROBLOX_PUBLIC_KEY,
+          key_id: ROBLOX_PUBLIC_KEY_ID,
+        }),
+      )
       .mockResolvedValueOnce({
         ok: false,
         status: 409,
@@ -264,15 +294,21 @@ describe('VendSecret', () => {
       'Secret already exists',
     );
     expect(deleteUsagePlanKey).toHaveBeenCalledWith({
-      usagePlanId: 'usage-plan-123',
-      keyId: 'api-key-id',
+      usagePlanId: USAGE_PLAN_ID,
+      keyId: API_GATEWAY_KEY_ID,
     });
-    expect(deleteApiKey).toHaveBeenCalledWith({ apiKey: 'api-key-id' });
+    expect(deleteApiKey).toHaveBeenCalledWith({ apiKey: API_GATEWAY_KEY_ID });
   });
 
   it('returns internal failure when Roblox rejects secret creation and cleans up', async () => {
     fetchMock
-      .mockResolvedValueOnce(buildFetchResponse({ secret: 'public-key', key_id: 'key-123' }))
+      .mockResolvedValueOnce(
+        buildFetchResponse({
+          id: 'public-key',
+          secret: ROBLOX_PUBLIC_KEY,
+          key_id: ROBLOX_PUBLIC_KEY_ID,
+        }),
+      )
       .mockResolvedValueOnce({
         ok: false,
         status: 400,
@@ -284,13 +320,29 @@ describe('VendSecret', () => {
 
     expect(response.statusCode).toBe(500);
     expect((response.body as InternalFailureErrorResponseContent).message).toContain('Failed to store secret');
-    expect(deleteApiKey).toHaveBeenCalledWith({ apiKey: 'api-key-id' });
+    expect(deleteApiKey).toHaveBeenCalledWith({ apiKey: API_GATEWAY_KEY_ID });
   });
 
   it('returns internal failure when API key mapping persistence fails and cleans up', async () => {
     fetchMock
-      .mockResolvedValueOnce(buildFetchResponse({ secret: 'public-key', key_id: 'key-123' }))
-      .mockResolvedValueOnce(buildFetchResponse({ id: 'secret-id' }, true, 200));
+      .mockResolvedValueOnce(
+        buildFetchResponse({
+          id: 'public-key',
+          secret: ROBLOX_PUBLIC_KEY,
+          key_id: ROBLOX_PUBLIC_KEY_ID,
+        }),
+      )
+      .mockResolvedValueOnce(
+        buildFetchResponse(
+          {
+            id: ROBLOX_SECRET_ID,
+            create_time: '2026-02-11T07:54:30.062Z',
+            update_time: '2026-02-11T07:54:30.062Z',
+          },
+          true,
+          200,
+        ),
+      );
     put.mockReturnValue({
       promise: jest.fn().mockRejectedValue(new Error('ddb put failed')),
     });
@@ -302,9 +354,9 @@ describe('VendSecret', () => {
       'Failed to persist experience API key mapping',
     );
     expect(deleteUsagePlanKey).toHaveBeenCalledWith({
-      usagePlanId: 'usage-plan-123',
-      keyId: 'api-key-id',
+      usagePlanId: USAGE_PLAN_ID,
+      keyId: API_GATEWAY_KEY_ID,
     });
-    expect(deleteApiKey).toHaveBeenCalledWith({ apiKey: 'api-key-id' });
+    expect(deleteApiKey).toHaveBeenCalledWith({ apiKey: API_GATEWAY_KEY_ID });
   });
 });

@@ -51,7 +51,7 @@ const requestArguments = {
     requestContext: {
       authorizer: {
         claims: {
-          sub: 'cognito-user-123',
+          sub: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
         },
       },
     },
@@ -66,7 +66,7 @@ const requestArguments = {
   },
 } satisfies Omit<ListAssetsChainedRequestInput, 'input'>;
 
-const buildRequest = (experienceId = '1234567890') => ({
+const buildRequest = (experienceId = '9228429469') => ({
   ...requestArguments,
   input: {
     requestParameters: {
@@ -79,7 +79,7 @@ const buildRequest = (experienceId = '1234567890') => ({
 describe('ListAssets', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedGetCognitoUserIdFromEvent.mockReturnValue('cognito-user-123');
+    mockedGetCognitoUserIdFromEvent.mockReturnValue('3448c4d8-70e1-703a-6450-fbf81e4d71b4');
     dynamoMocks.queryPromise.mockResolvedValue({
       Items: [],
     });
@@ -114,47 +114,59 @@ describe('ListAssets', () => {
       .mockResolvedValueOnce({
         Items: [
           {
-            AssetId: 'asset-older',
-            CognitoUserId: 'cognito-user-123',
-            ExperienceId: '1234567890',
-            FileName: 'older.gif',
+            AssetId: 'dd4465a8-4f2f-4f19-8ab8-98aa1257ceeb',
+            CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+            ExperienceId: '9228429469',
+            FileName: 'larger-gif.gif',
             ContentType: 'image/gif',
-            SizeBytes: 1024,
-            ObjectKey: 'cognito-user-123/1234567890/asset-older/older.gif',
+            SizeBytes: 10988203,
+            ObjectKey: '3448c4d8-70e1-703a-6450-fbf81e4d71b4/9228429469/dd4465a8-4f2f-4f19-8ab8-98aa1257ceeb/larger-gif.gif',
             Status: 'ready',
-            CreatedAt: 1700000000,
-            UpdatedAt: 1700000050,
+            CreatedAt: 1771152724,
+            UpdatedAt: 1771152730,
+          },
+          {
+            AssetId: '3a3573f1-1312-4f1f-9bed-9973b159dbcd',
+            CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+            ExperienceId: '9228429469',
+            FileName: 'paintball.gif',
+            ContentType: 'image/gif',
+            SizeBytes: 2440489,
+            ObjectKey: '3448c4d8-70e1-703a-6450-fbf81e4d71b4/9228429469/3a3573f1-1312-4f1f-9bed-9973b159dbcd/paintball.gif',
+            Status: 'ready',
+            CreatedAt: 1771152457,
+            UpdatedAt: 1771152460,
           },
         ],
         LastEvaluatedKey: {
-          AssetId: 'asset-older',
+          AssetId: '3a3573f1-1312-4f1f-9bed-9973b159dbcd',
         },
       })
       .mockResolvedValueOnce({
         Items: [
           {
-            AssetId: 'asset-newer',
-            CognitoUserId: 'cognito-user-123',
-            ExperienceId: '1234567890',
-            FileName: 'newer.gif',
-            ContentType: 'image/gif',
-            SizeBytes: 2048,
-            ObjectKey: 'cognito-user-123/1234567890/asset-newer/newer.gif',
+            AssetId: '3d19eaa3-41bc-416c-9c5e-08641af191f7',
+            CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+            ExperienceId: '9228429469',
+            FileName: 'adfasdf.png',
+            ContentType: 'image/png',
+            SizeBytes: 16927656,
+            ObjectKey: '3448c4d8-70e1-703a-6450-fbf81e4d71b4/9228429469/3d19eaa3-41bc-416c-9c5e-08641af191f7/adfasdf.png',
             Status: 'ready',
-            CreatedAt: 1700000001,
-            UpdatedAt: 1700000100,
+            CreatedAt: 1772964578,
+            UpdatedAt: 1772964585,
           },
           {
-            AssetId: 'asset-invalid',
-            CognitoUserId: 'cognito-user-123',
-            ExperienceId: '1234567890',
-            FileName: 'invalid.gif',
-            ContentType: 'image/tiff',
-            SizeBytes: 2048,
-            ObjectKey: 'cognito-user-123/1234567890/asset-invalid/invalid.gif',
+            AssetId: '1919b0d6-be31-4f6f-8afe-1d97f8c3f60a',
+            CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+            ExperienceId: '9228429469',
+            FileName: 'big-image.png',
+            ContentType: 'image/png',
+            SizeBytes: 16927656,
+            ObjectKey: '3448c4d8-70e1-703a-6450-fbf81e4d71b4/9228429469/1919b0d6-be31-4f6f-8afe-1d97f8c3f60a/big-image.png',
             Status: 'ready',
-            CreatedAt: 1700000002,
-            UpdatedAt: 1700000200,
+            CreatedAt: 1772964874,
+            UpdatedAt: 1772964878,
           },
         ],
       });
@@ -165,26 +177,48 @@ describe('ListAssets', () => {
     expect(response.body).toEqual({
       assets: [
         {
-          assetId: 'asset-newer',
-          experienceId: '1234567890',
-          fileName: 'newer.gif',
-          contentType: 'image/gif',
-          sizeBytes: 2048,
-          objectKey: 'cognito-user-123/1234567890/asset-newer/newer.gif',
+          assetId: '1919b0d6-be31-4f6f-8afe-1d97f8c3f60a',
+          experienceId: '9228429469',
+          fileName: 'big-image.png',
+          contentType: 'image/png',
+          sizeBytes: 16927656,
+          objectKey: '3448c4d8-70e1-703a-6450-fbf81e4d71b4/9228429469/1919b0d6-be31-4f6f-8afe-1d97f8c3f60a/big-image.png',
           status: 'ready',
-          createdAt: 1700000001,
-          updatedAt: 1700000100,
+          createdAt: 1772964874,
+          updatedAt: 1772964878,
         },
         {
-          assetId: 'asset-older',
-          experienceId: '1234567890',
-          fileName: 'older.gif',
-          contentType: 'image/gif',
-          sizeBytes: 1024,
-          objectKey: 'cognito-user-123/1234567890/asset-older/older.gif',
+          assetId: '3d19eaa3-41bc-416c-9c5e-08641af191f7',
+          experienceId: '9228429469',
+          fileName: 'adfasdf.png',
+          contentType: 'image/png',
+          sizeBytes: 16927656,
+          objectKey: '3448c4d8-70e1-703a-6450-fbf81e4d71b4/9228429469/3d19eaa3-41bc-416c-9c5e-08641af191f7/adfasdf.png',
           status: 'ready',
-          createdAt: 1700000000,
-          updatedAt: 1700000050,
+          createdAt: 1772964578,
+          updatedAt: 1772964585,
+        },
+        {
+          assetId: 'dd4465a8-4f2f-4f19-8ab8-98aa1257ceeb',
+          experienceId: '9228429469',
+          fileName: 'larger-gif.gif',
+          contentType: 'image/gif',
+          sizeBytes: 10988203,
+          objectKey: '3448c4d8-70e1-703a-6450-fbf81e4d71b4/9228429469/dd4465a8-4f2f-4f19-8ab8-98aa1257ceeb/larger-gif.gif',
+          status: 'ready',
+          createdAt: 1771152724,
+          updatedAt: 1771152730,
+        },
+        {
+          assetId: '3a3573f1-1312-4f1f-9bed-9973b159dbcd',
+          experienceId: '9228429469',
+          fileName: 'paintball.gif',
+          contentType: 'image/gif',
+          sizeBytes: 2440489,
+          objectKey: '3448c4d8-70e1-703a-6450-fbf81e4d71b4/9228429469/3a3573f1-1312-4f1f-9bed-9973b159dbcd/paintball.gif',
+          status: 'ready',
+          createdAt: 1771152457,
+          updatedAt: 1771152460,
         },
       ],
     });
@@ -199,8 +233,8 @@ describe('ListAssets', () => {
         '#experienceId': 'ExperienceId',
       },
       ExpressionAttributeValues: {
-        ':cognitoUserId': 'cognito-user-123',
-        ':experienceId': '1234567890',
+        ':cognitoUserId': '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+        ':experienceId': '9228429469',
       },
       ExclusiveStartKey: undefined,
     });
@@ -214,11 +248,11 @@ describe('ListAssets', () => {
         '#experienceId': 'ExperienceId',
       },
       ExpressionAttributeValues: {
-        ':cognitoUserId': 'cognito-user-123',
-        ':experienceId': '1234567890',
+        ':cognitoUserId': '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+        ':experienceId': '9228429469',
       },
       ExclusiveStartKey: {
-        AssetId: 'asset-older',
+        AssetId: '3a3573f1-1312-4f1f-9bed-9973b159dbcd',
       },
     });
   });

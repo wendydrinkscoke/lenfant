@@ -64,6 +64,14 @@ const {
 
 const mockedGetCognitoUserIdFromEvent = getCognitoUserIdFromEvent as jest.Mock;
 
+const COGNITO_USER_ID = '3448c4d8-70e1-703a-6450-fbf81e4d71b4';
+const EXPERIENCE_ID = '9228429469';
+const UPLOAD_SESSION_ID = '212f4c37-89c9-4780-bf40-01aaa7be826b';
+const ASSET_ID = '1919b0d6-be31-4f6f-8afe-1d97f8c3f60a';
+const FILE_NAME = 'big-image.png';
+const OBJECT_KEY = `${COGNITO_USER_ID}/${EXPERIENCE_ID}/${ASSET_ID}/${FILE_NAME}`;
+const MULTIPART_UPLOAD_ID = 'zHA4WIi4vnWEPM8UOh2q6sgVtjxYucWoLFrvaQ9LesXrhUaZ9MrHprzr3FBTRr5nf6Yt3xJ3JT45dsTgj5N1LoBX_u251Rh0IRZbXWJwHlhfdmetmt90HqF.Itz6Bi8lnwMFOE5qTGwizPr60AFTcOUSqATaHyGppsqAmWqtqaBzpy49oIYibLycI4XV4hu8oSEJsIK3lRMUxJ5jPxbqyg--';
+
 const requestArguments = {
   chain: undefined as never,
   event: {} as any,
@@ -81,8 +89,8 @@ const buildRequest = () => ({
   ...requestArguments,
   input: {
     requestParameters: {
-      experienceId: '1234567890',
-      uploadSessionId: 'session-123',
+      experienceId: EXPERIENCE_ID,
+      uploadSessionId: UPLOAD_SESSION_ID,
     },
     body: {} as never,
   },
@@ -91,15 +99,24 @@ const buildRequest = () => ({
 describe('AbortAssetUpload', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedGetCognitoUserIdFromEvent.mockReturnValue('cognito-user-123');
+    mockedGetCognitoUserIdFromEvent.mockReturnValue(COGNITO_USER_ID);
     dynamoMocks.getPromise.mockResolvedValue({
       Item: {
-        UploadSessionId: 'session-123',
-        ExperienceId: '1234567890',
-        CognitoUserId: 'cognito-user-123',
+        UploadSessionId: UPLOAD_SESSION_ID,
+        AssetId: ASSET_ID,
+        CognitoUserId: COGNITO_USER_ID,
+        ContentType: 'image/png',
+        CreatedAt: 1772964874,
+        ExperienceId: EXPERIENCE_ID,
+        ExpiresAt: 1772965774,
+        FileName: FILE_NAME,
+        MultipartPartCount: 3,
+        MultipartPartSizeBytes: 8388608,
         Strategy: 'multipart-put',
-        MultipartUploadId: 'upload-id-123',
-        ObjectKey: '1234567890/asset-id/banner.gif',
+        MultipartUploadId: MULTIPART_UPLOAD_ID,
+        ObjectKey: OBJECT_KEY,
+        SizeBytes: 16927656,
+        UpdatedAt: 1772964874,
       },
     });
     dynamoMocks.deletePromise.mockResolvedValue({});
@@ -115,13 +132,13 @@ describe('AbortAssetUpload', () => {
     });
     expect(s3Mocks.abortMultipartUpload).toHaveBeenCalledWith({
       Bucket: 'asset-bucket',
-      Key: '1234567890/asset-id/banner.gif',
-      UploadId: 'upload-id-123',
+      Key: OBJECT_KEY,
+      UploadId: MULTIPART_UPLOAD_ID,
     });
     expect(dynamoMocks.deleteFn).toHaveBeenCalledWith({
       TableName: 'AssetUploads',
       Key: {
-        UploadSessionId: 'session-123',
+        UploadSessionId: UPLOAD_SESSION_ID,
       },
     });
   });

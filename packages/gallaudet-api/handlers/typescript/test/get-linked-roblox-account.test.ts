@@ -49,7 +49,7 @@ const requestArguments = {
     requestContext: {
       authorizer: {
         claims: {
-          sub: 'cognito-user-123',
+          sub: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
         },
       },
     },
@@ -76,8 +76,8 @@ describe('GetLinkedRobloxAccount', () => {
   it('returns the linked Roblox user id for the authenticated Cognito user', async () => {
     dynamoMocks.getPromise.mockResolvedValueOnce({
       Item: {
-        CognitoUserId: 'cognito-user-123',
-        RobloxUserId: 'roblox-456',
+        CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+        RobloxUserId: '7954006733',
       },
     });
 
@@ -91,19 +91,19 @@ describe('GetLinkedRobloxAccount', () => {
 
     expect(dynamoMocks.get).toHaveBeenCalledWith({
       TableName: 'Users',
-      Key: { CognitoUserId: 'cognito-user-123' },
+      Key: { CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4' },
       ConsistentRead: true,
     });
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
-      robloxUserId: 'roblox-456',
+      robloxUserId: '7954006733',
     });
   });
 
   it('returns 400 when no Roblox account is linked', async () => {
     dynamoMocks.getPromise.mockResolvedValueOnce({
       Item: {
-        CognitoUserId: 'cognito-user-123',
+        CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
       },
     });
 

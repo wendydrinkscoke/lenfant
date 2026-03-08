@@ -38,6 +38,10 @@ const {
 
 const mockedGetCognitoUserIdFromEvent = getCognitoUserIdFromEvent as jest.Mock;
 const fetchMock = jest.fn();
+const COGNITO_USER_ID = '645824d8-c0a1-7069-1dff-77e1e7862617';
+const EXISTING_EXPERIENCE_ID = '9228429469';
+const NEW_EXPERIENCE_ID = '9441750099';
+const PLACE_ID = '127120714583972';
 
 const buildFetchResponse = (status = 200, body: unknown = { universeId: null }) => ({
   ok: status >= 200 && status < 300,
@@ -60,7 +64,7 @@ const requestArguments = {
   },
 } satisfies Omit<CreateProjectChainedRequestInput, 'input'>;
 
-const buildRequest = (experienceId = '1234567890') => ({
+const buildRequest = (experienceId = EXISTING_EXPERIENCE_ID) => ({
   ...requestArguments,
   input: {
     requestParameters: {
@@ -76,7 +80,7 @@ describe('CreateProject', () => {
     (globalThis as typeof globalThis & { fetch: jest.Mock }).fetch = fetchMock;
     fetchMock.mockReset();
     fetchMock.mockResolvedValue(buildFetchResponse(200, { universeId: null }));
-    mockedGetCognitoUserIdFromEvent.mockReturnValue('cognito-user-123');
+    mockedGetCognitoUserIdFromEvent.mockReturnValue(COGNITO_USER_ID);
     dynamoMocks.put.mockReturnValue({
       promise: jest.fn().mockResolvedValue({}),
     });
@@ -98,7 +102,7 @@ describe('CreateProject', () => {
   });
 
   it('creates a project scoped to the calling Cognito user', async () => {
-    const response = await createProject(buildRequest('9876543210'));
+    const response = await createProject(buildRequest(NEW_EXPERIENCE_ID));
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
@@ -110,14 +114,14 @@ describe('CreateProject', () => {
         ConditionExpression:
           'attribute_not_exists(CognitoUserId) AND attribute_not_exists(ExperienceId)',
         Item: expect.objectContaining({
-          CognitoUserId: 'cognito-user-123',
-          ExperienceId: '9876543210',
+          CognitoUserId: COGNITO_USER_ID,
+          ExperienceId: NEW_EXPERIENCE_ID,
           CreatedAt: expect.any(String),
         }),
       }),
     );
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://apis.roblox.com/universes/v1/places/9876543210/universe',
+      `https://apis.roblox.com/universes/v1/places/${NEW_EXPERIENCE_ID}/universe`,
     );
   });
 
@@ -126,7 +130,7 @@ describe('CreateProject', () => {
       buildFetchResponse(200, { universeId: 9228429469 }),
     );
 
-    const response = await createProject(buildRequest('127120714583972'));
+    const response = await createProject(buildRequest(PLACE_ID));
 
     expect(response.statusCode).toBe(400);
     expect((response.body as BadRequestErrorResponseContent).message).toContain(
@@ -152,7 +156,7 @@ describe('CreateProject', () => {
   it('returns internal failure when Roblox validation fails', async () => {
     fetchMock.mockResolvedValue(buildFetchResponse(500, { message: 'error' }));
 
-    const response = await createProject(buildRequest('9876543210'));
+    const response = await createProject(buildRequest(NEW_EXPERIENCE_ID));
 
     expect(response.statusCode).toBe(500);
     expect((response.body as InternalFailureErrorResponseContent).message).toEqual(
@@ -176,7 +180,7 @@ describe('CreateProject', () => {
     expect(
       (response.body as ProjectAlreadyExistsErrorResponseContent).message,
     ).toEqual(
-      'A project for experienceId 1234567890 already exists for this user.',
+      `A project for experienceId ${EXISTING_EXPERIENCE_ID} already exists for this user.`,
     );
   });
 

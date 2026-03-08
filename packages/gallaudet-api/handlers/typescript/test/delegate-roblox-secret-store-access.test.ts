@@ -15,12 +15,15 @@ jest.mock('aws-sdk', () => {
 });
 
 const { put } = (jest.requireMock('aws-sdk') as any).__mocks;
+const EXPERIENCE_ID = '9228429469';
+const API_KEY =
+  'vNSgD9p1Xkq2Ht7Rj4Lm0Bz8Yw3Qa6EcUf5Pi2CnSr9Td1Mv8Lo7Gh4Kx0Wp3Rb6Yt2Ju9AeCq5Nz1Fk';
 
 const baseRequest: Omit<DelegateRobloxSecretStoreAccessChainedRequestInput, 'input'> = {
   chain: undefined as never,
   event: {
     requestContext: {
-      authorizer: { claims: { sub: 'cognito-user-123' } },
+      authorizer: { claims: { sub: '3448c4d8-70e1-703a-6450-fbf81e4d71b4' } },
     },
   } as any,
   context: {} as any,
@@ -46,8 +49,8 @@ describe('DelegateRobloxSecretStoreAccess', () => {
       input: {
         requestParameters: {} as any,
         body: {
-          apiKey: 'roblox-api-key',
-          experienceId: '1234567890',
+          apiKey: API_KEY,
+          experienceId: EXPERIENCE_ID,
         } as any,
       },
     });
@@ -58,9 +61,9 @@ describe('DelegateRobloxSecretStoreAccess', () => {
       expect.objectContaining({
         TableName: 'RobloxExperienceApiKeys',
         Item: expect.objectContaining({
-          CognitoUserId: 'cognito-user-123',
-          ExperienceId: '1234567890',
-          ApiKey: 'roblox-api-key',
+          CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+          ExperienceId: EXPERIENCE_ID,
+          ApiKey: API_KEY,
         }),
       }),
     );
@@ -79,7 +82,7 @@ describe('DelegateRobloxSecretStoreAccess', () => {
     const response = await delegateRobloxSecretStoreAccess({
       ...baseRequest,
       event: { requestContext: { authorizer: {} } } as any,
-      input: { requestParameters: {} as any, body: { apiKey: 'k', experienceId: '1' } as any },
+      input: { requestParameters: {} as any, body: { apiKey: API_KEY, experienceId: EXPERIENCE_ID } as any },
     });
 
     expect(response.statusCode).toBe(403);
@@ -94,7 +97,7 @@ describe('DelegateRobloxSecretStoreAccess', () => {
       ...baseRequest,
       input: {
         requestParameters: {} as any,
-        body: { apiKey: 'key', experienceId: '1' } as any,
+        body: { apiKey: API_KEY, experienceId: EXPERIENCE_ID } as any,
       },
     });
 

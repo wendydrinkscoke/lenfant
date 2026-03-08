@@ -102,7 +102,7 @@ const baseRequestArgs = {
   event: {
     requestContext: {
       identity: {
-        apiKeyId: 'experience-123',
+        apiKeyId: 'f2ouqfm233',
       },
     },
   } as any,
@@ -125,7 +125,7 @@ describe('CompleteMilestone', () => {
     jest.clearAllMocks();
     mockedGetGoogleOAuthClient.mockReset();
     (getExperienceIdFromEvent as jest.Mock).mockReset();
-    (getExperienceIdFromEvent as jest.Mock).mockResolvedValue('experience-123');
+    (getExperienceIdFromEvent as jest.Mock).mockResolvedValue('6m3q5dsoej');
     dynamoMocks.query.mockReset();
     dynamoMocks.get.mockReset();
     dynamoMocks.update.mockReset();
@@ -140,7 +140,7 @@ describe('CompleteMilestone', () => {
     getAddOnContextMock.mockResolvedValue({
       data: {
         studentContext: {
-          submissionId: '1234567890',
+          submissionId: '810762858772',
         },
       },
     });
@@ -149,7 +149,7 @@ describe('CompleteMilestone', () => {
       data: {
         studentSubmissions: [
           {
-            id: 'submission-1',
+            id: 'Cg4IlOLtqcwXEMOwm6PfFw',
             userId: '112852293390088774335',
           },
         ],
@@ -164,7 +164,7 @@ describe('CompleteMilestone', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            CognitoUserId: 'cognito-student-1',
+            CognitoUserId: '14b8d408-c0a1-706f-f3f4-5d775f820f4c',
             Username: 'Google_112852293390088774335',
           },
         ],
@@ -175,13 +175,13 @@ describe('CompleteMilestone', () => {
       .mockReturnValueOnce({
         promise: jest.fn().mockResolvedValue({
           Item: {
-            InstanceId: 'task-1',
-            ExperienceId: 'experience-123',
-            CourseId: 'course-1',
-            ItemId: 'coursework-1',
-            AttachmentId: 'attachment-1',
-            CreatedBy: 'teacher-1',
-            EntryId: 'tour-whitehouse',
+            InstanceId: '6461d2d2-6a96-490a-91f7-bbebb219f815',
+            ExperienceId: '6m3q5dsoej',
+            CourseId: '810781632040',
+            ItemId: '815849199683',
+            AttachmentId: '815849744756',
+            CreatedBy: 'f47874b8-e001-7099-7b8a-5d1792d6122b',
+            EntryId: 'tour-the-whitehouse',
             MilestoneCompletions: {},
           },
         }),
@@ -189,18 +189,18 @@ describe('CompleteMilestone', () => {
       .mockReturnValueOnce({
         promise: jest.fn().mockResolvedValue({
           Item: {
-            ExperienceId: 'experience-123',
-            EntryId: 'tour-whitehouse',
+            ExperienceId: '6m3q5dsoej',
+            EntryId: 'tour-the-whitehouse',
             Milestones: [
               {
-                id: 'visit-oval-office',
+                id: 'visit-the-oval-office',
                 name: 'Visit the Oval Office',
-                percentageContribution: 40,
+                percentageContribution: 50,
               },
               {
-                id: 'visit-situation-room',
+                id: 'visit-the-situation-room',
                 name: 'Visit the Situation Room',
-                percentageContribution: 60,
+                percentageContribution: 50,
               },
             ],
           },
@@ -217,9 +217,9 @@ describe('CompleteMilestone', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
-          milestoneId: 'visit-oval-office',
+          robloxUserId: '7954006733',
+          taskId: '6461d2d2-6a96-490a-91f7-bbebb219f815',
+          milestoneId: 'visit-the-oval-office',
         },
         body: undefined as never,
       },
@@ -227,31 +227,31 @@ describe('CompleteMilestone', () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
-      updatedCumulativePercentage: 40,
-      nextMilestoneId: 'visit-situation-room',
+      updatedCumulativePercentage: 50,
+      nextMilestoneId: 'visit-the-situation-room',
       nextMilestoneName: 'Visit the Situation Room',
-      nextMilestonePercentageContribution: 60,
+      nextMilestonePercentageContribution: 50,
     });
 
     expect(dynamoMocks.update).toHaveBeenCalledWith(
       expect.objectContaining({
         TableName: 'TaskInstances',
-        Key: { InstanceId: 'task-1' },
+        Key: { InstanceId: '6461d2d2-6a96-490a-91f7-bbebb219f815' },
         ExpressionAttributeValues: expect.objectContaining({
           ':milestoneCompletions': {
-            'cognito-student-1': ['visit-oval-office'],
+            '14b8d408-c0a1-706f-f3f4-5d775f820f4c': ['visit-the-oval-office'],
           },
         }),
       }),
     );
 
     expect(patchSubmissionMock).toHaveBeenCalledWith({
-      courseId: 'course-1',
-      itemId: 'coursework-1',
-      attachmentId: 'attachment-1',
-      submissionId: '1234567890',
+      courseId: '810781632040',
+      itemId: '815849199683',
+      attachmentId: '815849744756',
+      submissionId: '810762858772',
       updateMask: 'pointsEarned',
-      requestBody: { pointsEarned: 40 },
+      requestBody: { pointsEarned: 50 },
     });
   });
 
@@ -260,7 +260,7 @@ describe('CompleteMilestone', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            CognitoUserId: 'cognito-student-1',
+            CognitoUserId: '14b8d408-c0a1-706f-f3f4-5d775f820f4c',
             Username: 'Google_112852293390088774335',
           },
         ],
@@ -271,15 +271,15 @@ describe('CompleteMilestone', () => {
       .mockReturnValueOnce({
         promise: jest.fn().mockResolvedValue({
           Item: {
-            InstanceId: 'task-1',
-            ExperienceId: 'experience-123',
-            CourseId: 'course-1',
-            ItemId: 'coursework-1',
-            AttachmentId: 'attachment-1',
-            CreatedBy: 'teacher-1',
-            EntryId: 'tour-whitehouse',
+            InstanceId: '6461d2d2-6a96-490a-91f7-bbebb219f815',
+            ExperienceId: '6m3q5dsoej',
+            CourseId: '810781632040',
+            ItemId: '815849199683',
+            AttachmentId: '815849744756',
+            CreatedBy: 'f47874b8-e001-7099-7b8a-5d1792d6122b',
+            EntryId: 'tour-the-whitehouse',
             MilestoneCompletions: {
-              'cognito-student-1': ['visit-oval-office'],
+              '14b8d408-c0a1-706f-f3f4-5d775f820f4c': ['visit-the-oval-office'],
             },
           },
         }),
@@ -287,13 +287,13 @@ describe('CompleteMilestone', () => {
       .mockReturnValueOnce({
         promise: jest.fn().mockResolvedValue({
           Item: {
-            ExperienceId: 'experience-123',
-            EntryId: 'tour-whitehouse',
+            ExperienceId: '6m3q5dsoej',
+            EntryId: 'tour-the-whitehouse',
             Milestones: [
               {
-                id: 'visit-oval-office',
+                id: 'visit-the-oval-office',
                 name: 'Visit the Oval Office',
-                percentageContribution: 40,
+                percentageContribution: 50,
               },
             ],
           },
@@ -314,9 +314,9 @@ describe('CompleteMilestone', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
-          milestoneId: 'visit-oval-office',
+          robloxUserId: '7954006733',
+          taskId: '6461d2d2-6a96-490a-91f7-bbebb219f815',
+          milestoneId: 'visit-the-oval-office',
         },
         body: undefined as never,
       },
@@ -324,14 +324,14 @@ describe('CompleteMilestone', () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
-      updatedCumulativePercentage: 40,
+      updatedCumulativePercentage: 50,
     });
 
     expect(dynamoMocks.update).toHaveBeenCalledWith(
       expect.objectContaining({
         ExpressionAttributeValues: expect.objectContaining({
           ':milestoneCompletions': {
-            'cognito-student-1': ['visit-oval-office'],
+            '14b8d408-c0a1-706f-f3f4-5d775f820f4c': ['visit-the-oval-office'],
           },
         }),
       }),
@@ -343,7 +343,7 @@ describe('CompleteMilestone', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            CognitoUserId: 'cognito-student-1',
+            CognitoUserId: '14b8d408-c0a1-706f-f3f4-5d775f820f4c',
             Username: 'Google_112852293390088774335',
           },
         ],
@@ -354,26 +354,26 @@ describe('CompleteMilestone', () => {
       .mockReturnValueOnce({
         promise: jest.fn().mockResolvedValue({
           Item: {
-            InstanceId: 'task-1',
-            ExperienceId: 'experience-123',
-            CourseId: 'course-1',
-            ItemId: 'coursework-1',
-            AttachmentId: 'attachment-1',
-            CreatedBy: 'teacher-1',
-            EntryId: 'tour-whitehouse',
+            InstanceId: '6461d2d2-6a96-490a-91f7-bbebb219f815',
+            ExperienceId: '6m3q5dsoej',
+            CourseId: '810781632040',
+            ItemId: '815849199683',
+            AttachmentId: '815849744756',
+            CreatedBy: 'f47874b8-e001-7099-7b8a-5d1792d6122b',
+            EntryId: 'tour-the-whitehouse',
           },
         }),
       })
       .mockReturnValueOnce({
         promise: jest.fn().mockResolvedValue({
           Item: {
-            ExperienceId: 'experience-123',
-            EntryId: 'tour-whitehouse',
+            ExperienceId: '6m3q5dsoej',
+            EntryId: 'tour-the-whitehouse',
             Milestones: [
               {
-                id: 'visit-oval-office',
+                id: 'visit-the-oval-office',
                 name: 'Visit the Oval Office',
-                percentageContribution: 40,
+                percentageContribution: 50,
               },
             ],
           },
@@ -394,8 +394,8 @@ describe('CompleteMilestone', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
+          robloxUserId: '7954006733',
+          taskId: '6461d2d2-6a96-490a-91f7-bbebb219f815',
           milestoneId: 'unknown-milestone',
         },
         body: undefined as never,
@@ -413,7 +413,7 @@ describe('CompleteMilestone', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            CognitoUserId: 'cognito-student-1',
+            CognitoUserId: '14b8d408-c0a1-706f-f3f4-5d775f820f4c',
             Username: 'Google_112852293390088774335',
           },
         ],
@@ -424,26 +424,26 @@ describe('CompleteMilestone', () => {
       .mockReturnValueOnce({
         promise: jest.fn().mockResolvedValue({
           Item: {
-            InstanceId: 'task-1',
-            ExperienceId: 'experience-123',
-            CourseId: 'course-1',
-            ItemId: 'coursework-1',
-            AttachmentId: 'attachment-1',
-            CreatedBy: 'teacher-1',
-            EntryId: 'tour-whitehouse',
+            InstanceId: '6461d2d2-6a96-490a-91f7-bbebb219f815',
+            ExperienceId: '6m3q5dsoej',
+            CourseId: '810781632040',
+            ItemId: '815849199683',
+            AttachmentId: '815849744756',
+            CreatedBy: 'f47874b8-e001-7099-7b8a-5d1792d6122b',
+            EntryId: 'tour-the-whitehouse',
           },
         }),
       })
       .mockReturnValueOnce({
         promise: jest.fn().mockResolvedValue({
           Item: {
-            ExperienceId: 'experience-123',
-            EntryId: 'tour-whitehouse',
+            ExperienceId: '6m3q5dsoej',
+            EntryId: 'tour-the-whitehouse',
             Milestones: [
               {
-                id: 'visit-oval-office',
+                id: 'visit-the-oval-office',
                 name: 'Visit the Oval Office',
-                percentageContribution: 40,
+                percentageContribution: 50,
               },
             ],
           },
@@ -481,9 +481,9 @@ describe('CompleteMilestone', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
-          milestoneId: 'visit-oval-office',
+          robloxUserId: '7954006733',
+          taskId: '6461d2d2-6a96-490a-91f7-bbebb219f815',
+          milestoneId: 'visit-the-oval-office',
         },
         body: undefined as never,
       },
@@ -507,9 +507,9 @@ describe('CompleteMilestone', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
-          milestoneId: 'visit-oval-office',
+          robloxUserId: '7954006733',
+          taskId: '6461d2d2-6a96-490a-91f7-bbebb219f815',
+          milestoneId: 'visit-the-oval-office',
         },
         body: undefined as never,
       },
@@ -526,7 +526,7 @@ describe('CompleteMilestone', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            CognitoUserId: 'cognito-student-1',
+            CognitoUserId: '14b8d408-c0a1-706f-f3f4-5d775f820f4c',
             Username: 'Google_112852293390088774335',
           },
         ],
@@ -537,26 +537,26 @@ describe('CompleteMilestone', () => {
       .mockReturnValueOnce({
         promise: jest.fn().mockResolvedValue({
           Item: {
-            InstanceId: 'task-1',
-            ExperienceId: 'experience-123',
-            CourseId: 'course-1',
-            ItemId: 'coursework-1',
-            AttachmentId: 'attachment-1',
-            CreatedBy: 'teacher-1',
-            EntryId: 'tour-whitehouse',
+            InstanceId: '6461d2d2-6a96-490a-91f7-bbebb219f815',
+            ExperienceId: '6m3q5dsoej',
+            CourseId: '810781632040',
+            ItemId: '815849199683',
+            AttachmentId: '815849744756',
+            CreatedBy: 'f47874b8-e001-7099-7b8a-5d1792d6122b',
+            EntryId: 'tour-the-whitehouse',
           },
         }),
       })
       .mockReturnValueOnce({
         promise: jest.fn().mockResolvedValue({
           Item: {
-            ExperienceId: 'experience-123',
-            EntryId: 'tour-whitehouse',
+            ExperienceId: '6m3q5dsoej',
+            EntryId: 'tour-the-whitehouse',
             Milestones: [
               {
-                id: 'visit-oval-office',
+                id: 'visit-the-oval-office',
                 name: 'Visit the Oval Office',
-                percentageAwarded: 40,
+                percentageAwarded: 50,
               },
             ],
           },
@@ -573,9 +573,9 @@ describe('CompleteMilestone', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
-          milestoneId: 'visit-oval-office',
+          robloxUserId: '7954006733',
+          taskId: '6461d2d2-6a96-490a-91f7-bbebb219f815',
+          milestoneId: 'visit-the-oval-office',
         },
         body: undefined as never,
       },

@@ -66,7 +66,7 @@ describe('GetTaskCatalog', () => {
     dynamoMocks.scanPromise.mockResolvedValueOnce({
       Items: [
         {
-          ExperienceId: 'abcdefg',
+          ExperienceId: '9228429469',
           EntryId: 'draft-bill',
           Name: 'Draft a Bill',
           Subheading: 'Research and write legislation',
@@ -76,7 +76,7 @@ describe('GetTaskCatalog', () => {
           ],
         },
         {
-          ExperienceId: 'abcdefg',
+          ExperienceId: '9228429469',
           EntryId: 'tour-whitehouse',
           Name: 'Tour the White House',
           Subheading: 'Guided tour of the White House',
@@ -98,7 +98,7 @@ describe('GetTaskCatalog', () => {
           ],
         },
         {
-          ExperienceId: 'qredasg',
+          ExperienceId: '9348701256',
           EntryId: 'press-briefing',
           Name: 'Attend Press Briefing',
           Subheading: 'Answer questions from the press',
@@ -110,16 +110,16 @@ describe('GetTaskCatalog', () => {
       Responses: {
         Experiences: [
           {
-            ExperienceId: 'abcdefg',
-            ExperienceName: 'Experience Alpha',
+            ExperienceId: '9228429469',
+            ExperienceName: 'Civics Quest: Capitol Edition',
             ExperienceNameFetchedAt: '2999-01-01T00:00:00.000Z',
             AssetIds: [
               'c580fb04-787e-4c92-8dd9-d6ff22f4eb3b',
             ],
           },
           {
-            ExperienceId: 'qredasg',
-            ExperienceName: 'Experience Beta',
+            ExperienceId: '9348701256',
+            ExperienceName: 'Constitution Clash',
             ExperienceNameFetchedAt: '2999-01-01T00:00:00.000Z',
           },
         ],
@@ -142,10 +142,10 @@ describe('GetTaskCatalog', () => {
         Experiences: {
           Keys: [
             {
-              ExperienceId: 'abcdefg',
+              ExperienceId: '9228429469',
             },
             {
-              ExperienceId: 'qredasg',
+              ExperienceId: '9348701256',
             },
           ],
         },
@@ -155,8 +155,8 @@ describe('GetTaskCatalog', () => {
     expect(response.body).toEqual({
       experiences: [
         {
-          experienceId: 'abcdefg',
-          experienceName: 'Experience Alpha',
+          experienceId: '9228429469',
+          experienceName: 'Civics Quest: Capitol Edition',
           assetIds: [
             'c580fb04-787e-4c92-8dd9-d6ff22f4eb3b',
           ],
@@ -194,8 +194,8 @@ describe('GetTaskCatalog', () => {
           ],
         },
         {
-          experienceId: 'qredasg',
-          experienceName: 'Experience Beta',
+          experienceId: '9348701256',
+          experienceName: 'Constitution Clash',
           catalogEntries: [
             {
               entryId: 'press-briefing',
@@ -234,11 +234,11 @@ describe('GetTaskCatalog', () => {
     dynamoMocks.scanPromise.mockResolvedValueOnce({
       Items: [
         {
-          ExperienceId: 'missing-exp',
-          EntryId: 'entry-1',
-          Name: 'Name',
-          Subheading: 'Subheading',
-          Instructions: 'Instructions',
+          ExperienceId: '9917002468',
+          EntryId: 'get-100-points',
+          Name: 'Get 100 Points',
+          Subheading: 'Obtain at least 100 points in one session',
+          Instructions: 'Get points by selecting the correct country as quickly as possible.',
         },
       ],
     });

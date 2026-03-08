@@ -52,7 +52,7 @@ const requestArguments = {
     requestContext: {
       authorizer: {
         claims: {
-          sub: 'cognito-user-123',
+          sub: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
         },
       },
     },
@@ -70,7 +70,7 @@ const requestArguments = {
 describe('ListProjects', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedGetCognitoUserIdFromEvent.mockReturnValue('cognito-user-123');
+    mockedGetCognitoUserIdFromEvent.mockReturnValue('3448c4d8-70e1-703a-6450-fbf81e4d71b4');
     dynamoMocks.queryPromise.mockResolvedValue({ Items: [] });
   });
 
@@ -119,7 +119,7 @@ describe('ListProjects', () => {
         '#cognitoUserId': 'CognitoUserId',
       },
       ExpressionAttributeValues: {
-        ':cognitoUserId': 'cognito-user-123',
+        ':cognitoUserId': '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
       },
     });
   });
@@ -127,8 +127,8 @@ describe('ListProjects', () => {
   it('returns projects for the calling Cognito user', async () => {
     dynamoMocks.queryPromise.mockResolvedValueOnce({
       Items: [
-        { ExperienceId: 'exp-1', CognitoUserId: 'cognito-user-123' },
-        { ExperienceId: 'exp-2', CognitoUserId: 'cognito-user-123' },
+        { ExperienceId: '9228429469', CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4' },
+        { ExperienceId: '9348701256', CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4' },
       ],
     });
 
@@ -142,7 +142,7 @@ describe('ListProjects', () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
-      projects: [{ experienceId: 'exp-1' }, { experienceId: 'exp-2' }],
+      projects: [{ experienceId: '9228429469' }, { experienceId: '9348701256' }],
     });
   });
 

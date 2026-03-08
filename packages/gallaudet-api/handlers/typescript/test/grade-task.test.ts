@@ -101,7 +101,7 @@ const baseRequestArgs = {
   event: {
     requestContext: {
       identity: {
-        apiKeyId: 'experience-123',
+        apiKeyId: 'f2ouqfm233',
       },
     },
   } as any,
@@ -125,11 +125,11 @@ beforeEach(() => {
   patchSubmissionMock.mockReset();
   mockedGetGoogleOAuthClient.mockReset();
   (getExperienceIdFromEvent as jest.Mock).mockReset();
-  (getExperienceIdFromEvent as jest.Mock).mockResolvedValue('experience-123');
+  (getExperienceIdFromEvent as jest.Mock).mockResolvedValue('9228429469');
   getAddOnContextMock.mockResolvedValue({
     data: {
       studentContext: {
-        submissionId: '1234567890',
+        submissionId: '810762858772',
       },
     },
   });
@@ -158,8 +158,8 @@ describe('gradeTask handler', () => {
       }),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
+          robloxUserId: '7954006733',
+          taskId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
         },
         body: {
           percentage: 75,
@@ -179,8 +179,8 @@ describe('gradeTask handler', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
+          robloxUserId: '7954006733',
+          taskId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
         },
         body: {
           percentage: 123,
@@ -205,8 +205,8 @@ describe('gradeTask handler', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
+          robloxUserId: '7954006733',
+          taskId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
         },
         body: {
           percentage: 80,
@@ -226,8 +226,8 @@ describe('gradeTask handler', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            CognitoUserId: 'cognito-student-1',
-            Username: 'Google_112233',
+            CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+            Username: 'Google_112852293390088774335',
           },
         ],
       }),
@@ -236,12 +236,12 @@ describe('gradeTask handler', () => {
     dynamoMocks.get.mockReturnValue({
       promise: jest.fn().mockResolvedValue({
         Item: {
-          InstanceId: 'task-1',
-          ExperienceId: 'experience-other',
-          CourseId: 'course-1',
-          ItemId: 'coursework-1',
-          AttachmentId: 'attachment-1',
-          CreatedBy: 'teacher-1',
+          InstanceId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
+          ExperienceId: '9348701256',
+          CourseId: '810781632040',
+          ItemId: '844809637151',
+          AttachmentId: '844810086236',
+          CreatedBy: '0488e498-10c1-7003-8e1b-930673943caf',
         },
       }),
     });
@@ -250,8 +250,8 @@ describe('gradeTask handler', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
+          robloxUserId: '7954006733',
+          taskId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
         },
         body: {
           percentage: 90,
@@ -271,8 +271,8 @@ describe('gradeTask handler', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            CognitoUserId: 'cognito-student-1',
-            Username: 'Google_112233',
+            CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+            Username: 'Google_112852293390088774335',
           },
         ],
       }),
@@ -281,12 +281,12 @@ describe('gradeTask handler', () => {
     dynamoMocks.get.mockReturnValue({
       promise: jest.fn().mockResolvedValue({
         Item: {
-          InstanceId: 'task-1',
-          ExperienceId: 'experience-123',
-          CourseId: 'course-1',
-          ItemId: 'coursework-1',
-          AttachmentId: 'attachment-1',
-          CreatedBy: 'teacher-1',
+          InstanceId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
+          ExperienceId: '9228429469',
+          CourseId: '810781632040',
+          ItemId: '844809637151',
+          AttachmentId: '844810086236',
+          CreatedBy: '0488e498-10c1-7003-8e1b-930673943caf',
         },
       }),
     });
@@ -329,8 +329,8 @@ describe('gradeTask handler', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
+          robloxUserId: '7954006733',
+          taskId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
         },
         body: {
           percentage: 92,
@@ -352,8 +352,8 @@ describe('gradeTask handler', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            CognitoUserId: 'cognito-student-1',
-            Username: 'Google_112233',
+            CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+            Username: 'Google_112852293390088774335',
           },
         ],
       }),
@@ -362,12 +362,12 @@ describe('gradeTask handler', () => {
     dynamoMocks.get.mockReturnValue({
       promise: jest.fn().mockResolvedValue({
         Item: {
-          InstanceId: 'task-1',
-          ExperienceId: 'experience-123',
-          CourseId: 'course-1',
-          ItemId: 'coursework-1',
-          AttachmentId: 'attachment-1',
-          CreatedBy: 'teacher-1',
+          InstanceId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
+          ExperienceId: '9228429469',
+          CourseId: '810781632040',
+          ItemId: '844809637151',
+          AttachmentId: '844810086236',
+          CreatedBy: '0488e498-10c1-7003-8e1b-930673943caf',
         },
       }),
     });
@@ -380,8 +380,8 @@ describe('gradeTask handler', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
+          robloxUserId: '7954006733',
+          taskId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
         },
         body: {
           percentage: 88,
@@ -402,8 +402,8 @@ describe('gradeTask handler', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            CognitoUserId: 'cognito-student-1',
-            Username: 'Google_112233',
+            CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+            Username: 'Google_112852293390088774335',
           },
         ],
       }),
@@ -412,12 +412,12 @@ describe('gradeTask handler', () => {
     dynamoMocks.get.mockReturnValue({
       promise: jest.fn().mockResolvedValue({
         Item: {
-          InstanceId: 'task-1',
-          ExperienceId: 'experience-123',
-          CourseId: 'course-1',
-          ItemId: 'coursework-1',
-          AttachmentId: 'attachment-1',
-          CreatedBy: 'teacher-1',
+          InstanceId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
+          ExperienceId: '9228429469',
+          CourseId: '810781632040',
+          ItemId: '844809637151',
+          AttachmentId: '844810086236',
+          CreatedBy: '0488e498-10c1-7003-8e1b-930673943caf',
         },
       }),
     });
@@ -434,8 +434,8 @@ describe('gradeTask handler', () => {
       data: {
         studentSubmissions: [
           {
-            id: 'submission-1',
-            userId: '112233',
+            id: 'Cg4IlOLtqcwXEJ-a0JTLGA',
+            userId: '112852293390088774335',
           },
         ],
       },
@@ -445,8 +445,8 @@ describe('gradeTask handler', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
+          robloxUserId: '7954006733',
+          taskId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
         },
         body: {
           percentage: 60,
@@ -466,8 +466,8 @@ describe('gradeTask handler', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            CognitoUserId: 'cognito-student-1',
-            Username: 'Google_112233',
+            CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+            Username: 'Google_112852293390088774335',
           },
         ],
       }),
@@ -476,12 +476,12 @@ describe('gradeTask handler', () => {
     dynamoMocks.get.mockReturnValue({
       promise: jest.fn().mockResolvedValue({
         Item: {
-          InstanceId: 'task-1',
-          ExperienceId: 'experience-123',
-          CourseId: 'course-1',
-          ItemId: 'coursework-1',
-          AttachmentId: 'attachment-1',
-          CreatedBy: 'teacher-1',
+          InstanceId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
+          ExperienceId: '9228429469',
+          CourseId: '810781632040',
+          ItemId: '844809637151',
+          AttachmentId: '844810086236',
+          CreatedBy: '0488e498-10c1-7003-8e1b-930673943caf',
         },
       }),
     });
@@ -504,8 +504,8 @@ describe('gradeTask handler', () => {
       data: {
         studentSubmissions: [
           {
-            id: 'submission-1',
-            userId: '112233',
+            id: 'Cg4IlOLtqcwXEJ-a0JTLGA',
+            userId: '112852293390088774335',
           },
         ],
       },
@@ -515,8 +515,8 @@ describe('gradeTask handler', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
+          robloxUserId: '7954006733',
+          taskId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
         },
         body: {
           percentage: 60,
@@ -536,8 +536,8 @@ describe('gradeTask handler', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            CognitoUserId: 'cognito-student-1',
-            Username: 'Google_112233',
+            CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+            Username: 'Google_112852293390088774335',
           },
         ],
       }),
@@ -546,14 +546,14 @@ describe('gradeTask handler', () => {
     dynamoMocks.get.mockReturnValue({
       promise: jest.fn().mockResolvedValue({
         Item: {
-          InstanceId: 'task-1',
-          ExperienceId: 'experience-123',
-          CourseId: 'course-1',
-          ItemId: 'coursework-1',
-          AttachmentId: 'attachment-1',
-          CreatedBy: 'teacher-1',
+          InstanceId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
+          ExperienceId: '9228429469',
+          CourseId: '810781632040',
+          ItemId: '844809637151',
+          AttachmentId: '844810086236',
+          CreatedBy: '0488e498-10c1-7003-8e1b-930673943caf',
           Grades: {
-            'cognito-student-1': 90,
+            '3448c4d8-70e1-703a-6450-fbf81e4d71b4': 90,
           },
         },
       }),
@@ -563,8 +563,8 @@ describe('gradeTask handler', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
+          robloxUserId: '7954006733',
+          taskId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
         },
         body: {
           percentage: 80,
@@ -587,7 +587,7 @@ describe('gradeTask handler', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            CognitoUserId: 'cognito-student-1',
+            CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
             Username: 'Google_112852293390088774335',
           },
         ],
@@ -597,12 +597,12 @@ describe('gradeTask handler', () => {
     dynamoMocks.get.mockReturnValue({
       promise: jest.fn().mockResolvedValue({
         Item: {
-          InstanceId: 'task-1',
-          ExperienceId: 'experience-123',
-          CourseId: 'course-1',
-          ItemId: 'coursework-1',
-          AttachmentId: 'attachment-1',
-          CreatedBy: 'teacher-1',
+          InstanceId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
+          ExperienceId: '9228429469',
+          CourseId: '810781632040',
+          ItemId: '844809637151',
+          AttachmentId: '844810086236',
+          CreatedBy: '0488e498-10c1-7003-8e1b-930673943caf',
         },
       }),
     });
@@ -620,7 +620,7 @@ describe('gradeTask handler', () => {
       data: {
         studentSubmissions: [
           {
-            id: 'submission-1',
+            id: 'Cg4IlOLtqcwXEJ-a0JTLGA',
             userId: '112852293390088774335',
           },
         ],
@@ -633,8 +633,8 @@ describe('gradeTask handler', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
+          robloxUserId: '7954006733',
+          taskId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
         },
         body: {
           percentage: 85,
@@ -650,7 +650,7 @@ describe('gradeTask handler', () => {
     expect(dynamoMocks.update).toHaveBeenCalledWith({
       TableName: 'TaskInstances',
       Key: {
-        InstanceId: 'task-1',
+        InstanceId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
       },
       UpdateExpression: 'SET #grades = :grades, #updatedAt = :updatedAt',
       ExpressionAttributeNames: {
@@ -659,7 +659,7 @@ describe('gradeTask handler', () => {
       },
       ExpressionAttributeValues: {
         ':grades': {
-          'cognito-student-1': 85,
+          '3448c4d8-70e1-703a-6450-fbf81e4d71b4': 85,
         },
         ':updatedAt': expect.any(String),
       },
@@ -669,17 +669,17 @@ describe('gradeTask handler', () => {
 
     expect(studentSubmissionsListMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        courseId: 'course-1',
-        courseWorkId: 'coursework-1',
+        courseId: '810781632040',
+        courseWorkId: '844809637151',
         userId: 'me',
       }),
     );
 
     expect(patchSubmissionMock).toHaveBeenCalledWith({
-      courseId: 'course-1',
-      itemId: 'coursework-1',
-      attachmentId: 'attachment-1',
-      submissionId: '1234567890',
+      courseId: '810781632040',
+      itemId: '844809637151',
+      attachmentId: '844810086236',
+      submissionId: '810762858772',
       updateMask: 'pointsEarned',
       requestBody: { pointsEarned: 85 },
     });
@@ -690,8 +690,8 @@ describe('gradeTask handler', () => {
       promise: jest.fn().mockResolvedValue({
         Items: [
           {
-            CognitoUserId: 'cognito-student-1',
-            Username: 'Google_198765',
+            CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4',
+            Username: 'Google_112852293390088774336',
           },
         ],
       }),
@@ -700,12 +700,12 @@ describe('gradeTask handler', () => {
     dynamoMocks.get.mockReturnValue({
       promise: jest.fn().mockResolvedValue({
         Item: {
-          InstanceId: 'task-1',
-          ExperienceId: 'experience-123',
-          CourseId: 'course-1',
-          ItemId: 'coursework-1',
-          AttachmentId: 'attachment-1',
-          CreatedBy: 'teacher-1',
+          InstanceId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
+          ExperienceId: '9228429469',
+          CourseId: '810781632040',
+          ItemId: '844809637151',
+          AttachmentId: '844810086236',
+          CreatedBy: '0488e498-10c1-7003-8e1b-930673943caf',
         },
       }),
     });
@@ -720,8 +720,8 @@ describe('gradeTask handler', () => {
       data: {
         studentSubmissions: [
           {
-            id: 'submission-99',
-            userId: '198765',
+            id: 'Cg4IlOLtqcwXEMzx-tubGA',
+            userId: '112852293390088774336',
           },
         ],
       },
@@ -748,8 +748,8 @@ describe('gradeTask handler', () => {
       ...buildRequestArgs(),
       input: {
         requestParameters: {
-          robloxUserId: 'roblox-1',
-          taskId: 'task-1',
+          robloxUserId: '7954006733',
+          taskId: '20ef8ab7-afed-4096-baa7-2279e382cad9',
         },
         body: {
           percentage: 70,

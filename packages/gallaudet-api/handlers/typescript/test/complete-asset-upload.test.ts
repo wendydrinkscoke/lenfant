@@ -73,6 +73,14 @@ const {
 
 const mockedGetCognitoUserIdFromEvent = getCognitoUserIdFromEvent as jest.Mock;
 
+const COGNITO_USER_ID = '3448c4d8-70e1-703a-6450-fbf81e4d71b4';
+const EXPERIENCE_ID = '9228429469';
+const UPLOAD_SESSION_ID = '212f4c37-89c9-4780-bf40-01aaa7be826b';
+const ASSET_ID = '1919b0d6-be31-4f6f-8afe-1d97f8c3f60a';
+const FILE_NAME = 'big-image.png';
+const OBJECT_KEY = `${COGNITO_USER_ID}/${EXPERIENCE_ID}/${ASSET_ID}/${FILE_NAME}`;
+const MULTIPART_UPLOAD_ID = 'zHA4WIi4vnWEPM8UOh2q6sgVtjxYucWoLFrvaQ9LesXrhUaZ9MrHprzr3FBTRr5nf6Yt3xJ3JT45dsTgj5N1LoBX_u251Rh0IRZbXWJwHlhfdmetmt90HqF.Itz6Bi8lnwMFOE5qTGwizPr60AFTcOUSqATaHyGppsqAmWqtqaBzpy49oIYibLycI4XV4hu8oSEJsIK3lRMUxJ5jPxbqyg--';
+
 const requestArguments = {
   chain: undefined as never,
   event: {} as any,
@@ -90,13 +98,13 @@ const buildSinglePartRequest = () => ({
   ...requestArguments,
   input: {
     requestParameters: {
-      experienceId: '1234567890',
-      uploadSessionId: 'session-123',
+      experienceId: EXPERIENCE_ID,
+      uploadSessionId: UPLOAD_SESSION_ID,
     },
     body: {
       completion: {
         singlePart: {
-          eTag: 'etag-123',
+          eTag: '"9a0364b9e99bb480dd25e1f0284c8555"',
         },
       },
     },
@@ -106,19 +114,21 @@ const buildSinglePartRequest = () => ({
 describe('CompleteAssetUpload', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedGetCognitoUserIdFromEvent.mockReturnValue('cognito-user-123');
+    mockedGetCognitoUserIdFromEvent.mockReturnValue(COGNITO_USER_ID);
     dynamoMocks.getPromise.mockResolvedValue({
       Item: {
-        UploadSessionId: 'session-123',
-        AssetId: 'asset-123',
-        CognitoUserId: 'cognito-user-123',
-        ExperienceId: '1234567890',
-        FileName: 'banner.gif',
-        ContentType: 'image/gif',
-        SizeBytes: 1024,
-        ObjectKey: '1234567890/asset-123/banner.gif',
+        UploadSessionId: UPLOAD_SESSION_ID,
+        AssetId: ASSET_ID,
+        CognitoUserId: COGNITO_USER_ID,
+        ExperienceId: EXPERIENCE_ID,
+        FileName: FILE_NAME,
+        ContentType: 'image/png',
+        SizeBytes: 16927656,
+        ObjectKey: OBJECT_KEY,
         Strategy: 'single-part-put',
-        CreatedAt: 1700000000,
+        ExpiresAt: 1772965774,
+        CreatedAt: 1772964874,
+        UpdatedAt: 1772964874,
       },
     });
     dynamoMocks.putPromise.mockResolvedValue({});
@@ -132,14 +142,14 @@ describe('CompleteAssetUpload', () => {
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
       asset: {
-        assetId: 'asset-123',
-        experienceId: '1234567890',
-        fileName: 'banner.gif',
-        contentType: 'image/gif',
-        sizeBytes: 1024,
-        objectKey: '1234567890/asset-123/banner.gif',
+        assetId: ASSET_ID,
+        experienceId: EXPERIENCE_ID,
+        fileName: FILE_NAME,
+        contentType: 'image/png',
+        sizeBytes: 16927656,
+        objectKey: OBJECT_KEY,
         status: 'ready',
-        createdAt: 1700000000,
+        createdAt: 1772964874,
         updatedAt: expect.any(Number),
       },
     });
@@ -147,7 +157,7 @@ describe('CompleteAssetUpload', () => {
     expect(dynamoMocks.deleteFn).toHaveBeenCalledWith({
       TableName: 'AssetUploads',
       Key: {
-        UploadSessionId: 'session-123',
+        UploadSessionId: UPLOAD_SESSION_ID,
       },
     });
     expect(s3Mocks.completeMultipartUpload).not.toHaveBeenCalled();
@@ -156,17 +166,21 @@ describe('CompleteAssetUpload', () => {
   it('completes a multipart upload when multipart completion details are provided', async () => {
     dynamoMocks.getPromise.mockResolvedValueOnce({
       Item: {
-        UploadSessionId: 'session-123',
-        AssetId: 'asset-123',
-        CognitoUserId: 'cognito-user-123',
-        ExperienceId: '1234567890',
-        FileName: 'banner.gif',
-        ContentType: 'image/gif',
-        SizeBytes: 1024,
-        ObjectKey: '1234567890/asset-123/banner.gif',
+        UploadSessionId: UPLOAD_SESSION_ID,
+        AssetId: ASSET_ID,
+        CognitoUserId: COGNITO_USER_ID,
+        ExperienceId: EXPERIENCE_ID,
+        FileName: FILE_NAME,
+        ContentType: 'image/png',
+        SizeBytes: 16927656,
+        ObjectKey: OBJECT_KEY,
         Strategy: 'multipart-put',
-        MultipartUploadId: 'upload-id-123',
-        CreatedAt: 1700000000,
+        MultipartUploadId: MULTIPART_UPLOAD_ID,
+        MultipartPartSizeBytes: 8388608,
+        MultipartPartCount: 3,
+        ExpiresAt: 1772965774,
+        CreatedAt: 1772964874,
+        UpdatedAt: 1772964874,
       },
     });
 
@@ -174,15 +188,15 @@ describe('CompleteAssetUpload', () => {
       ...requestArguments,
       input: {
         requestParameters: {
-          experienceId: '1234567890',
-          uploadSessionId: 'session-123',
+          experienceId: EXPERIENCE_ID,
+          uploadSessionId: UPLOAD_SESSION_ID,
         },
         body: {
           completion: {
             multipart: {
               parts: [
-                { partNumber: 2, eTag: 'etag-b' },
-                { partNumber: 1, eTag: 'etag-a' },
+                { partNumber: 2, eTag: '"6f5902ac237024bdd0c176cb93063dc4"' },
+                { partNumber: 1, eTag: '"c4ca4238a0b923820dcc509a6f75849b"' },
               ],
             },
           },
@@ -193,12 +207,12 @@ describe('CompleteAssetUpload', () => {
     expect(response.statusCode).toBe(200);
     expect(s3Mocks.completeMultipartUpload).toHaveBeenCalledWith({
       Bucket: 'asset-bucket',
-      Key: '1234567890/asset-123/banner.gif',
-      UploadId: 'upload-id-123',
+      Key: OBJECT_KEY,
+      UploadId: MULTIPART_UPLOAD_ID,
       MultipartUpload: {
         Parts: [
-          { ETag: 'etag-a', PartNumber: 1 },
-          { ETag: 'etag-b', PartNumber: 2 },
+          { ETag: '"c4ca4238a0b923820dcc509a6f75849b"', PartNumber: 1 },
+          { ETag: '"6f5902ac237024bdd0c176cb93063dc4"', PartNumber: 2 },
         ],
       },
     });
@@ -209,13 +223,13 @@ describe('CompleteAssetUpload', () => {
       ...requestArguments,
       input: {
         requestParameters: {
-          experienceId: '1234567890',
-          uploadSessionId: 'session-123',
+          experienceId: EXPERIENCE_ID,
+          uploadSessionId: UPLOAD_SESSION_ID,
         },
         body: {
           completion: {
-            singlePart: { eTag: 'etag-1' },
-            multipart: { parts: [{ partNumber: 1, eTag: 'etag-2' }] },
+            singlePart: { eTag: '"eccbc87e4b5ce2fe28308fd9f2a7baf3"' },
+            multipart: { parts: [{ partNumber: 1, eTag: '"a87ff679a2f3e71d9181a67b7542122c"' }] },
           },
         },
       },
