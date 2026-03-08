@@ -37,7 +37,7 @@ export default function TermsOfServiceContent() {
             <CardContent className="space-y-4">
               <p>
                 {
-                  'Welcome to Roblox NUSA Academy. These Terms of Service ("Terms") govern your use of our web application and Google Classroom Add-On that enables political science teachers to host LARP (Live Action Role Playing) simulations on Roblox.'
+                  'Welcome to CTS. These Terms of Service ("Terms") govern your use of our web application and Google Classroom Add-On that enables political science teachers to host LARP (Live Action Role Playing) simulations on Roblox.'
                 }
               </p>
               <p>
@@ -215,7 +215,7 @@ export default function TermsOfServiceContent() {
             <CardContent className="space-y-4">
               <p className="text-sm">
                 {
-                  "TO THE MAXIMUM EXTENT PERMITTED BY LAW, ROBLOX NUSA ACADEMY SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF DATA, LOSS OF PROFITS, OR BUSINESS INTERRUPTION."
+                  "TO THE MAXIMUM EXTENT PERMITTED BY LAW, CIVIC TECH FOR SCHOOLS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF DATA, LOSS OF PROFITS, OR BUSINESS INTERRUPTION."
                 }
               </p>
               <p className="text-sm">

@@ -49,7 +49,7 @@ export default function PrivacyContent() {
             <CardContent className="space-y-4">
               <p>
                 {
-                  "This Privacy Policy describes how Civic LARP collects, uses, and protects information when you use our web application and Google Classroom Add-On for educational LARP simulations on Roblox."
+                  "This Privacy Policy describes how CTS collects, uses, and protects information when you use our web application and Google Classroom Add-On for educational LARP simulations on Roblox."
                 }
               </p>
               <p>

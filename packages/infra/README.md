@@ -23,7 +23,7 @@ for detialed screenshots of this process.
 1. Log in to the cupwendyscup@gmail.com account.
 1. Create a project e.g. `gallaudet-gamma`.
 1. Configure the "App Information", "Audience", and "Contact Info" sections.
-  - For app name put something like `Roblox NUSA Academy (GAMMA)`. It doesn't
+  - For app name put something like `CivicTech for Schools (GAMMA)`. It doesn't
     really matter what you put in terms of functionality/code, but it'll show 
     up to end users.
   - For audience, select "External"

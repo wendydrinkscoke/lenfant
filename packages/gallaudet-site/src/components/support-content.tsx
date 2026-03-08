@@ -57,7 +57,7 @@ const faqItems = [
       },
       {
         q: "How do I add more students to my class?",
-        a: "Students are automatically synced from your Google Classroom roster. Add students to your Google Classroom and they'll appear in Roblox NUSA Academy within 15 minutes.",
+        a: "Students are automatically synced from your Google Classroom roster. Add students to your Google Classroom and they'll appear in CTS within 15 minutes.",
       },
       {
         q: "What happens if I leave my school?",
@@ -292,7 +292,7 @@ export default function SupportContent() {
             <CardContent>
               <p className="text-sm text-orange-700 dark:text-orange-300 mb-4">
                 {
-                  "If you're experiencing a critical issue that's preventing you from using Roblox NUSA Academy during class time, email us and include 'URGENT' in the subject."
+                  "If you're experiencing a critical issue that's preventing you from using CTS during class time, email us and include 'URGENT' in the subject."
                 }
               </p>
               <Button
