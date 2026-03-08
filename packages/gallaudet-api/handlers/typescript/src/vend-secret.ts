@@ -147,7 +147,6 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
 
   try {
     const bodyText = await publicKeyResponse.text();
-    logger.info(`Public key API call response: ${bodyText}.`);
 
     if (publicKeyResponse.status === 403) {
       return Response.notAuthorized({
@@ -156,7 +155,7 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
     }
 
     if (!publicKeyResponse.ok) {
-      logger.error(`Failed to fetch Roblox public key: ${publicKeyResponse.status} ${bodyText}`);
+      logger.error(`Failed to fetch Roblox public key: ${publicKeyResponse.status}`);
       if (400 <= publicKeyResponse.status && publicKeyResponse.status < 500) {
         return Response.notAuthorized({
           message: 'Roblox secret store access has not been delegated for this user.',
@@ -170,6 +169,9 @@ export const vendSecret: VendSecretChainedHandlerFunction = async (request) => {
     const publicKeyBody = JSON.parse(bodyText);
     publicKey = publicKeyBody.secret;
     keyId = publicKeyBody.key_id ?? publicKeyBody.keyId;
+    logger.info(
+      `Fetched Roblox public key metadata (id=${publicKeyBody.id ?? 'unknown'}, keyId=${keyId ?? 'missing'})`,
+    );
   } catch (err) {
     logger.error(`Error while fetching Roblox public key: ${(err as Error).message}`);
     return Response.internalFailure({
