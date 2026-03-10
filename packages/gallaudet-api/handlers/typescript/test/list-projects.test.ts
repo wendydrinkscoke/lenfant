@@ -1,4 +1,5 @@
 process.env.PROJECTS_TABLE_NAME = 'Projects';
+process.env.EXPERIENCES_TABLE_NAME = 'Experiences';
 
 import {
   InternalFailureErrorResponseContent,
@@ -7,9 +8,14 @@ import {
 } from 'gallaudet-api-typescript-runtime';
 import { listProjects } from '../src/list-projects';
 import { getCognitoUserIdFromEvent } from '../src/utils/auth-utils';
+import { getExperiencesWithResolvedNames } from '../src/utils/experience-metadata-utils';
 
 jest.mock('../src/utils/auth-utils', () => ({
   getCognitoUserIdFromEvent: jest.fn(),
+}));
+
+jest.mock('../src/utils/experience-metadata-utils', () => ({
+  getExperiencesWithResolvedNames: jest.fn(),
 }));
 
 jest.mock('aws-sdk', () => {
@@ -45,6 +51,7 @@ const {
 };
 
 const mockedGetCognitoUserIdFromEvent = getCognitoUserIdFromEvent as jest.Mock;
+const mockedGetExperiencesWithResolvedNames = getExperiencesWithResolvedNames as jest.Mock;
 
 const requestArguments = {
   chain: undefined as never,
@@ -72,6 +79,7 @@ describe('ListProjects', () => {
     jest.clearAllMocks();
     mockedGetCognitoUserIdFromEvent.mockReturnValue('3448c4d8-70e1-703a-6450-fbf81e4d71b4');
     dynamoMocks.queryPromise.mockResolvedValue({ Items: [] });
+    mockedGetExperiencesWithResolvedNames.mockResolvedValue(new Map());
   });
 
   it('returns 403 when no authenticated user is found', async () => {
@@ -112,6 +120,10 @@ describe('ListProjects', () => {
     expect(response.body).toEqual({
       projects: [],
     });
+    expect(mockedGetExperiencesWithResolvedNames).toHaveBeenCalledWith(
+      [],
+      requestArguments.interceptorContext.logger,
+    );
     expect(dynamoMocks.query).toHaveBeenCalledWith({
       TableName: 'Projects',
       KeyConditionExpression: '#cognitoUserId = :cognitoUserId',
@@ -131,6 +143,12 @@ describe('ListProjects', () => {
         { ExperienceId: '9348701256', CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4' },
       ],
     });
+    mockedGetExperiencesWithResolvedNames.mockResolvedValueOnce(
+      new Map([
+        ['9228429469', { experienceName: 'National USA Game' }],
+        ['9348701256', { experienceName: 'Blue Coral Labs' }],
+      ]),
+    );
 
     const response = await listProjects({
       ...requestArguments,
@@ -142,8 +160,35 @@ describe('ListProjects', () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
-      projects: [{ experienceId: '9228429469' }, { experienceId: '9348701256' }],
+      projects: [
+        { experienceId: '9228429469', experienceName: 'National USA Game' },
+        { experienceId: '9348701256', experienceName: 'Blue Coral Labs' },
+      ],
     });
+  });
+
+  it('returns 500 when experience metadata resolution fails', async () => {
+    dynamoMocks.queryPromise.mockResolvedValueOnce({
+      Items: [
+        { ExperienceId: '9228429469', CognitoUserId: '3448c4d8-70e1-703a-6450-fbf81e4d71b4' },
+      ],
+    });
+    mockedGetExperiencesWithResolvedNames.mockRejectedValueOnce(
+      new Error('metadata failure'),
+    );
+
+    const response = await listProjects({
+      ...requestArguments,
+      input: {
+        requestParameters: {},
+        body: undefined as never,
+      },
+    });
+
+    expect(response.statusCode).toBe(500);
+    expect((response.body as InternalFailureErrorResponseContent).message).toEqual(
+      'Failed to list projects.',
+    );
   });
 
   it('returns 500 when the projects query fails', async () => {

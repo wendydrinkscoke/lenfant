@@ -325,6 +325,11 @@ const upsertMockProject = (experienceId: string) => {
   setMockProjectIds([...existing, experienceId]);
 };
 
+const getMockExperienceName = (experienceId: string): string =>
+  MOCK_CATALOG.experiences.find((experience) => experience.experienceId === experienceId)
+    ?.experienceName ??
+  `Mock Experience ${experienceId}`;
+
 const createMockSecretId = () =>
   `mock-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -421,7 +426,7 @@ export class MockGallaudetApi extends DefaultApi {
     return {
       experience: {
         experienceId,
-        experienceName: `Universe ${experienceId}`,
+        experienceName: getMockExperienceName(experienceId),
         catalogEntries: [],
       },
     };
@@ -665,7 +670,10 @@ export class MockGallaudetApi extends DefaultApi {
     await delay(MOCK_LATENCY_MS);
     const projectIds = getMockProjectIds();
     return {
-      projects: projectIds.map((experienceId) => ({ experienceId })),
+      projects: projectIds.map((experienceId) => ({
+        experienceId,
+        experienceName: getMockExperienceName(experienceId),
+      })),
     };
   }
 

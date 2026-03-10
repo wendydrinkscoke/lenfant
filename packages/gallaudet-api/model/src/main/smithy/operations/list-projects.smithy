@@ -3,6 +3,7 @@ namespace llc.civictech.school
 
 structure Project {
     experienceId: ExperienceId
+    experienceName: ExperienceName
 }
 
 list Projects {

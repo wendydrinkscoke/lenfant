@@ -75,3 +75,12 @@ structure SecretAlreadyExistsError {
   message: ErrorMessage
 }
 
+@error("client")
+@httpError(422)
+structure PlaceIdProvidedError {
+    @required
+    message: ErrorMessage
+
+    @required
+    suggestedUniverseId: ExperienceId
+}

@@ -203,10 +203,12 @@ export class Gallaudet extends Construct {
       {
         environment: {
           PROJECTS_TABLE_NAME: props.projectsTable.tableName,
+          EXPERIENCES_TABLE_NAME: props.experiencesTable.tableName,
         },
       },
     );
     props.projectsTable.grantReadWriteData(createProjectFunction);
+    props.experiencesTable.grantReadWriteData(createProjectFunction);
 
     const delegateGoogleClassroomAccessFunction =
       new DelegateGoogleClassroomAccessFunction(
@@ -486,6 +488,7 @@ export class Gallaudet extends Construct {
       {
         environment: {
           PROJECTS_TABLE_NAME: props.projectsTable.tableName,
+          EXPERIENCES_TABLE_NAME: props.experiencesTable.tableName,
         },
         description: [
           "This function lists all projects created by a particular user.",
@@ -496,6 +499,7 @@ export class Gallaudet extends Construct {
       },
     );
     props.projectsTable.grantReadData(listProjectsFunction);
+    props.experiencesTable.grantReadWriteData(listProjectsFunction);
 
     const listAssetsFunction = new ListAssetsFunction(
       this,

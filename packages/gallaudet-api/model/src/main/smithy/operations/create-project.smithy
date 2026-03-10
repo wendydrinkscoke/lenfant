@@ -17,6 +17,7 @@ operation CreateProject {
         BadRequestError
         NotAuthorizedError
         RobloxLinkRequiredError
+        PlaceIdProvidedError
         ProjectAlreadyExistsError
         InternalFailureError
     ]

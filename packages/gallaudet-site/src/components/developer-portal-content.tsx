@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import type { ReactNode } from "react"
 import { Card, CardContent } from "./ui/card"
 import { Button } from "./ui/button"
@@ -31,6 +31,23 @@ interface DeveloperPortalContentProps {
   user: AuthUser | null
 }
 
+const getProjectLoadErrorMessage = async (error: unknown): Promise<string> => {
+  if (error instanceof ResponseError) {
+    try {
+      const data = await error.response.clone().json()
+      if (typeof data?.message === "string") {
+        return data.message
+      }
+    } catch {
+      // Ignore parse errors and fall back to the default message.
+    }
+  } else if (error instanceof Error && error.message) {
+    return error.message
+  }
+
+  return "Unable to load experiences."
+}
+
 export function DeveloperPortalContent({ user }: DeveloperPortalContentProps) {
   type Experience = { id: string; name: string; status?: string }
   const [experiences, setExperiences] = useState<Experience[]>([])
@@ -58,6 +75,70 @@ export function DeveloperPortalContent({ user }: DeveloperPortalContentProps) {
   const [selectedFeature, setSelectedFeature] = useState(features[0]?.id ?? "")
   const [addExperienceOpen, setAddExperienceOpen] = useState(false)
   const [isLoadingExperiences, setIsLoadingExperiences] = useState(false)
+
+  const loadExperiences = useCallback(
+    async ({
+      preferredSelection,
+      showErrorToast = true,
+    }: {
+      preferredSelection?: string
+      showErrorToast?: boolean
+    } = {}): Promise<Experience[]> => {
+      setIsLoadingExperiences(true)
+
+      try {
+        const apiClient = await getGallaudetApi()
+        const response = await apiClient.listProjects()
+        const normalized = (response.projects ?? [])
+          .map((project) => {
+            const id = project.experienceId?.trim()
+            const name = project.experienceName?.trim()
+            if (!id || !name) {
+              return null
+            }
+
+            return {
+              id,
+              name,
+              status: "Active",
+            }
+          })
+          .filter(
+            (
+              experience,
+            ): experience is { id: string; name: string; status: string } =>
+              Boolean(experience),
+          )
+
+        setExperiences(normalized)
+        setSelectedExperience((prev) => {
+          if (
+            preferredSelection &&
+            normalized.some((experience) => experience.id === preferredSelection)
+          ) {
+            return preferredSelection
+          }
+          if (prev && normalized.some((experience) => experience.id === prev)) {
+            return prev
+          }
+          return normalized[0]?.id ?? null
+        })
+
+        return normalized
+      } catch (error) {
+        const message = await getProjectLoadErrorMessage(error)
+        if (showErrorToast) {
+          toast.error("Failed to load experiences", {
+            description: message,
+          })
+        }
+        throw new Error(message)
+      } finally {
+        setIsLoadingExperiences(false)
+      }
+    },
+    [],
+  )
 
   useEffect(() => {
     if (!experiences.length && selectedExperience !== null) {
@@ -87,63 +168,8 @@ export function DeveloperPortalContent({ user }: DeveloperPortalContentProps) {
   }, [])
 
   useEffect(() => {
-    let isMounted = true
-    ;(async () => {
-      setIsLoadingExperiences(true)
-      try {
-        const apiClient = await getGallaudetApi()
-        const response = await apiClient.listProjects()
-        if (!isMounted) return
-
-        const normalized = (response.projects ?? [])
-          .map((project) => project.experienceId?.trim())
-          .filter((id): id is string => Boolean(id))
-          .map((id) => ({
-            id,
-            name: `Universe ${id}`,
-            status: "Active",
-          }))
-
-        setExperiences((prev) => {
-          const existing = new Set(prev.map((exp) => exp.id))
-          const merged = [...prev]
-          normalized.forEach((exp) => {
-            if (!existing.has(exp.id)) {
-              merged.push(exp)
-            }
-          })
-          return merged
-        })
-        setSelectedExperience((prev) => prev ?? normalized[0]?.id ?? null)
-      } catch (error) {
-        if (!isMounted) return
-        let message = "Unable to load experiences."
-        if (error instanceof ResponseError) {
-          try {
-            const data = await error.response.clone().json()
-            if (typeof data?.message === "string") {
-              message = data.message
-            }
-          } catch {
-            // Ignore parse errors and fall back to default message.
-          }
-        } else if (error instanceof Error && error.message) {
-          message = error.message
-        }
-        toast.error("Failed to load experiences", {
-          description: message,
-        })
-      } finally {
-        if (isMounted) {
-          setIsLoadingExperiences(false)
-        }
-      }
-    })()
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
+    void loadExperiences().catch(() => undefined)
+  }, [loadExperiences])
 
   const selectedExperienceName = experiences.find((e) => e.id === selectedExperience)?.name
   const hasSelection = Boolean(selectedExperienceName)
@@ -175,10 +201,23 @@ export function DeveloperPortalContent({ user }: DeveloperPortalContentProps) {
         onSelectExperience={setSelectedExperience}
         addExperienceOpen={addExperienceOpen}
         onAddExperienceOpenChange={setAddExperienceOpen}
-        onAddExperience={(experience) => {
-          setExperiences((prev) => [...prev, experience])
-          setSelectedExperience(experience.id)
-          toast.success("Experience added", { description: `${experience.name} is now in your console.` })
+        onAddExperience={async (experienceId) => {
+          const refreshedExperiences = await loadExperiences({
+            preferredSelection: experienceId,
+            showErrorToast: false,
+          })
+          const addedExperience = refreshedExperiences.find(
+            (experience) => experience.id === experienceId,
+          )
+          if (!addedExperience) {
+            throw new Error(
+              "Project was created, but it did not appear in the refreshed project list.",
+            )
+          }
+
+          toast.success("Experience added", {
+            description: `${addedExperience.name} is now in your console.`,
+          })
         }}
         features={features}
         selectedFeature={selectedFeature}

@@ -14,7 +14,6 @@ import { ResponseError } from "gallaudet-api-typescript-react-query-hooks"
 type Experience = { id: string; name: string; status?: string }
 type Feature = { id: string; label: string; icon?: React.ComponentType<{ className?: string }> }
 type UserInfo = { name: string; email: string; avatar?: string }
-type RobloxPlaceUniverseLookupResponse = { universeId?: number | string | null }
 
 const featureIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   listing: Sparkles,
@@ -43,7 +42,7 @@ export function DevPortalSidebar({
   onSelectExperience: (id: string) => void
   addExperienceOpen: boolean
   onAddExperienceOpenChange: (open: boolean) => void
-  onAddExperience: (experience: Experience) => void
+  onAddExperience: (experienceId: string) => Promise<void>
   features: Feature[]
   selectedFeature: string
   onSelectFeature: (id: string) => void
@@ -98,7 +97,7 @@ function ExperienceSwitcher({
   onSelectExperience: (id: string) => void
   dialogOpen: boolean
   onDialogOpenChange: (open: boolean) => void
-  onAddExperience: (experience: Experience) => void
+  onAddExperience: (experienceId: string) => Promise<void>
 }) {
   const active = selectedExperience
     ? experiences.find((exp) => exp.id === selectedExperience)
@@ -110,30 +109,6 @@ function ExperienceSwitcher({
   const isSubmitting = status === "loading"
 
   const canConfirm = Boolean(experienceId.trim()) && !isSubmitting
-
-  const resolveUniverseIdForPlaceId = async (placeId: string): Promise<string | null | undefined> => {
-    try {
-      const response = await fetch(`https://apis.roblox.com/universes/v1/places/${placeId}/universe`)
-      if (!response.ok) {
-        return undefined
-      }
-
-      const payload = (await response.json()) as RobloxPlaceUniverseLookupResponse
-      if (typeof payload.universeId === "number" && Number.isFinite(payload.universeId)) {
-        return String(payload.universeId)
-      }
-      if (typeof payload.universeId === "string" && payload.universeId.trim().length > 0) {
-        return payload.universeId.trim()
-      }
-      if (payload.universeId === null) {
-        return null
-      }
-      return undefined
-    } catch {
-      // Client-side validation is best effort. Backend still validates.
-      return undefined
-    }
-  }
 
   useEffect(() => {
     if (!dialogOpen) {
@@ -157,28 +132,12 @@ function ExperienceSwitcher({
     }
 
     setStatus("loading")
-    setStatusMessage("Validating ID...")
-
-    const mappedUniverseId = await resolveUniverseIdForPlaceId(trimmedId)
-    if (mappedUniverseId) {
-      setStatus("error")
-      setStatusMessage(
-        `That looks like a place ID. Use universe ID ${mappedUniverseId} instead.`
-      )
-      return
-    }
-
     setStatusMessage("Creating project...")
 
     try {
       const apiClient = await getGallaudetApi()
       await apiClient.createProject({ experienceId: trimmedId })
-
-      onAddExperience({
-        id: trimmedId,
-        name: `Universe ${trimmedId}`,
-        status: "Pending",
-      })
+      await onAddExperience(trimmedId)
       onDialogOpenChange(false)
     } catch (error) {
       let message = "Unable to create the project. Please try again."

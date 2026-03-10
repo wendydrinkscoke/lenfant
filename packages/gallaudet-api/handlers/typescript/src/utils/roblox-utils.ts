@@ -73,9 +73,40 @@ type RobloxGamesLookupResponse = {
   }>;
 };
 
-export const getRobloxExperienceNameFromUniverseId = async (
+export type RobloxUniverseLookupResult =
+  | {
+    status: 'found';
+    universeId: string;
+    experienceName: string;
+  }
+  | {
+    status: 'not_found';
+  };
+
+type RobloxPlaceUniverseLookupResponse = {
+  universeId?: number | string | null;
+};
+
+export type RobloxPlaceUniverseLookupResult =
+  | {
+    status: 'found';
+    universeId: string;
+  }
+  | {
+    status: 'not_found';
+  };
+
+const parseRobloxJson = <T>(bodyText: string, errorMessage: string): T => {
+  try {
+    return JSON.parse(bodyText) as T;
+  } catch {
+    throw new Error(`${errorMessage}: ${bodyText}`);
+  }
+};
+
+export const lookupRobloxUniverse = async (
   universeId: string,
-): Promise<string> => {
+): Promise<RobloxUniverseLookupResult> => {
   const endpoint = `https://games.roblox.com/v1/games?universeIds=${encodeURIComponent(universeId)}`;
   const response = await fetch(endpoint);
   const bodyText = await response.text();
@@ -84,12 +115,10 @@ export const getRobloxExperienceNameFromUniverseId = async (
     throw new Error(`Roblox games lookup failed (${response.status}): ${bodyText}`);
   }
 
-  let parsed: RobloxGamesLookupResponse;
-  try {
-    parsed = JSON.parse(bodyText) as RobloxGamesLookupResponse;
-  } catch {
-    throw new Error(`Roblox games lookup returned non-JSON payload: ${bodyText}`);
-  }
+  const parsed = parseRobloxJson<RobloxGamesLookupResponse>(
+    bodyText,
+    'Roblox games lookup returned non-JSON payload',
+  );
 
   const matchingEntry = parsed.data?.find((entry) => {
     if (typeof entry.id === 'number') {
@@ -103,8 +132,69 @@ export const getRobloxExperienceNameFromUniverseId = async (
 
   const experienceName = matchingEntry?.name?.trim();
   if (!experienceName) {
+    return {
+      status: 'not_found',
+    };
+  }
+
+  return {
+    status: 'found',
+    universeId,
+    experienceName,
+  };
+};
+
+export const lookupRobloxUniverseForPlace = async (
+  placeId: string,
+): Promise<RobloxPlaceUniverseLookupResult> => {
+  const endpoint = `https://apis.roblox.com/universes/v1/places/${encodeURIComponent(placeId)}/universe`;
+  const response = await fetch(endpoint);
+  const bodyText = await response.text();
+
+  if (!response.ok) {
+    if (response.status === 400 || response.status === 404) {
+      return {
+        status: 'not_found',
+      };
+    }
+
+    throw new Error(`Roblox place lookup failed (${response.status}): ${bodyText}`);
+  }
+
+  const parsed = parseRobloxJson<RobloxPlaceUniverseLookupResponse>(
+    bodyText,
+    'Roblox place lookup returned non-JSON payload',
+  );
+
+  if (typeof parsed.universeId === 'number' && Number.isFinite(parsed.universeId)) {
+    return {
+      status: 'found',
+      universeId: String(parsed.universeId),
+    };
+  }
+
+  if (typeof parsed.universeId === 'string') {
+    const trimmedUniverseId = parsed.universeId.trim();
+    if (trimmedUniverseId.length > 0) {
+      return {
+        status: 'found',
+        universeId: trimmedUniverseId,
+      };
+    }
+  }
+
+  return {
+    status: 'not_found',
+  };
+};
+
+export const getRobloxExperienceNameFromUniverseId = async (
+  universeId: string,
+): Promise<string> => {
+  const result = await lookupRobloxUniverse(universeId);
+  if (result.status !== 'found') {
     throw new Error(`Roblox games lookup did not return a name for universeId=${universeId}`);
   }
 
-  return experienceName;
+  return result.experienceName;
 };

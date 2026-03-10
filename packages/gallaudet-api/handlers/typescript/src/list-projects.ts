@@ -10,6 +10,7 @@ import {
 import { getCognitoUserIdFromEvent } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError } from './utils/error-utils';
+import { getExperiencesWithResolvedNames } from './utils/experience-metadata-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
 
@@ -45,7 +46,7 @@ export const listProjects: ListProjectsChainedHandlerFunction = async (request) 
   }
   logger.info(`Cognito User ID: ${cognitoUserId}`);
 
-  const projects: Project[] = [];
+  const experienceIds: string[] = [];
   let lastEvaluatedKey: DynamoDB.DocumentClient.Key | undefined;
 
   try {
@@ -74,7 +75,7 @@ export const listProjects: ListProjectsChainedHandlerFunction = async (request) 
             ? item.ExperienceId.trim()
             : undefined;
         if (experienceId) {
-          projects.push({ experienceId });
+          experienceIds.push(experienceId);
         }
       });
 
@@ -97,6 +98,38 @@ export const listProjects: ListProjectsChainedHandlerFunction = async (request) 
     );
     return Response.internalFailure({
       message: 'Failed to list projects.',
+    });
+  }
+
+  let resolvedExperiencesById: Map<string, { experienceName: string }>;
+  try {
+    resolvedExperiencesById = await getExperiencesWithResolvedNames(experienceIds, logger);
+  } catch (error) {
+    logger.error(
+      `Failed to resolve project metadata for cognitoUserId=${cognitoUserId}: ${(error as Error).message}`,
+    );
+    // TODO(metrics): emit a metric when project listing fails during experience metadata resolution.
+    return Response.internalFailure({
+      message: 'Failed to list projects.',
+    });
+  }
+
+  const projects: Project[] = [];
+  for (const experienceId of experienceIds) {
+    const resolvedExperience = resolvedExperiencesById.get(experienceId);
+    if (!resolvedExperience) {
+      logger.error(
+        `Resolved project metadata missing for cognitoUserId=${cognitoUserId}, experienceId=${experienceId}`,
+      );
+      // TODO(metrics): emit a metric when ListProjects encounters missing resolved metadata.
+      return Response.internalFailure({
+        message: 'Failed to list projects.',
+      });
+    }
+
+    projects.push({
+      experienceId,
+      experienceName: resolvedExperience.experienceName,
     });
   }
 

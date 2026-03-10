@@ -5,52 +5,31 @@ import {
   INTERCEPTORS,
   Response,
   LoggingInterceptor,
+  PlaceIdProvidedErrorResponseContent,
   ProjectAlreadyExistsErrorResponseContent,
 } from 'gallaudet-api-typescript-runtime';
 import { getCognitoUserIdFromEvent } from './utils/auth-utils';
 import { getRequiredEnv } from './utils/env-utils';
 import { isAWSError } from './utils/error-utils';
+import {
+  lookupRobloxUniverse,
+  lookupRobloxUniverseForPlace,
+} from './utils/roblox-utils';
 
 const ddbClient = new DynamoDB.DocumentClient();
 
-type RobloxPlaceUniverseLookupResponse = {
-  universeId?: number | string | null;
-};
-
-const resolveUniverseIdForPlaceId = async (
-  placeId: string,
-  logger: ReturnType<typeof LoggingInterceptor.getLogger>,
-): Promise<string | null> => {
-  const endpoint = `https://apis.roblox.com/universes/v1/places/${placeId}/universe`;
-  const response = await fetch(endpoint);
-  const bodyText = await response.text();
-
-  if (!response.ok) {
-    logger.error(
-      `Roblox place lookup failed for id ${placeId}: ${response.status} ${bodyText}`,
-    );
-    throw new Error('Failed to validate experience ID with Roblox.');
+const isProjectAlreadyCreatedError = (error: unknown): boolean => {
+  if (!isAWSError(error) || error.code !== 'TransactionCanceledException') {
+    return false;
   }
 
-  let parsed: RobloxPlaceUniverseLookupResponse;
-  try {
-    parsed = JSON.parse(bodyText) as RobloxPlaceUniverseLookupResponse;
-  } catch (error) {
-    logger.error(
-      `Roblox place lookup returned non-JSON payload for id ${placeId}: ${bodyText}`,
-    );
-    throw new Error('Failed to validate experience ID with Roblox.');
+  const cancellationReasons = (error as { cancellationReasons?: Array<{ Code?: string }> })
+    .cancellationReasons;
+  if (cancellationReasons?.some((reason) => reason?.Code === 'ConditionalCheckFailed')) {
+    return true;
   }
 
-  if (typeof parsed.universeId === 'number' && Number.isFinite(parsed.universeId)) {
-    return String(parsed.universeId);
-  }
-  if (typeof parsed.universeId === 'string') {
-    const trimmed = parsed.universeId.trim();
-    return trimmed.length > 0 ? trimmed : null;
-  }
-
-  return null;
+  return error.message.includes('ConditionalCheckFailed');
 };
 
 /**
@@ -62,8 +41,10 @@ export const createProject: CreateProjectChainedHandlerFunction = async (request
 
   // 1. Get environment variables needed
   let projectsTableName: string;
+  let experiencesTableName: string;
   try {
     projectsTableName = getRequiredEnv('PROJECTS_TABLE_NAME');
+    experiencesTableName = getRequiredEnv('EXPERIENCES_TABLE_NAME');
   } catch (error) {
     logger.error(`Missing required environment variable: ${error}`);
     return Response.internalFailure({
@@ -94,36 +75,84 @@ export const createProject: CreateProjectChainedHandlerFunction = async (request
     });
   }
 
+  let experienceName: string;
   try {
-    const resolvedUniverseId = await resolveUniverseIdForPlaceId(trimmedExperienceId, logger);
-    if (resolvedUniverseId) {
+    const universeLookup = await lookupRobloxUniverse(trimmedExperienceId);
+    if (universeLookup.status === 'found') {
+      experienceName = universeLookup.experienceName;
+    } else {
+      const placeLookup = await lookupRobloxUniverseForPlace(trimmedExperienceId);
+      if (placeLookup.status === 'found') {
+        const body: PlaceIdProvidedErrorResponseContent = {
+          message: `The provided ID ${trimmedExperienceId} appears to be a Roblox place ID. Use universe ID ${placeLookup.universeId} instead.`,
+          suggestedUniverseId: placeLookup.universeId,
+        };
+        return {
+          statusCode: 422,
+          body,
+        };
+      }
+
       return Response.badRequest({
-        message: `The provided ID ${trimmedExperienceId} appears to be a Roblox place ID. Use universe ID ${resolvedUniverseId} instead.`,
+        message: `Experience ID ${trimmedExperienceId} does not correspond to a valid Roblox universe.`,
       });
     }
   } catch (error) {
-    logger.error((error as Error).message);
+    logger.error(
+      `Failed to validate experienceId=${trimmedExperienceId} with Roblox: ${(error as Error).message}`,
+    );
+    // TODO(metrics): emit a metric when create-project cannot validate an experience ID with Roblox.
     return Response.internalFailure({
       message: 'Failed to validate experience ID with Roblox.',
     });
   }
 
-  // 4. Create a project row scoped to the calling Cognito user.
+  // 4. Create a project row scoped to the calling Cognito user and seed canonical experience metadata.
+  const nowIso = new Date().toISOString();
   const projectItem = {
     CognitoUserId: cognitoUserId,
     ExperienceId: trimmedExperienceId,
-    CreatedAt: new Date().toISOString(),
+    CreatedAt: nowIso,
   };
   logger.info(`Creating Project item: ${JSON.stringify(projectItem)}`);
   try {
-    await ddbClient.put({
-      TableName: projectsTableName,
-      Item: projectItem,
-      ConditionExpression: 'attribute_not_exists(CognitoUserId) AND attribute_not_exists(ExperienceId)',
+    await ddbClient.transactWrite({
+      TransactItems: [
+        {
+          Put: {
+            TableName: projectsTableName,
+            Item: projectItem,
+            ConditionExpression:
+              'attribute_not_exists(CognitoUserId) AND attribute_not_exists(ExperienceId)',
+          },
+        },
+        {
+          Update: {
+            TableName: experiencesTableName,
+            Key: {
+              ExperienceId: trimmedExperienceId,
+            },
+            UpdateExpression:
+              'SET #experienceName = :experienceName, #experienceNameFetchedAt = :experienceNameFetchedAt, #updatedAt = :updatedAt, #createdAt = if_not_exists(#createdAt, :createdAt)',
+            ExpressionAttributeNames: {
+              '#experienceName': 'ExperienceName',
+              '#experienceNameFetchedAt': 'ExperienceNameFetchedAt',
+              '#updatedAt': 'UpdatedAt',
+              '#createdAt': 'CreatedAt',
+            },
+            ExpressionAttributeValues: {
+              ':experienceName': experienceName,
+              ':experienceNameFetchedAt': nowIso,
+              ':updatedAt': nowIso,
+              ':createdAt': nowIso,
+            },
+          },
+        },
+      ],
     }).promise();
     logger.info(`Created new project entry: ${JSON.stringify(projectItem)}`);
   } catch (error) {
-    if (isAWSError(error) && error.code === 'ConditionalCheckFailedException') {
+    if (isProjectAlreadyCreatedError(error)) {
       logger.warn(
         `Project with ExperienceId ${trimmedExperienceId} already exists for CognitoUserId ${cognitoUserId}.`,
       );
@@ -138,6 +167,7 @@ export const createProject: CreateProjectChainedHandlerFunction = async (request
       });
     }
     logger.error(`Failed to create project entry: ${error}`);
+    // TODO(metrics): emit a metric when create-project fails during the transactional write.
     return Response.internalFailure({
       message: 'Failed to create new project entry in the database.',
     });

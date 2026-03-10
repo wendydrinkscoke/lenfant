@@ -1,10 +1,12 @@
 process.env.PROJECTS_TABLE_NAME = 'Projects';
+process.env.EXPERIENCES_TABLE_NAME = 'Experiences';
 
 import {
   BadRequestErrorResponseContent,
   CreateProjectChainedRequestInput,
   InternalFailureErrorResponseContent,
   NotAuthorizedErrorResponseContent,
+  PlaceIdProvidedErrorResponseContent,
   ProjectAlreadyExistsErrorResponseContent,
 } from 'gallaudet-api-typescript-runtime';
 import { createProject } from '../src/create-project';
@@ -15,14 +17,19 @@ jest.mock('../src/utils/auth-utils', () => ({
 }));
 
 jest.mock('aws-sdk', () => {
-  const put = jest.fn();
+  const transactWritePromise = jest.fn();
+  const transactWrite = jest.fn(() => ({
+    promise: transactWritePromise,
+  }));
+
   return {
     DynamoDB: {
-      DocumentClient: jest.fn(() => ({ put })),
+      DocumentClient: jest.fn(() => ({ transactWrite })),
     },
     __mocks: {
       dynamo: {
-        put,
+        transactWrite,
+        transactWritePromise,
       },
     },
   };
@@ -32,7 +39,10 @@ const {
   __mocks: { dynamo: dynamoMocks },
 } = jest.requireMock('aws-sdk') as {
   __mocks: {
-    dynamo: { put: jest.Mock };
+    dynamo: {
+      transactWrite: jest.Mock;
+      transactWritePromise: jest.Mock;
+    };
   };
 };
 
@@ -43,7 +53,7 @@ const EXISTING_EXPERIENCE_ID = '9228429469';
 const NEW_EXPERIENCE_ID = '9441750099';
 const PLACE_ID = '127120714583972';
 
-const buildFetchResponse = (status = 200, body: unknown = { universeId: null }) => ({
+const buildFetchResponse = (status = 200, body: unknown) => ({
   ok: status >= 200 && status < 300,
   status,
   text: jest.fn().mockResolvedValue(
@@ -79,11 +89,18 @@ describe('CreateProject', () => {
     jest.clearAllMocks();
     (globalThis as typeof globalThis & { fetch: jest.Mock }).fetch = fetchMock;
     fetchMock.mockReset();
-    fetchMock.mockResolvedValue(buildFetchResponse(200, { universeId: null }));
+    fetchMock.mockResolvedValue(
+      buildFetchResponse(200, {
+        data: [
+          {
+            id: Number(EXISTING_EXPERIENCE_ID),
+            name: 'National USA Game',
+          },
+        ],
+      }),
+    );
     mockedGetCognitoUserIdFromEvent.mockReturnValue(COGNITO_USER_ID);
-    dynamoMocks.put.mockReturnValue({
-      promise: jest.fn().mockResolvedValue({}),
-    });
+    dynamoMocks.transactWritePromise.mockResolvedValue({});
   });
 
   it('returns not authorized when no authenticated user is present', async () => {
@@ -98,48 +115,87 @@ describe('CreateProject', () => {
       'Authentication required',
     );
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(dynamoMocks.put).not.toHaveBeenCalled();
+    expect(dynamoMocks.transactWrite).not.toHaveBeenCalled();
   });
 
   it('creates a project scoped to the calling Cognito user', async () => {
+    fetchMock.mockResolvedValueOnce(
+      buildFetchResponse(200, {
+        data: [
+          {
+            id: Number(NEW_EXPERIENCE_ID),
+            name: 'Fresh Universe',
+          },
+        ],
+      }),
+    );
+
     const response = await createProject(buildRequest(NEW_EXPERIENCE_ID));
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
       message: 'Project created successfully.',
     });
-    expect(dynamoMocks.put).toHaveBeenCalledWith(
+    expect(dynamoMocks.transactWrite).toHaveBeenCalledWith(
       expect.objectContaining({
-        TableName: 'Projects',
-        ConditionExpression:
-          'attribute_not_exists(CognitoUserId) AND attribute_not_exists(ExperienceId)',
-        Item: expect.objectContaining({
-          CognitoUserId: COGNITO_USER_ID,
-          ExperienceId: NEW_EXPERIENCE_ID,
-          CreatedAt: expect.any(String),
-        }),
+        TransactItems: [
+          {
+            Put: {
+              TableName: 'Projects',
+              ConditionExpression:
+                'attribute_not_exists(CognitoUserId) AND attribute_not_exists(ExperienceId)',
+              Item: expect.objectContaining({
+                CognitoUserId: COGNITO_USER_ID,
+                ExperienceId: NEW_EXPERIENCE_ID,
+                CreatedAt: expect.any(String),
+              }),
+            },
+          },
+          {
+            Update: {
+              TableName: 'Experiences',
+              Key: {
+                ExperienceId: NEW_EXPERIENCE_ID,
+              },
+              UpdateExpression: expect.stringContaining('#experienceName = :experienceName'),
+              ExpressionAttributeNames: expect.objectContaining({
+                '#experienceName': 'ExperienceName',
+                '#experienceNameFetchedAt': 'ExperienceNameFetchedAt',
+              }),
+              ExpressionAttributeValues: expect.objectContaining({
+                ':experienceName': 'Fresh Universe',
+                ':experienceNameFetchedAt': expect.any(String),
+              }),
+            },
+          },
+        ],
       }),
     );
     expect(fetchMock).toHaveBeenCalledWith(
-      `https://apis.roblox.com/universes/v1/places/${NEW_EXPERIENCE_ID}/universe`,
+      `https://games.roblox.com/v1/games?universeIds=${NEW_EXPERIENCE_ID}`,
     );
   });
 
   it('returns bad request when a place id is provided and suggests the universe id', async () => {
-    fetchMock.mockResolvedValue(
-      buildFetchResponse(200, { universeId: 9228429469 }),
-    );
+    fetchMock
+      .mockResolvedValueOnce(buildFetchResponse(200, { data: [] }))
+      .mockResolvedValueOnce(
+        buildFetchResponse(200, { universeId: 9228429469 }),
+      );
 
     const response = await createProject(buildRequest(PLACE_ID));
 
-    expect(response.statusCode).toBe(400);
-    expect((response.body as BadRequestErrorResponseContent).message).toContain(
+    expect(response.statusCode).toBe(422);
+    expect((response.body as PlaceIdProvidedErrorResponseContent).message).toContain(
       'appears to be a Roblox place ID',
     );
-    expect((response.body as BadRequestErrorResponseContent).message).toContain(
+    expect((response.body as PlaceIdProvidedErrorResponseContent).message).toContain(
       '9228429469',
     );
-    expect(dynamoMocks.put).not.toHaveBeenCalled();
+    expect(
+      (response.body as PlaceIdProvidedErrorResponseContent).suggestedUniverseId,
+    ).toBe('9228429469');
+    expect(dynamoMocks.transactWrite).not.toHaveBeenCalled();
   });
 
   it('returns bad request for non-numeric identifiers', async () => {
@@ -150,11 +206,25 @@ describe('CreateProject', () => {
       'Experience ID must contain only numbers.',
     );
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(dynamoMocks.put).not.toHaveBeenCalled();
+    expect(dynamoMocks.transactWrite).not.toHaveBeenCalled();
+  });
+
+  it('returns bad request when the identifier is neither a universe ID nor a place ID', async () => {
+    fetchMock
+      .mockResolvedValueOnce(buildFetchResponse(200, { data: [] }))
+      .mockResolvedValueOnce(buildFetchResponse(404, { errors: [] }));
+
+    const response = await createProject(buildRequest('123'));
+
+    expect(response.statusCode).toBe(400);
+    expect((response.body as BadRequestErrorResponseContent).message).toEqual(
+      'Experience ID 123 does not correspond to a valid Roblox universe.',
+    );
+    expect(dynamoMocks.transactWrite).not.toHaveBeenCalled();
   });
 
   it('returns internal failure when Roblox validation fails', async () => {
-    fetchMock.mockResolvedValue(buildFetchResponse(500, { message: 'error' }));
+    fetchMock.mockResolvedValueOnce(buildFetchResponse(500, { message: 'error' }));
 
     const response = await createProject(buildRequest(NEW_EXPERIENCE_ID));
 
@@ -162,17 +232,18 @@ describe('CreateProject', () => {
     expect((response.body as InternalFailureErrorResponseContent).message).toEqual(
       'Failed to validate experience ID with Roblox.',
     );
-    expect(dynamoMocks.put).not.toHaveBeenCalled();
+    expect(dynamoMocks.transactWrite).not.toHaveBeenCalled();
   });
 
   it('returns a conflict when the user already created a project for the experience', async () => {
-    const conditionalCheckFailedError = Object.assign(
-      new Error('Conditional request failed'),
-      { code: 'ConditionalCheckFailedException' },
+    const transactionCanceledError = Object.assign(
+      new Error('Transaction cancelled due to ConditionalCheckFailed'),
+      {
+        code: 'TransactionCanceledException',
+        cancellationReasons: [{ Code: 'ConditionalCheckFailed' }, { Code: 'None' }],
+      },
     );
-    dynamoMocks.put.mockReturnValue({
-      promise: jest.fn().mockRejectedValue(conditionalCheckFailedError),
-    });
+    dynamoMocks.transactWritePromise.mockRejectedValueOnce(transactionCanceledError);
 
     const response = await createProject(buildRequest());
 
@@ -185,9 +256,7 @@ describe('CreateProject', () => {
   });
 
   it('returns internal failure when the project write fails', async () => {
-    dynamoMocks.put.mockReturnValue({
-      promise: jest.fn().mockRejectedValue(new Error('ddb error')),
-    });
+    dynamoMocks.transactWritePromise.mockRejectedValueOnce(new Error('ddb error'));
 
     const response = await createProject(buildRequest());
 
