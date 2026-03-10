@@ -14,9 +14,16 @@ const inGameClips: Clip[] = [
   {
     title: "Run The World! - Learn Country Names",
     alt: "Student avatar speaking during a filibuster",
-    src: "/run-the-world-learn-country-names-thumbnail.png",
+    src: "/run-the-world-learn-country-names-by-wendysstraw-thumbnail.png",
     description: "Learn country names by running around a life-sized map of the globe! Stand on top of a country to select it. Beat other players to that country and you'll earn more points.",
     link: "https://www.roblox.com/games/127120714583972/Run-The-World-Learn-Country-Names"
+  },
+  {
+    title: "AP Study Game",
+    alt: "Thumbnail for \"AP Study Game\" Roblox game",
+    src: "/ap-study-game-by-studyverse-thumbnail.webp",
+    description: "Prepare for AP exams with an independent study game featuring more than 17 courses and quiz-style practice across subjects like history, biology, psychology, reading, and math.",
+    link: "https://www.roblox.com/games/138615169232956/AP-Study-Game"
   },
   {
     title: "Tour the George W. Bush Presidential Library",
@@ -24,13 +31,6 @@ const inGameClips: Clip[] = [
     src: "/gwb-lib-thumbnail.png",
     description: "Learn about the 43rd President of the United State by touring a bloxy version of his Presidential library!",
     link: "https://www.roblox.com/games/127120714583341/Tour-The-GWB-Library"
-  },
-  {
-    title: "Up for Debate",
-    alt: "Thumbnail for \"Up for Debate\" Roblox game",
-    src: "/up-for-debate-thumbnail.jpg",
-    description: "Debate with a another player on a randomly determined topic. You will either be chosen to argue in favor or against the topic's proposal. At the end of the round, spectators vote on who won the debate!",
-    link: "https://www.roblox.com/games/13781542989/Up-For-Debate"
   },
 ]
 
